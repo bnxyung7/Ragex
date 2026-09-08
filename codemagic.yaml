@@ -37,14 +37,14 @@ workflows:
         script: |
           xcodebuild -resolvePackageDependencies \
             -project ThreeOneOSFive.xcodeproj \
-            -scheme ThreeOneOSFive
+            -scheme 3105
 
       - name: Build (simulator, compile check)
         script: |
           set -o pipefail
           xcodebuild \
             -project ThreeOneOSFive.xcodeproj \
-            -scheme ThreeOneOSFive \
+            -scheme 3105 \
             -configuration Debug \
             -sdk iphonesimulator \
             -derivedDataPath "$CM_BUILD_DIR/DerivedData" \
@@ -65,7 +65,7 @@ workflows:
       xcode: latest
       vars:
         XCODE_PROJECT: ThreeOneOSFive.xcodeproj
-        XCODE_SCHEME: ThreeOneOSFive
+        XCODE_SCHEME: 3105
         BUILD_DIR: $CM_BUILD_DIR/build
         IPA_DIR: $CM_BUILD_DIR/ipa
 
@@ -116,25 +116,25 @@ workflows:
         script: |
           # Find the device build .app (Release-iphoneos, never Simulator)
           APP_PATH=$(find "$BUILD_DIR/DerivedData" \
-            -path "*/Release-iphoneos/ThreeOneOSFive.app" -type d | head -1)
+            -path "*/Release-iphoneos/3105.app" -type d | head -1)
 
           # Fallback: any non-simulator .app
           if [ -z "$APP_PATH" ]; then
             APP_PATH=$(find "$BUILD_DIR/DerivedData" \
-              -name "ThreeOneOSFive.app" -type d \
+              -name "3105.app" -type d \
               -not -path "*Simulator*" \
               -not -path "*iphonesimulator*" | head -1)
           fi
 
           if [ -z "$APP_PATH" ]; then
-            echo "ERROR: ThreeOneOSFive.app not found"
+            echo "ERROR: 3105.app not found"
             find "$BUILD_DIR/DerivedData" -name "*.app" -type d 2>/dev/null || true
             exit 1
           fi
           echo "Found: $APP_PATH"
 
           # Verify binary is arm64 (device, not simulator)
-          BINARY="$APP_PATH/ThreeOneOSFive"
+          BINARY="$APP_PATH/3105"
           if [ ! -f "$BINARY" ]; then
             echo "ERROR: Binary not found at $BINARY"
             exit 1
@@ -144,34 +144,34 @@ workflows:
           file "$BINARY" | grep -i "arm64" \
             || { echo "ERROR: Binary does not contain arm64 — not a device build"; exit 1; }
 
-          # Package into unsigned IPA: Payload/ThreeOneOSFive.app inside a ZIP
+          # Package into unsigned IPA: Payload/3105.app inside a ZIP
           mkdir -p "$IPA_DIR/Payload"
-          cp -r "$APP_PATH" "$IPA_DIR/Payload/ThreeOneOSFive.app"
+          cp -r "$APP_PATH" "$IPA_DIR/Payload/3105.app"
           cd "$IPA_DIR"
-          zip -qr "$CM_BUILD_DIR/ThreeOneOSFive-unsigned.ipa" Payload/
+          zip -qr "$CM_BUILD_DIR/3105-unsigned.ipa" Payload/
           cd "$CM_BUILD_DIR"
 
           echo "=== IPA created ==="
-          ls -lh "$CM_BUILD_DIR/ThreeOneOSFive-unsigned.ipa"
+          ls -lh "$CM_BUILD_DIR/3105-unsigned.ipa"
 
       - name: Verify IPA structure
         script: |
-          IPA="$CM_BUILD_DIR/ThreeOneOSFive-unsigned.ipa"
+          IPA="$CM_BUILD_DIR/3105-unsigned.ipa"
           test -f "$IPA" || { echo "ERROR: IPA not found"; exit 1; }
 
           echo "=== IPA contents (first 40 lines) ==="
           unzip -l "$IPA" | head -40
 
-          echo "=== Verifying Payload/ThreeOneOSFive.app/ exists ==="
-          unzip -l "$IPA" | grep "Payload/ThreeOneOSFive.app/" \
-            || { echo "ERROR: Payload/ThreeOneOSFive.app not found in IPA"; exit 1; }
+          echo "=== Verifying Payload/3105.app/ exists ==="
+          unzip -l "$IPA" | grep "Payload/3105.app/" \
+            || { echo "ERROR: Payload/3105.app not found in IPA"; exit 1; }
 
           echo "=== Verifying Info.plist inside app ==="
-          unzip -l "$IPA" | grep "Payload/ThreeOneOSFive.app/Info.plist" \
+          unzip -l "$IPA" | grep "Payload/3105.app/Info.plist" \
             || { echo "WARNING: Info.plist not found directly — may be nested"; }
 
           echo "=== Checking bundle ID in Info.plist ==="
-          unzip -p "$IPA" "Payload/ThreeOneOSFive.app/Info.plist" \
+          unzip -p "$IPA" "Payload/3105.app/Info.plist" \
             | plutil -p - | grep -i "CFBundleIdentifier" || true
 
           echo "=== IPA verified. Ready for ESign. ==="
@@ -179,5 +179,5 @@ workflows:
           echo "Signing: UNSIGNED — sign with ESign before installing"
 
     artifacts:
-      - $CM_BUILD_DIR/ThreeOneOSFive-unsigned.ipa
+      - $CM_BUILD_DIR/3105-unsigned.ipa
       - $CM_BUILD_DIR/**/*.dSYM.zip
