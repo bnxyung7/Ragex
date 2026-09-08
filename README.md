@@ -201,8 +201,7 @@ Ragex/
 ├── ThreeOneOSFive.xcodeproj     # Xcode project
 ├── docs/                        # Documentation and images
 │   ├── images/                  # Screenshots and icons
-│   ├── PATCH_GUIDE.md           # Patch creation guide
-│   └── releases/                # Release notes
+│   └── PATCH_GUIDE.md           # Patch creation guide
 ├── CHANGELOG.md                 # Version history
 ├── LICENSE                      # GPL v3.0 License
 ├── PREINSTALLED_PATCHES.md      # Preinstalled patch guide
