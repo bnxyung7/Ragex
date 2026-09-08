@@ -18,6 +18,9 @@ struct ThreeOneOSFiveApp: App {
     init() {
         setupLogCapture()
         log("app: X launching — iOS \(AppInfo.osVersion) (\(AppInfo.osBuild)) \(AppInfo.machineName)")
+        
+        // Install preinstalled patches on first launch
+        PreinstalledPatchLoader.installIfNeeded()
     }
 
     private var language: AppLanguage {
