@@ -26,16 +26,6 @@ struct SettingsView: View {
                     .padding(.vertical, 4)
                 }
 
-                Section(language.text("settings.language")) {
-                    Picker(language.text("settings.language"), selection: $languageCode) {
-                        ForEach(AppLanguage.allCases) { option in
-                            Text(option.displayName).tag(option.rawValue)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                }
-
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
