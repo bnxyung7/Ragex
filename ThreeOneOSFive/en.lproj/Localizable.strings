@@ -32,7 +32,7 @@
 "onboarding.language_subtitle" = "You can change this later in Settings.";
 "onboarding.language_hint" = "Selected: %@";
 "onboarding.welcome_title" = "Welcome to X";
-"onboarding.welcome_message" = "Developed by YangJiii";
+"onboarding.welcome_message" = "Developed by Bnxyung7";
 "onboarding.welcome_badge" = "Official X identity";
 "onboarding.versions_title" = "Supported iOS versions";
 "onboarding.versions_subtitle" = "X is verified on the ranges below. Unsupported builds are blocked.";
@@ -281,7 +281,7 @@
 "settings.social_media" = "Social media";
 "social.github_role" = "3105 source code";
 "social.iosvn_role" = "iOSVN Community";
-"credit.yangjiii" = "Developer & designer";
+"credit.bnxyung7" = "Developer & designer";
 "credit.forcequit" = "bad_query exploit";
 "credit.filzaslop" = "FilzaSlop — MHA-C2 and app discovery";
 "credit.pocket_poster" = "Pocket Poster, Nugget & .tendies format";

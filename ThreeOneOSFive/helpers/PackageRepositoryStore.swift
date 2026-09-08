@@ -369,7 +369,7 @@ final class PackageRepositoryStore: ObservableObject {
                 identifier: "clean-layout",
                 kind: .patch,
                 name: "Clean Layout",
-                author: "YangJiii",
+                author: "Bnxyung7",
                 version: "1.2.0",
                 summary: "A compact layout patch for a cleaner app interface.",
                 details: "Simulator preview package used to verify marketplace layout.",
@@ -422,7 +422,7 @@ final class PackageRepositoryStore: ObservableObject {
         ]
         sources = [source]
         repositories[source.id] = PackageRepository(
-            identifier: "com.yangjiii.preview",
+            identifier: "com.bnxyung7.preview",
             name: "3105 Preview",
             summary: "Simulator-only marketplace preview",
             iconURL: nil,
@@ -436,7 +436,7 @@ final class PackageRepositoryStore: ObservableObject {
     private func installSimulatorWallpaperRepository() {
         let revision = "f04c0a8e81c328201ad7769fac16b907ce905035"
         let sourceURL = URL(
-            string: "https://raw.githubusercontent.com/YangJiiii/3105-repo/main/" +
+            string: "https://raw.githubusercontent.com/bnxyung7/Ragex-repo/main/" +
                 "repositories/demo/repo.json"
         )!
         let previewURL = URL(
@@ -482,9 +482,9 @@ final class PackageRepositoryStore: ObservableObject {
         )
         sources = [source]
         repositories[source.id] = PackageRepository(
-            identifier: "com.yangjiii.3105",
-            name: "3105 Repository",
-            summary: "Nguồn chính thức cho tweak và wallpaper của 3105.",
+            identifier: "com.bnxyung7.x",
+            name: "X Repository",
+            summary: "Official X patch and tweak repository.",
             iconURL: nil,
             sourceURL: sourceURL,
             packages: [package]
