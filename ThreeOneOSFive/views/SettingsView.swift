@@ -37,6 +37,53 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "arrow.down.circle.fill")
+                                .foregroundStyle(.blue)
+                                .font(.title2)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Updates")
+                                    .font(.headline)
+                                Text("Version \(appVersion)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
+                        Divider()
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Latest Changes")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                            
+                            Text("• Complete rebrand to X")
+                                .font(.caption)
+                            Text("• Removed Spanish language support")
+                                .font(.caption)
+                            Text("• Updated app icons and branding")
+                                .font(.caption)
+                            Text("• Bug fixes and improvements")
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.secondary)
+                        
+                        Link(destination: URL(string: "https://discord.gg/AksKwSWaKq")!) {
+                            HStack {
+                                Image(systemName: "message.fill")
+                                Text("Join Discord for Updates")
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                            }
+                            .font(.subheadline)
+                            .foregroundStyle(.blue)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+
+                Section {
                     Toggle(isOn: $cleanerEnabled) {
                         Label(language.text("tab.cleaner"), systemImage: "sparkles")
                     }
