@@ -671,3 +671,6 @@
 "tab.home" = "Trang chủ";
 "tab.files" = "Tệp tin";
 "tab.patches" = "Bản vá";
+
+"home.settings" = "Cài đặt";
+"home.logs" = "Nhật ký";

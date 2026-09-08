@@ -671,3 +671,6 @@
 "tab.home" = "Home";
 "tab.files" = "Files";
 "tab.patches" = "Patches";
+
+"home.settings" = "Settings";
+"home.logs" = "Logs";

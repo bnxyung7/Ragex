@@ -671,3 +671,6 @@
 "tab.home" = "主页";
 "tab.files" = "文件";
 "tab.patches" = "补丁";
+
+"home.settings" = "设置";
+"home.logs" = "日志";
