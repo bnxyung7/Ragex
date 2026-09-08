@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# codemagic.yaml — ThreeOneOSFive (3105)
-# Bundle ID: com.opa334.3105
+# codemagic.yaml — X
+# Bundle ID: com.apple.mobile.MobileHouseArrest
 #
 # STRATEGY: Build unsigned IPA for iOS device (arm64).
 # The IPA is NOT signed by Apple. Sign it afterward with ESign or similar tool.
@@ -12,8 +12,8 @@
 workflows:
 
   # ── Dev: simulator compile check ─────────────────────────────────────────
-  threeoneosfive-dev:
-    name: ThreeOneOSFive — Dev Compile Check
+  x-dev:
+    name: X — Dev Compile Check
     instance_type: mac_mini_m2
     max_build_duration: 45
 
@@ -37,14 +37,14 @@ workflows:
         script: |
           xcodebuild -resolvePackageDependencies \
             -project ThreeOneOSFive.xcodeproj \
-            -scheme 3105
+            -scheme X
 
       - name: Build (simulator, compile check)
         script: |
           set -o pipefail
           xcodebuild \
             -project ThreeOneOSFive.xcodeproj \
-            -scheme 3105 \
+            -scheme X \
             -configuration Debug \
             -sdk iphonesimulator \
             -derivedDataPath "$CM_BUILD_DIR/DerivedData" \
@@ -54,10 +54,10 @@ workflows:
 
   # ── Release: unsigned IPA for iOS device — sign later with ESign ─────────
   # No Apple signing required.
-  # Output: ThreeOneOSFive-unsigned.ipa  (Payload/ThreeOneOSFive.app)
+  # Output: X-unsigned.ipa  (Payload/X.app)
   # Sign afterward with ESign, Sideloadly, AltStore, or any IPA signer.
-  threeoneosfive-release:
-    name: ThreeOneOSFive — Unsigned IPA (sign with ESign)
+  x-release:
+    name: X — Unsigned IPA (sign with ESign)
     instance_type: mac_mini_m2
     max_build_duration: 60
 
@@ -65,7 +65,7 @@ workflows:
       xcode: latest
       vars:
         XCODE_PROJECT: ThreeOneOSFive.xcodeproj
-        XCODE_SCHEME: 3105
+        XCODE_SCHEME: X
         BUILD_DIR: $CM_BUILD_DIR/build
         IPA_DIR: $CM_BUILD_DIR/ipa
 
@@ -116,25 +116,25 @@ workflows:
         script: |
           # Find the device build .app (Release-iphoneos, never Simulator)
           APP_PATH=$(find "$BUILD_DIR/DerivedData" \
-            -path "*/Release-iphoneos/3105.app" -type d | head -1)
+            -path "*/Release-iphoneos/X.app" -type d | head -1)
 
           # Fallback: any non-simulator .app
           if [ -z "$APP_PATH" ]; then
             APP_PATH=$(find "$BUILD_DIR/DerivedData" \
-              -name "3105.app" -type d \
+              -name "X.app" -type d \
               -not -path "*Simulator*" \
               -not -path "*iphonesimulator*" | head -1)
           fi
 
           if [ -z "$APP_PATH" ]; then
-            echo "ERROR: 3105.app not found"
+            echo "ERROR: X.app not found"
             find "$BUILD_DIR/DerivedData" -name "*.app" -type d 2>/dev/null || true
             exit 1
           fi
           echo "Found: $APP_PATH"
 
           # Verify binary is arm64 (device, not simulator)
-          BINARY="$APP_PATH/3105"
+          BINARY="$APP_PATH/X"
           if [ ! -f "$BINARY" ]; then
             echo "ERROR: Binary not found at $BINARY"
             exit 1
@@ -144,40 +144,40 @@ workflows:
           file "$BINARY" | grep -i "arm64" \
             || { echo "ERROR: Binary does not contain arm64 — not a device build"; exit 1; }
 
-          # Package into unsigned IPA: Payload/3105.app inside a ZIP
+          # Package into unsigned IPA: Payload/X.app inside a ZIP
           mkdir -p "$IPA_DIR/Payload"
-          cp -r "$APP_PATH" "$IPA_DIR/Payload/3105.app"
+          cp -r "$APP_PATH" "$IPA_DIR/Payload/X.app"
           cd "$IPA_DIR"
-          zip -qr "$CM_BUILD_DIR/3105-unsigned.ipa" Payload/
+          zip -qr "$CM_BUILD_DIR/X-unsigned.ipa" Payload/
           cd "$CM_BUILD_DIR"
 
           echo "=== IPA created ==="
-          ls -lh "$CM_BUILD_DIR/3105-unsigned.ipa"
+          ls -lh "$CM_BUILD_DIR/X-unsigned.ipa"
 
       - name: Verify IPA structure
         script: |
-          IPA="$CM_BUILD_DIR/3105-unsigned.ipa"
+          IPA="$CM_BUILD_DIR/X-unsigned.ipa"
           test -f "$IPA" || { echo "ERROR: IPA not found"; exit 1; }
 
           echo "=== IPA contents (first 40 lines) ==="
           unzip -l "$IPA" | head -40
 
-          echo "=== Verifying Payload/3105.app/ exists ==="
-          unzip -l "$IPA" | grep "Payload/3105.app/" \
-            || { echo "ERROR: Payload/3105.app not found in IPA"; exit 1; }
+          echo "=== Verifying Payload/X.app/ exists ==="
+          unzip -l "$IPA" | grep "Payload/X.app/" \
+            || { echo "ERROR: Payload/X.app not found in IPA"; exit 1; }
 
           echo "=== Verifying Info.plist inside app ==="
-          unzip -l "$IPA" | grep "Payload/3105.app/Info.plist" \
+          unzip -l "$IPA" | grep "Payload/X.app/Info.plist" \
             || { echo "WARNING: Info.plist not found directly — may be nested"; }
 
           echo "=== Checking bundle ID in Info.plist ==="
-          unzip -p "$IPA" "Payload/3105.app/Info.plist" \
+          unzip -p "$IPA" "Payload/X.app/Info.plist" \
             | plutil -p - | grep -i "CFBundleIdentifier" || true
 
           echo "=== IPA verified. Ready for ESign. ==="
-          echo "Bundle ID: com.opa334.3105"
+          echo "Bundle ID: com.apple.mobile.MobileHouseArrest"
           echo "Signing: UNSIGNED — sign with ESign before installing"
 
     artifacts:
-      - $CM_BUILD_DIR/3105-unsigned.ipa
+      - $CM_BUILD_DIR/X-unsigned.ipa
       - $CM_BUILD_DIR/**/*.dSYM.zip
