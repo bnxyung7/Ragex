@@ -54,9 +54,9 @@ enum PreinstalledPatchLoader {
             
             do {
                 try fileManager.copyItem(at: sourceURL, to: destinationURL)
-                Utils.log("[PreinstalledPatches] Installed: \(sourceURL.lastPathComponent)")
+                print("[PreinstalledPatches] Installed: \(sourceURL.lastPathComponent)")
             } catch {
-                Utils.log("[PreinstalledPatches] Failed to install \(sourceURL.lastPathComponent): \(error)")
+                print("[PreinstalledPatches] Failed to install \(sourceURL.lastPathComponent): \(error)")
             }
         }
     }
