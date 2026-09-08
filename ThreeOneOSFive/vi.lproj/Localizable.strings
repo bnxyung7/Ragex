@@ -674,3 +674,13 @@
 
 "home.settings" = "Cài đặt";
 "home.logs" = "Nhật ký";
+
+"dashboard.device" = "Thiết bị";
+"dashboard.hardware_model" = "Mẫu phần cứng";
+"dashboard.ios_version" = "Phiên bản iOS";
+"dashboard.compatibility" = "Khả năng tương thích";
+"dashboard.supported" = "Được hỗ trợ";
+"dashboard.unsupported" = "Không được hỗ trợ";
+"dashboard.verified_footer" = "Đã xác minh: iOS 26.0–26.6.1 và bốn bản iOS 27.0 beta được liệt kê.";
+"dashboard.installation" = "Cài đặt";
+"dashboard.installation_warning" = "X chỉ hoạt động khi được ký bằng chứng chỉ doanh nghiệp. Không hỗ trợ SideStore, AltStore, 3uTools và LiveContainer.";

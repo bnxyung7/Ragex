@@ -674,3 +674,13 @@
 
 "home.settings" = "Settings";
 "home.logs" = "Logs";
+
+"dashboard.device" = "Device";
+"dashboard.hardware_model" = "Hardware model";
+"dashboard.ios_version" = "iOS Version";
+"dashboard.compatibility" = "Compatibility";
+"dashboard.supported" = "Supported";
+"dashboard.unsupported" = "Unsupported";
+"dashboard.verified_footer" = "Verified: iOS 26.0–26.6.1 and the four listed iOS 27.0 beta builds.";
+"dashboard.installation" = "Installation";
+"dashboard.installation_warning" = "X only works when signed with an enterprise certificate. SideStore, AltStore, 3uTools and LiveContainer are not supported.";

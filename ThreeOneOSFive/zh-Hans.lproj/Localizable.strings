@@ -674,3 +674,13 @@
 
 "home.settings" = "设置";
 "home.logs" = "日志";
+
+"dashboard.device" = "设备";
+"dashboard.hardware_model" = "硬件型号";
+"dashboard.ios_version" = "iOS 版本";
+"dashboard.compatibility" = "兼容性";
+"dashboard.supported" = "支持";
+"dashboard.unsupported" = "不支持";
+"dashboard.verified_footer" = "已验证：iOS 26.0–26.6.1 和四个列出的 iOS 27.0 测试版本。";
+"dashboard.installation" = "安装";
+"dashboard.installation_warning" = "X 仅在使用企业证书签名时有效。不支持 SideStore、AltStore、3uTools 和 LiveContainer。";
