@@ -6,7 +6,7 @@ All notable user-facing changes are documented in this file.
 
 ### Added
 
-- Bundle-tree Patch workspace v2 under `On My iPhone/3105/Patches`, synchronized automatically when applying or exporting.
+- Bundle-tree Patch workspace v2 under `On My iPhone/X/Patches`, synchronized automatically when applying or exporting.
 - Multiple independent Files tabs with preserved navigation state.
 - ZIP extraction with path, symbolic-link, CRC, and available-space validation.
 - Responsive iPad split-view and landscape navigation.
@@ -55,7 +55,7 @@ All notable user-facing changes are documented in this file.
 - Stabilized persistent search presentation in app and file browsers.
 - Fixed native document selection for replacement files and `.3105` package imports.
 - Resolved bundle-name mapping for enumerated app containers where metadata is available.
-- Limited wallpaper reset to active content installed by 3105.
+- Limited wallpaper reset to active content installed by X.
 - Corrected Cleaner layout when no removable app data is found.
 
 ### Compatibility

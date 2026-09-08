@@ -398,7 +398,7 @@ final class PackageRepositoryStore: ObservableObject {
                 identifier: "profile-switcher",
                 kind: .patch,
                 name: "Profile Switcher",
-                author: "3105 Community",
+                author: "X Community",
                 version: "1.0.0",
                 summary: "A portable workspace example with multiple bundle targets.",
                 details: nil,
@@ -423,7 +423,7 @@ final class PackageRepositoryStore: ObservableObject {
         sources = [source]
         repositories[source.id] = PackageRepository(
             identifier: "com.bnxyung7.preview",
-            name: "3105 Preview",
+            name: "X Preview",
             summary: "Simulator-only marketplace preview",
             iconURL: nil,
             sourceURL: sourceURL,
