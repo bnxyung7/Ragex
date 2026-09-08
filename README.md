@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/images/app-icon.png" width="132" alt="3105 app icon">
+  <img src="docs/images/app-icon.png" width="132" alt="X app icon">
 </p>
 
-<h1 align="center">3105</h1>
+<h1 align="center">X</h1>
 
 <p align="center">
   A native iOS workspace for app-container files, portable patches, limited cleanup, and PosterBoard wallpaper packages.
@@ -23,16 +23,16 @@
 </p>
 
 > [!WARNING]
-> 3105 is research software for personal device management. Keep a backup and use it only on devices and data you own. Simulator screenshots demonstrate UI only; they do not verify device-level access.
+> X is research software for personal device management. Keep a backup and use it only on devices and data you own. Simulator screenshots demonstrate UI only; they do not verify device-level access.
 
 ## Preview
 
 <p align="center">
-  <img src="docs/images/home.png" width="245" alt="3105 Home">
+  <img src="docs/images/home.png" width="245" alt="X Home">
   &nbsp;
-  <img src="docs/images/patches.png" width="245" alt="3105 Patches">
+  <img src="docs/images/patches.png" width="245" alt="X Patches">
   &nbsp;
-  <img src="docs/images/cleaner.png" width="245" alt="3105 Cleaner">
+  <img src="docs/images/cleaner.png" width="245" alt="X Cleaner">
 </p>
 
 ## What's new in 1.1.0
@@ -45,7 +45,7 @@ See the complete [Patch workspace guide](docs/PATCH_GUIDE.md).
 
 ## What's new in 1.0.1
 
-- **Patch workspace v2** — build patches as a normal bundle-based directory tree under `On My iPhone/3105/Patches`; Apply and Export synchronize the workspace automatically.
+- **Patch workspace v2** — build patches as a normal bundle-based directory tree under `On My iPhone/X/Patches`; Apply and Export synchronize the workspace automatically.
 - **Safer recovery** — original files are journaled before writes; Restore puts existing files back, removes files introduced by the patch, and removes patch-created directories once empty.
 - **More capable Files tab** — independent tabs, preserved folder position, multi-selection, ZIP creation and extraction, plus a denser and more consistent grouped layout.
 - **Responsive navigation** — iPad split-view and landscape support, optional Cleaner/Wallpaper tabs, stable search fields, and refined icon/row sizing.
@@ -59,13 +59,13 @@ See the complete [Patch workspace guide](docs/PATCH_GUIDE.md).
 - **File operations** — search, preview, share, import multiple files, copy, move, paste, rename, delete, create files and folders, make ZIP archives, and safely handle name conflicts.
 - **Portable `.3105` patches** — bundle-based rules survive container-ID changes between devices; projects may include files or folders, support optional password protection, and can be imported from Files or a secure website link.
 - **Limited Cleaner** — scans only each app's `Library/Caches` and `tmp`, sorts recoverable size in either direction, supports bulk selection, and requires confirmation before deletion.
-- **Wallpaper Lab** — imports `.tendies` packages, validates payloads, journals installed items, and resets only content installed by 3105.
-- **No jailbreak installation** — 3105 does not install a persistent jailbreak, bootstrap, or daemon and does not inject code into third-party apps. Because it still uses device exploits and can modify app data, no universal guarantee can be made against every app's integrity or jailbreak-detection policy.
+- **Wallpaper Lab** — imports `.tendies` packages, validates payloads, journals installed items, and resets only content installed by X.
+- **No jailbreak installation** — X does not install a persistent jailbreak, bootstrap, or daemon and does not inject code into third-party apps. Because it still uses device exploits and can modify app data, no universal guarantee can be made against every app's integrity or jailbreak-detection policy.
 - **Localized interface** — English, Vietnamese, and Simplified Chinese.
 
 ## Compatibility
 
-3105 enables device-level features only for builds explicitly verified by the project:
+X enables device-level features only for builds explicitly verified by the project:
 
 | System | Verified range/builds |
 | --- | --- |
@@ -89,7 +89,7 @@ Unlisted iOS 27 builds are marked unsupported rather than assumed compatible. Th
 ## Project layout
 
 ```text
-3105/
+X/
 ├── ThreeOneOSFive/          # SwiftUI app, helpers, native bridges, localizations
 ├── ThreeOneOSFive.xcodeproj # Xcode project and 3105 scheme
 └── docs/images/             # Repository artwork and current UI previews
@@ -99,19 +99,6 @@ Unlisted iOS 27 builds are marked unsupported rather than assumed compatible. Th
 
 Do not publish logs, app containers, cookies, account databases, or patch payloads containing personal data. Report security-sensitive issues privately to the maintainer.
 
-## Credits
-
-3105 is developed and designed by [YangJiii](https://x.com/duongduong0908).
-
-Special thanks to [0xjohnny](https://x.com/0xjohnny) for [FilzaSlop](https://github.com/0xjohnnydev/FilzaSlop) and related research:
-
-- [MobileHouseArrest-PoC](https://github.com/0xjohnnydev/MobileHouseArrest-PoC) — ContainerManager identity-trust bug
-- [Geod-MCM-PoC](https://github.com/0xjohnnydev/Geod-MCM-PoC) — `geod` MobileContainerManager `partDomain` traversal
-- [InstallCoordination-PoC](https://github.com/0xjohnnydev/InstallCoordination-PoC) — persisted-state and final-symlink chain
-- [CFPrefsZeroFile-PoC](https://github.com/0xjohnnydev/CFPrefsZeroFile-PoC) — `cfprefsd` zero-file creation
-
-The project also builds on work from Pocket Poster/Nugget, CrazyMind90, forcequitOS, Dopamine, and their contributors. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for full attribution and upstream links.
-
 ## License
 
-Original portions of 3105 are distributed under the [GNU General Public License v3.0](LICENSE). Third-party components remain subject to their respective upstream copyright and license terms; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Original portions of X are distributed under the [GNU General Public License v3.0](LICENSE). Third-party components remain subject to their respective upstream copyright and license terms; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
