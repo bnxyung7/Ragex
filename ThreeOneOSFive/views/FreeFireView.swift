@@ -220,7 +220,9 @@ struct BundlePatch: Identifiable {
     let url: URL
     
     var displayName: String {
-        url.deletingPathExtension().lastPathComponent
+        let filename = url.deletingPathExtension().lastPathComponent
+        // Replace underscores with spaces and format nicely
+        return filename.replacingOccurrences(of: "_", with: " ")
     }
     
     var info: String? {

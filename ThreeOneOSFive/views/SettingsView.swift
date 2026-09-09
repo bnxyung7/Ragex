@@ -59,39 +59,6 @@ struct SettingsView: View {
                         .padding(.vertical, 4)
                     }
                     .buttonStyle(.plain)
-                    
-                    
-                    Button {
-                        PreinstalledPatchLoader.forceReinstall()
-                        
-                        // Reload patch store to show newly installed patches
-                        // Add small delay to ensure file system is ready
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            patchStore.reload()
-                        }
-                        
-                        // Show success toast
-                        toastMessage = "Patches reinstalled successfully"
-                        toastIcon = "checkmark.circle.fill"
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            showToast = true
-                        }
-                        
-                        // Hide toast after 2 seconds
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            withAnimation {
-                                showToast = false
-                            }
-                        }
-                    } label: {
-                        HStack {
-                            Image(systemName: "arrow.clockwise.circle.fill")
-                                .foregroundStyle(.orange)
-                            Text("Reinstall Preinstalled Patches")
-                                .foregroundStyle(.primary)
-                        }
-                    }
-                    .buttonStyle(.plain)
                 }
                 
                 Section {
@@ -125,14 +92,6 @@ struct SettingsView: View {
                 Section(language.text("common.device")) {
                     LabeledContent(language.text("dashboard.hardware_model"), value: AppInfo.displayMachineName)
                     LabeledContent(language.text("settings.ios_version"), value: "\(AppInfo.osVersion) (\(AppInfo.osBuild))")
-                    
-                    Divider()
-                    
-                    LabeledContent("Patches in bundle", value: checkBundlePatches())
-                        .font(.caption)
-                    
-                    LabeledContent("Patches installed", value: UserDefaults.standard.bool(forKey: "PreinstalledPatchLoader.hasInstalled") ? "YES" : "NO")
-                        .font(.caption)
                 }
 
                 Section {

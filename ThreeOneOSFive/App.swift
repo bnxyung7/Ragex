@@ -19,8 +19,8 @@ struct ThreeOneOSFiveApp: App {
         setupLogCapture()
         log("app: X launching — iOS \(AppInfo.osVersion) (\(AppInfo.osBuild)) \(AppInfo.machineName)")
         
-        // Install preinstalled patches on first launch
-        PreinstalledPatchLoader.installIfNeeded()
+        // Preinstalled patches now only appear in Free Fire tab
+        // PreinstalledPatchLoader.installIfNeeded()
     }
 
     private var language: AppLanguage {
