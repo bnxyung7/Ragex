@@ -226,7 +226,9 @@ struct KeyRowView: View {
     let key: UserKey
     let onRevoke: () -> Void
     
+    @EnvironmentObject var keyStore: KeyStore
     @State private var showRevokeAlert = false
+    @State private var showManageSheet = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -246,9 +248,9 @@ struct KeyRowView: View {
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(key.isExpired ? Color.red.opacity(0.2) : Color.green.opacity(0.2))
+                            .fill(statusColor.opacity(0.2))
                     )
-                    .foregroundStyle(key.isExpired ? .red : .green)
+                    .foregroundStyle(statusColor)
             }
             
             // Details
@@ -260,32 +262,69 @@ struct KeyRowView: View {
                 if let userName = key.userName, !userName.isEmpty {
                     keyDetail(icon: "person.fill", text: "Usuario: \(userName)")
                 }
+                
+                if key.isBanned, let reason = key.banReason {
+                    keyDetail(icon: "xmark.shield.fill", text: "Razón ban: \(reason)")
+                        .foregroundStyle(.red)
+                }
+                
+                if !key.notifications.isEmpty {
+                    keyDetail(icon: "bell.badge.fill", text: "\(key.notifications.count) notificación(es)")
+                        .foregroundStyle(.orange)
+                }
             }
             .font(.caption)
             .foregroundStyle(.secondary)
             
-            // Revoke button
-            Button(role: .destructive) {
-                showRevokeAlert = true
-            } label: {
-                HStack {
-                    Image(systemName: "trash.fill")
-                    Text("Revocar Key")
+            // Action buttons
+            HStack(spacing: 8) {
+                Button {
+                    showManageSheet = true
+                } label: {
+                    HStack {
+                        Image(systemName: "gearshape.fill")
+                        Text("Gestionar")
+                    }
+                    .font(.caption)
+                    .fontWeight(.medium)
                 }
-                .font(.caption)
-                .fontWeight(.medium)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                
+                Button(role: .destructive) {
+                    showRevokeAlert = true
+                } label: {
+                    HStack {
+                        Image(systemName: "trash.fill")
+                        Text("Eliminar")
+                    }
+                    .font(.caption)
+                    .fontWeight(.medium)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
         }
         .padding(.vertical, 4)
-        .alert("Revocar Key", isPresented: $showRevokeAlert) {
+        .alert("Eliminar Key", isPresented: $showRevokeAlert) {
             Button("Cancelar", role: .cancel) { }
-            Button("Revocar", role: .destructive) {
+            Button("Eliminar", role: .destructive) {
                 onRevoke()
             }
         } message: {
-            Text("¿Estás seguro de que deseas revocar esta Key? Esta acción no se puede deshacer.")
+            Text("¿Estás seguro de que deseas eliminar esta Key? Esta acción no se puede deshacer.")
+        }
+        .sheet(isPresented: $showManageSheet) {
+            KeyManagementSheet(key: key)
+                .environmentObject(keyStore)
+        }
+    }
+    
+    private var statusColor: Color {
+        switch key.status {
+        case .active: return .green
+        case .expired: return .red
+        case .banned: return .orange
         }
     }
     
@@ -475,5 +514,440 @@ struct CreateKeyView: View {
         // Haptic feedback
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
+    }
+}
+
+
+// MARK: - Key Management Sheet
+
+struct KeyManagementSheet: View {
+    let key: UserKey
+    @EnvironmentObject var keyStore: KeyStore
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var showResetConfirm = false
+    @State private var showAddTimeSheet = false
+    @State private var showReduceTimeSheet = false
+    @State private var showBanSheet = false
+    @State private var daysToAdd = 1
+    @State private var daysToReduce = 1
+    @State private var banReason = ""
+    
+    var body: some View {
+        NavigationView {
+            List {
+                // Key Info Section
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Key:")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(key.keyString)
+                                .font(.system(.body, design: .monospaced))
+                                .fontWeight(.semibold)
+                        }
+                        
+                        HStack {
+                            Text("Estado:")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(key.status.displayName)
+                                .fontWeight(.medium)
+                                .foregroundStyle(key.isBanned ? .orange : (key.isExpired ? .red : .green))
+                        }
+                        
+                        HStack {
+                            Text("Tiempo restante:")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(key.timeRemaining)
+                                .fontWeight(.medium)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                } header: {
+                    Text("Información")
+                }
+                
+                // Time Management
+                Section {
+                    Button {
+                        showResetConfirm = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.clockwise.circle.fill")
+                                .foregroundStyle(.blue)
+                            Text("Reset Key")
+                            Spacer()
+                            Text("Reiniciar tiempo")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    
+                    Button {
+                        showAddTimeSheet = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("Añadir Tiempo")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    
+                    Button {
+                        showReduceTimeSheet = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "minus.circle.fill")
+                                .foregroundStyle(.orange)
+                            Text("Reducir Tiempo")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                } header: {
+                    Text("Gestión de Tiempo")
+                }
+                
+                // Ban Management
+                Section {
+                    if key.isBanned {
+                        Button {
+                            unbanKey()
+                        } label: {
+                            HStack {
+                                Image(systemName: "checkmark.shield.fill")
+                                    .foregroundStyle(.green)
+                                Text("Desbanear Key")
+                                Spacer()
+                            }
+                        }
+                        
+                        if let reason = key.banReason {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Razón del ban:")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(reason)
+                                    .font(.subheadline)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    } else {
+                        Button(role: .destructive) {
+                            showBanSheet = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "xmark.shield.fill")
+                                Text("Banear Key")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Control de Acceso")
+                }
+                
+                // Notifications
+                if !key.notifications.isEmpty {
+                    Section {
+                        ForEach(Array(key.notifications.enumerated()), id: \.offset) { index, notification in
+                            HStack(spacing: 12) {
+                                Image(systemName: notification.icon)
+                                    .foregroundStyle(colorForNotification(notification))
+                                
+                                Text(notification.message)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        
+                        Button(role: .destructive) {
+                            keyStore.clearNotifications(for: key)
+                            dismiss()
+                        } label: {
+                            HStack {
+                                Image(systemName: "trash.fill")
+                                Text("Limpiar Notificaciones")
+                            }
+                        }
+                    } header: {
+                        Text("Notificaciones (\(key.notifications.count))")
+                    }
+                }
+            }
+            .navigationTitle("Gestionar Key")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cerrar") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .alert("Reset Key", isPresented: $showResetConfirm) {
+            Button("Cancelar", role: .cancel) { }
+            Button("Reset") {
+                resetKey()
+            }
+        } message: {
+            Text("Esto reiniciará el tiempo de expiración de la Key a su duración original.")
+        }
+        .sheet(isPresented: $showAddTimeSheet) {
+            AddTimeSheet(days: $daysToAdd, onConfirm: {
+                addTime()
+            })
+        }
+        .sheet(isPresented: $showReduceTimeSheet) {
+            ReduceTimeSheet(days: $daysToReduce, onConfirm: {
+                reduceTime()
+            })
+        }
+        .sheet(isPresented: $showBanSheet) {
+            BanKeySheet(reason: $banReason, onConfirm: {
+                banKey()
+            })
+        }
+    }
+    
+    private func colorForNotification(_ notification: KeyNotification) -> Color {
+        switch notification.color {
+        case "blue": return .blue
+        case "green": return .green
+        case "orange": return .orange
+        case "red": return .red
+        case "yellow": return .yellow
+        default: return .gray
+        }
+    }
+    
+    private func resetKey() {
+        keyStore.resetKey(key)
+        dismiss()
+    }
+    
+    private func addTime() {
+        keyStore.addTime(to: key, days: daysToAdd)
+        dismiss()
+    }
+    
+    private func reduceTime() {
+        keyStore.reduceTime(from: key, days: daysToReduce)
+        dismiss()
+    }
+    
+    private func banKey() {
+        keyStore.banKey(key, reason: banReason.isEmpty ? nil : banReason)
+        dismiss()
+    }
+    
+    private func unbanKey() {
+        keyStore.unbanKey(key)
+        dismiss()
+    }
+}
+
+// MARK: - Add Time Sheet
+
+struct AddTimeSheet: View {
+    @Binding var days: Int
+    let onConfirm: () -> Void
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.green)
+                    .padding(.top, 32)
+                
+                Text("Añadir Tiempo")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                VStack(spacing: 16) {
+                    Text("Días a añadir:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Picker("Días", selection: $days) {
+                        ForEach(1...365, id: \.self) { day in
+                            Text("\(day) día(s)").tag(day)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(height: 150)
+                }
+                
+                Button {
+                    onConfirm()
+                    dismiss()
+                } label: {
+                    Text("Añadir")
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.green)
+                        )
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Reduce Time Sheet
+
+struct ReduceTimeSheet: View {
+    @Binding var days: Int
+    let onConfirm: () -> Void
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                Image(systemName: "minus.circle.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.orange)
+                    .padding(.top, 32)
+                
+                Text("Reducir Tiempo")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                VStack(spacing: 16) {
+                    Text("Días a reducir:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Picker("Días", selection: $days) {
+                        ForEach(1...365, id: \.self) { day in
+                            Text("\(day) día(s)").tag(day)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(height: 150)
+                }
+                
+                Button {
+                    onConfirm()
+                    dismiss()
+                } label: {
+                    Text("Reducir")
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.orange)
+                        )
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Ban Key Sheet
+
+struct BanKeySheet: View {
+    @Binding var reason: String
+    let onConfirm: () -> Void
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                Image(systemName: "xmark.shield.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.red)
+                    .padding(.top, 32)
+                
+                Text("Banear Key")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Text("Esta Key será bloqueada y el usuario no podrá acceder a Free Fire")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Razón (opcional):")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    TextField("Violación de términos, comportamiento sospechoso...", text: $reason, axis: .vertical)
+                        .textFieldStyle(.roundedBorder)
+                        .lineLimit(3...5)
+                }
+                .padding(.horizontal, 24)
+                
+                Button(role: .destructive) {
+                    onConfirm()
+                    dismiss()
+                } label: {
+                    Text("Banear")
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.red)
+                        )
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }

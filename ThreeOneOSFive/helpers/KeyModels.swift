@@ -33,9 +33,62 @@ enum KeyDuration: String, Codable, CaseIterable {
 enum KeyStatus: String, Codable {
     case active = "Activa"
     case expired = "Expirada"
+    case banned = "Baneada"
     
     var displayName: String {
         return rawValue
+    }
+}
+
+/// Key notification types
+enum KeyNotification: Codable {
+    case reset
+    case timeAdded(days: Int)
+    case timeReduced(days: Int)
+    case banned(reason: String?)
+    case unbanned
+    case expiring(hoursLeft: Int)
+    
+    var message: String {
+        switch self {
+        case .reset:
+            return "Tu Key ha sido reiniciada. El tiempo de expiración se ha restablecido."
+        case .timeAdded(let days):
+            return "Se han añadido \(days) día(s) adicionales a tu Key."
+        case .timeReduced(let days):
+            return "Se han reducido \(days) día(s) de tu Key."
+        case .banned(let reason):
+            if let reason = reason {
+                return "Tu Key ha sido baneada. Razón: \(reason)"
+            }
+            return "Tu Key ha sido baneada por el administrador."
+        case .unbanned:
+            return "Tu Key ha sido desbaneada. Ya puedes usarla nuevamente."
+        case .expiring(let hours):
+            return "Tu Key expirará en \(hours) hora(s). Renueva pronto."
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .reset: return "arrow.clockwise.circle.fill"
+        case .timeAdded: return "plus.circle.fill"
+        case .timeReduced: return "minus.circle.fill"
+        case .banned: return "xmark.shield.fill"
+        case .unbanned: return "checkmark.shield.fill"
+        case .expiring: return "clock.badge.exclamationmark.fill"
+        }
+    }
+    
+    var color: String {
+        switch self {
+        case .reset: return "blue"
+        case .timeAdded: return "green"
+        case .timeReduced: return "orange"
+        case .banned: return "red"
+        case .unbanned: return "green"
+        case .expiring: return "yellow"
+        }
     }
 }
 
@@ -45,8 +98,11 @@ struct UserKey: Codable, Identifiable {
     let keyString: String
     let duration: KeyDuration
     let createdAt: Date
-    let expiresAt: Date?
+    var expiresAt: Date?
     var userName: String?
+    var isBanned: Bool
+    var banReason: String?
+    var notifications: [KeyNotification]
     
     init(keyString: String, duration: KeyDuration, userName: String? = nil) {
         self.id = UUID()
@@ -54,6 +110,9 @@ struct UserKey: Codable, Identifiable {
         self.duration = duration
         self.createdAt = Date()
         self.userName = userName
+        self.isBanned = false
+        self.banReason = nil
+        self.notifications = []
         
         if let interval = duration.timeInterval {
             self.expiresAt = Date().addingTimeInterval(interval)
@@ -72,11 +131,23 @@ struct UserKey: Codable, Identifiable {
     
     /// Current status
     var status: KeyStatus {
+        if isBanned {
+            return .banned
+        }
         return isExpired ? .expired : .active
+    }
+    
+    /// Check if key is valid (not banned and not expired)
+    var isValid: Bool {
+        return !isBanned && !isExpired
     }
     
     /// Time remaining as string
     var timeRemaining: String {
+        if isBanned {
+            return "Baneada"
+        }
+        
         guard let expiresAt = expiresAt else {
             return "Permanente"
         }

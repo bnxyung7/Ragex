@@ -56,19 +56,33 @@ struct ProfileView: View {
                 // Active key info
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                        Image(systemName: session.key.isBanned ? "lock.fill" : "checkmark.circle.fill")
+                            .foregroundStyle(session.key.isBanned ? .orange : .green)
                             .font(.title2)
                         
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Free Fire Activo")
+                            Text(session.key.isBanned ? "Free Fire Baneado" : "Free Fire Activo")
                                 .font(.headline)
-                            Text("Tu Key está activa")
+                            Text(session.key.isBanned ? "Tu Key ha sido baneada" : "Tu Key está activa")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         
                         Spacer()
+                        
+                        // Notifications badge
+                        if !session.key.notifications.isEmpty {
+                            ZStack {
+                                Circle()
+                                    .fill(.red)
+                                    .frame(width: 24, height: 24)
+                                
+                                Text("\(session.key.notifications.count)")
+                                    .font(.caption2)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.white)
+                            }
+                        }
                     }
                     
                     Divider()
@@ -81,6 +95,56 @@ struct ProfileView: View {
                     
                     if let userName = session.key.userName {
                         keyDetailRow(icon: "person.fill", label: "Usuario", value: userName)
+                    }
+                    
+                    if session.key.isBanned, let reason = session.key.banReason {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Razón del ban:")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(reason)
+                                .font(.subheadline)
+                                .foregroundStyle(.red)
+                        }
+                        .padding(.top, 4)
+                    }
+                    
+                    // Notifications section
+                    if !session.key.notifications.isEmpty {
+                        Divider()
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "bell.badge.fill")
+                                    .foregroundStyle(.orange)
+                                Text("Notificaciones")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                Spacer()
+                                Button("Limpiar") {
+                                    keyStore.clearNotifications(for: session.key)
+                                }
+                                .font(.caption)
+                            }
+                            
+                            ForEach(Array(session.key.notifications.enumerated()), id: \.offset) { index, notification in
+                                HStack(spacing: 8) {
+                                    Image(systemName: notification.icon)
+                                        .foregroundStyle(colorForNotification(notification))
+                                        .frame(width: 20)
+                                    
+                                    Text(notification.message)
+                                        .font(.caption)
+                                        .foregroundStyle(.primary)
+                                }
+                                .padding(.vertical, 4)
+                                .padding(.horizontal, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color(.secondarySystemBackground))
+                                )
+                            }
+                        }
                     }
                     
                     // Deactivate button
@@ -231,6 +295,17 @@ struct ProfileView: View {
             Text(value)
                 .font(.subheadline)
                 .fontWeight(.medium)
+        }
+    }
+    
+    private func colorForNotification(_ notification: KeyNotification) -> Color {
+        switch notification.color {
+        case "blue": return .blue
+        case "green": return .green
+        case "orange": return .orange
+        case "red": return .red
+        case "yellow": return .yellow
+        default: return .gray
         }
     }
     

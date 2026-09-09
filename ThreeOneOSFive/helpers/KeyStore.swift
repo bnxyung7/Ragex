@@ -80,7 +80,149 @@ class KeyStore: ObservableObject {
         guard let session = activeSession else {
             return false
         }
-        return session.isValid
+        return session.isValid && !session.key.isBanned
+    }
+    
+    // MARK: - Key Management Operations
+    
+    /// Reset key expiration to original duration
+    func resetKey(_ key: UserKey) {
+        guard let index = allKeys.firstIndex(where: { $0.id == key.id }) else { return }
+        
+        var updatedKey = key
+        
+        // Reset expiration based on original duration
+        if let interval = key.duration.timeInterval {
+            updatedKey.expiresAt = Date().addingTimeInterval(interval)
+        }
+        
+        // Add notification
+        updatedKey.notifications.append(.reset)
+        
+        allKeys[index] = updatedKey
+        
+        // Update active session if this is the active key
+        if activeSession?.key.id == key.id {
+            activeSession = UserSession(key: updatedKey, activatedAt: activeSession!.activatedAt)
+        }
+        
+        saveKeys()
+        saveSession()
+    }
+    
+    /// Add days to key
+    func addTime(to key: UserKey, days: Int) {
+        guard let index = allKeys.firstIndex(where: { $0.id == key.id }) else { return }
+        guard days > 0 else { return }
+        
+        var updatedKey = key
+        
+        // Add time
+        if let currentExpiration = updatedKey.expiresAt {
+            updatedKey.expiresAt = currentExpiration.addingTimeInterval(TimeInterval(days * 86400))
+        } else {
+            // If permanent, set expiration from now + days
+            updatedKey.expiresAt = Date().addingTimeInterval(TimeInterval(days * 86400))
+        }
+        
+        // Add notification
+        updatedKey.notifications.append(.timeAdded(days: days))
+        
+        allKeys[index] = updatedKey
+        
+        // Update active session if this is the active key
+        if activeSession?.key.id == key.id {
+            activeSession = UserSession(key: updatedKey, activatedAt: activeSession!.activatedAt)
+        }
+        
+        saveKeys()
+        saveSession()
+    }
+    
+    /// Reduce days from key
+    func reduceTime(from key: UserKey, days: Int) {
+        guard let index = allKeys.firstIndex(where: { $0.id == key.id }) else { return }
+        guard days > 0 else { return }
+        guard let currentExpiration = key.expiresAt else { return } // Can't reduce permanent keys
+        
+        var updatedKey = key
+        
+        // Reduce time
+        let newExpiration = currentExpiration.addingTimeInterval(-TimeInterval(days * 86400))
+        
+        // Don't allow negative time (set to now if would be in past)
+        updatedKey.expiresAt = max(newExpiration, Date())
+        
+        // Add notification
+        updatedKey.notifications.append(.timeReduced(days: days))
+        
+        allKeys[index] = updatedKey
+        
+        // Update active session if this is the active key
+        if activeSession?.key.id == key.id {
+            activeSession = UserSession(key: updatedKey, activatedAt: activeSession!.activatedAt)
+            
+            // If key expired after reduction, deactivate
+            if updatedKey.isExpired {
+                deactivateSession()
+            }
+        }
+        
+        saveKeys()
+        saveSession()
+    }
+    
+    /// Ban a key
+    func banKey(_ key: UserKey, reason: String? = nil) {
+        guard let index = allKeys.firstIndex(where: { $0.id == key.id }) else { return }
+        
+        var updatedKey = key
+        updatedKey.isBanned = true
+        updatedKey.banReason = reason
+        
+        // Add notification
+        updatedKey.notifications.append(.banned(reason: reason))
+        
+        allKeys[index] = updatedKey
+        
+        // Deactivate if this is the active key
+        if activeSession?.key.id == key.id {
+            deactivateSession()
+        }
+        
+        saveKeys()
+    }
+    
+    /// Unban a key
+    func unbanKey(_ key: UserKey) {
+        guard let index = allKeys.firstIndex(where: { $0.id == key.id }) else { return }
+        
+        var updatedKey = key
+        updatedKey.isBanned = false
+        updatedKey.banReason = nil
+        
+        // Add notification
+        updatedKey.notifications.append(.unbanned)
+        
+        allKeys[index] = updatedKey
+        saveKeys()
+    }
+    
+    /// Clear notifications for a key
+    func clearNotifications(for key: UserKey) {
+        guard let index = allKeys.firstIndex(where: { $0.id == key.id }) else { return }
+        
+        var updatedKey = key
+        updatedKey.notifications.removeAll()
+        
+        allKeys[index] = updatedKey
+        saveKeys()
+    }
+    
+    /// Get unread notifications count
+    func unreadNotificationsCount() -> Int {
+        guard let session = activeSession else { return 0 }
+        return session.key.notifications.count
     }
     
     /// Revoke/delete a key
@@ -103,6 +245,11 @@ class KeyStore: ObservableObject {
     /// Get all expired keys
     var expiredKeys: [UserKey] {
         return allKeys.filter { $0.isExpired }
+    }
+    
+    /// Get all banned keys
+    var bannedKeys: [UserKey] {
+        return allKeys.filter { $0.isBanned }
     }
     
     // MARK: - Persistence
@@ -151,9 +298,11 @@ class KeyStore: ObservableObject {
     }
     
     private func checkExpiration() {
-        if let session = activeSession, session.key.isExpired {
-            deactivateSession()
-            print("[KeyStore] Session expired, deactivated")
+        if let session = activeSession {
+            if session.key.isExpired || session.key.isBanned {
+                deactivateSession()
+                print("[KeyStore] Session expired or banned, deactivated")
+            }
         }
     }
 }
