@@ -477,12 +477,3 @@ struct CreateKeyView: View {
         generator.notificationOccurred(.success)
     }
 }
-
-// Extension to save tab settings
-extension AdminSettings {
-    func saveTabSettings() {
-        if let encoded = try? JSONEncoder().encode(tabSettings) {
-            UserDefaults.standard.set(encoded, forKey: "com.x.tabSettings")
-        }
-    }
-}

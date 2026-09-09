@@ -36,11 +36,11 @@ struct FeatureVisibility: Equatable {
     static let developerModeStorageKey = "feature.developer_mode.enabled"
 
     let developerModeEnabled: Bool
-    let adminSettings: AdminSettings
+    let tabSettings: TabVisibilitySettings
 
     init(developerModeEnabled: Bool, adminSettings: AdminSettings = .shared) {
         self.developerModeEnabled = developerModeEnabled
-        self.adminSettings = adminSettings
+        self.tabSettings = adminSettings.tabSettings
     }
 
     var visibleSections: [AppSection] {
@@ -52,11 +52,11 @@ struct FeatureVisibility: Equatable {
         case .home:
             return true
         case .files:
-            return adminSettings.tabSettings.filesEnabled
+            return tabSettings.filesEnabled
         case .patches:
-            return adminSettings.tabSettings.patchesEnabled
+            return tabSettings.patchesEnabled
         case .freeFire:
-            return adminSettings.tabSettings.freeFireEnabled
+            return tabSettings.freeFireEnabled
         case .profile:
             return true // Always visible
         }

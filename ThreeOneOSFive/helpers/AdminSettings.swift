@@ -20,7 +20,7 @@ struct AdminSession: Codable {
 }
 
 /// Tab visibility settings controlled by admin
-struct TabVisibilitySettings: Codable {
+struct TabVisibilitySettings: Codable, Equatable {
     var patchesEnabled: Bool
     var filesEnabled: Bool
     var freeFireEnabled: Bool
