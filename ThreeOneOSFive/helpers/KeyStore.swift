@@ -254,7 +254,7 @@ class KeyStore: ObservableObject {
     
     // MARK: - Persistence
     
-    private func saveKeys() {
+    func saveKeys() {
         if let encoded = try? JSONEncoder().encode(allKeys) {
             UserDefaults.standard.set(encoded, forKey: keysKey)
         }
