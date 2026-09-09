@@ -126,12 +126,12 @@ struct PatchControlBottomSheet: View {
                             RoundedRectangle(cornerRadius: 14)
                                 .fill(
                                     isActive 
-                                    ? Color.gray.opacity(0.2)
-                                    : LinearGradient(
+                                    ? AnyShapeStyle(Color.gray.opacity(0.2))
+                                    : AnyShapeStyle(LinearGradient(
                                         colors: [Color.green, Color.green.opacity(0.8)],
                                         startPoint: .leading,
                                         endPoint: .trailing
-                                    )
+                                    ))
                                 )
                         )
                         .overlay(
@@ -171,12 +171,12 @@ struct PatchControlBottomSheet: View {
                             RoundedRectangle(cornerRadius: 14)
                                 .fill(
                                     !isActive 
-                                    ? Color(.secondarySystemBackground)
-                                    : LinearGradient(
+                                    ? AnyShapeStyle(Color(.secondarySystemBackground))
+                                    : AnyShapeStyle(LinearGradient(
                                         colors: [Color.red, Color.red.opacity(0.8)],
                                         startPoint: .leading,
                                         endPoint: .trailing
-                                    )
+                                    ))
                                 )
                         )
                         .overlay(
