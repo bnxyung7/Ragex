@@ -55,6 +55,21 @@ struct SettingsView: View {
                         .padding(.vertical, 4)
                     }
                     .buttonStyle(.plain)
+                    
+                    #if DEBUG
+                    Button {
+                        PreinstalledPatchLoader.resetInstallationFlag()
+                        PreinstalledPatchLoader.installIfNeeded()
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.clockwise.circle.fill")
+                                .foregroundStyle(.orange)
+                            Text("Reinstall Preinstalled Patches")
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    #endif
                 }
                 
                 Section {
@@ -88,6 +103,24 @@ struct SettingsView: View {
                 Section(language.text("common.device")) {
                     LabeledContent(language.text("dashboard.hardware_model"), value: AppInfo.displayMachineName)
                     LabeledContent(language.text("settings.ios_version"), value: "\(AppInfo.osVersion) (\(AppInfo.osBuild))")
+                    
+                    #if DEBUG
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Debug Info")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                        
+                        Text("Preinstalled patches in bundle: \(checkBundlePatches())")
+                            .font(.caption2.monospaced())
+                            .foregroundStyle(.secondary)
+                        
+                        Text("Patches installed: \(UserDefaults.standard.bool(forKey: "PreinstalledPatchLoader.hasInstalled") ? "YES" : "NO")")
+                            .font(.caption2.monospaced())
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                    #endif
                 }
 
                 Section {
@@ -156,4 +189,20 @@ struct SettingsView: View {
             version.build
         )
     }
+    
+    #if DEBUG
+    private func checkBundlePatches() -> String {
+        guard let url = Bundle.main.url(forResource: "PreinstalledPatches", withExtension: nil) else {
+            return "NOT FOUND"
+        }
+        
+        let fileManager = FileManager.default
+        guard let files = try? fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
+            .filter({ $0.pathExtension.lowercased() == "xpatch" }) else {
+            return "ERROR"
+        }
+        
+        return files.map { $0.lastPathComponent }.joined(separator: ", ")
+    }
+    #endif
 }
