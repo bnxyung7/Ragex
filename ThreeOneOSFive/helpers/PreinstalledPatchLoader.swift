@@ -19,6 +19,13 @@ enum PreinstalledPatchLoader {
         print("[PreinstalledPatches] Installation complete")
     }
     
+    /// Force reinstall preinstalled patches (bypasses the "already installed" check)
+    static func forceReinstall() {
+        print("[PreinstalledPatches] Force reinstall requested...")
+        installPreinstalledPatches()
+        print("[PreinstalledPatches] Force reinstall complete")
+    }
+    
     private static func installPreinstalledPatches() {
         let fileManager = FileManager.default
         

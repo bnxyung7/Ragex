@@ -62,8 +62,7 @@ struct SettingsView: View {
                     
                     
                     Button {
-                        PreinstalledPatchLoader.resetInstallationFlag()
-                        PreinstalledPatchLoader.installIfNeeded()
+                        PreinstalledPatchLoader.forceReinstall()
                         
                         // Reload patch store to show newly installed patches
                         patchStore.reload()
