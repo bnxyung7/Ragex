@@ -64,7 +64,6 @@ struct FreeFireView: View {
             if let patch = selectedPatch {
                 PatchControlSheet(patch: patch)
                     .environmentObject(patchStore)
-                    .environmentObject(DevicePatchService.shared)
             }
         }
     }

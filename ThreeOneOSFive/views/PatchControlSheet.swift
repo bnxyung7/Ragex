@@ -3,7 +3,6 @@ import SwiftUI
 struct PatchControlSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var patchStore: PatchProjectStore
-    @EnvironmentObject private var devicePatchService: DevicePatchService
     
     let patch: BundlePatch
     
@@ -14,8 +13,19 @@ struct PatchControlSheet: View {
     @State private var showSuccess = false
     @State private var successMessage = ""
     
+    private var patchProject: PatchProject? {
+        let items = patchStore.items
+        guard let item = items.first(where: {
+            $0.packageURL.lastPathComponent == patch.url.lastPathComponent
+        }) else { return nil }
+        return item.project
+    }
+    
     private var isActive: Bool {
-        devicePatchService.activePatchKeys.contains(patch.id)
+        guard let project = patchProject else { return false }
+        return patchStore.appliedReceipts.contains(where: { receipt in
+            receipt.patchKey == project.key
+        })
     }
     
     var body: some View {
@@ -153,22 +163,18 @@ struct PatchControlSheet: View {
         
         Task {
             do {
-                // Check for conflicts
-                let conflicts = await devicePatchService.detectConflicts(for: patch.id, in: patchStore)
-                
-                if !conflicts.isEmpty {
-                    await MainActor.run {
-                        errorMessage = "Conflict detected with: \(conflicts.map { $0.displayName }.joined(separator: ", ")). Please deactivate conflicting patches first."
-                        showError = true
-                        isApplying = false
-                    }
-                    return
+                guard let project = patchProject else {
+                    throw NSError(domain: "PatchControl", code: 1, userInfo: [
+                        NSLocalizedDescriptionKey: "Patch project not found"
+                    ])
                 }
                 
-                // Apply patch
-                try await devicePatchService.apply(patchKey: patch.id, in: patchStore)
+                // Apply patch using static method
+                _ = try DevicePatchService.apply(project: project)
                 
                 await MainActor.run {
+                    patchStore.reload()
+                    
                     // Play activation sound
                     SoundPlayer.shared.playActivate()
                     
@@ -191,9 +197,25 @@ struct PatchControlSheet: View {
         
         Task {
             do {
-                try await devicePatchService.restore(patchKey: patch.id, in: patchStore)
+                guard let project = patchProject else {
+                    throw NSError(domain: "PatchControl", code: 1, userInfo: [
+                        NSLocalizedDescriptionKey: "Patch project not found"
+                    ])
+                }
+                
+                // Find the receipt
+                guard let receipt = patchStore.appliedReceipts.first(where: { $0.patchKey == project.key }) else {
+                    throw NSError(domain: "PatchControl", code: 2, userInfo: [
+                        NSLocalizedDescriptionKey: "No active receipt found for this patch"
+                    ])
+                }
+                
+                // Restore using static method
+                try DevicePatchService.restore(receipt: receipt)
                 
                 await MainActor.run {
+                    patchStore.reload()
+                    
                     // Play deactivation sound
                     SoundPlayer.shared.playDeactivate()
                     

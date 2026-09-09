@@ -94,6 +94,12 @@ struct RepositoryHomeView: View {
                     
                     Spacer()
                         .frame(height: 40)
+                    
+                    // Product Carousel
+                    ProductCarouselView()
+                    
+                    Spacer()
+                        .frame(height: 40)
                 }
                 .padding(.bottom, 32)
             }
