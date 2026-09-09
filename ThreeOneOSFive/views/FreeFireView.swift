@@ -319,8 +319,17 @@ struct BundlePatch: Identifiable {
     
     var displayName: String {
         let filename = url.deletingPathExtension().lastPathComponent
-        // Replace underscores with spaces and format nicely
-        return filename.replacingOccurrences(of: "_", with: " ")
+        // Replace underscores with spaces
+        var name = filename.replacingOccurrences(of: "_", with: " ")
+        
+        // Remove existing percentage if present (like "70" at end)
+        if let lastWord = name.split(separator: " ").last,
+           lastWord.allSatisfy({ $0.isNumber }) {
+            name = name.replacingOccurrences(of: " \(lastWord)", with: "")
+        }
+        
+        // Always add 70% at the end
+        return "\(name) 70%"
     }
     
     var category: FreeFireView.PatchCategory {
