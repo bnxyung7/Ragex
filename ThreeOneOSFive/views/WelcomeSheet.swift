@@ -2,155 +2,244 @@ import SwiftUI
 
 struct WelcomeSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var currentPage = 0
+    
+    let totalPages = 4
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Background gradient
-                LinearGradient(
-                    colors: [Color.accentColor.opacity(0.15), Color.clear],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+        ZStack {
+            Color.black.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Progress indicator
+                HStack(spacing: 8) {
+                    ForEach(0..<totalPages, id: \.self) { index in
+                        Capsule()
+                            .fill(index <= currentPage ? Color.orange : Color.gray.opacity(0.3))
+                            .frame(height: 4)
+                            .frame(maxWidth: index == currentPage ? 40 : 20)
+                            .animation(.spring(response: 0.3), value: currentPage)
+                    }
+                }
+                .padding(.horizontal, 40)
+                .padding(.top, 20)
                 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // App icon and title
-                        VStack(spacing: 16) {
-                            if let appIcon = UIImage(named: "AppIcon60x60") {
-                                Image(uiImage: appIcon)
-                                    .resizable()
-                                    .frame(width: 80, height: 80)
-                                    .cornerRadius(18)
-                                    .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
-                            } else {
-                                RoundedRectangle(cornerRadius: 18)
-                                    .fill(Color.accentColor)
-                                    .frame(width: 80, height: 80)
-                                    .overlay {
-                                        Text("X")
-                                            .font(.largeTitle)
-                                            .fontWeight(.bold)
-                                            .foregroundStyle(.white)
-                                    }
-                            }
-                            
-                            VStack(spacing: 4) {
-                                Text("Bienvenido a X")
-                                    .font(.title)
-                                    .fontWeight(.bold)
-                                
-                                Text("Personaliza tu experiencia Free Fire")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .padding(.top, 32)
-                        
-                        // Important notice
-                        HStack(alignment: .top, spacing: 12) {
-                            Image(systemName: "exclamationmark.shield.fill")
-                                .font(.title2)
-                                .foregroundStyle(.orange)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Certificado Requerido")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                
-                                Text("X solo funciona con certificado enterprise. Otros métodos no son soportados.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .padding()
-                        .background(Color.orange.opacity(0.1))
-                        .cornerRadius(12)
-                        .padding(.horizontal)
-                        
-                        Divider()
-                            .padding(.horizontal)
-                        
-                        // Community section
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("ÚNETE A LA COMUNIDAD")
-                                .font(.caption)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal)
-                            
-                            VStack(spacing: 12) {
-                                SocialLinkButton(
-                                    icon: "discord",
-                                    title: "Discord",
-                                    subtitle: "Únete al servidor oficial",
-                                    color: .purple,
-                                    url: "https://discord.gg/AksKwSWaKq"
-                                )
-                                
-                                SocialLinkButton(
-                                    icon: "whatsapp",
-                                    title: "Grupo WhatsApp",
-                                    subtitle: "Chatea con la comunidad",
-                                    color: .green,
-                                    url: "https://chat.whatsapp.com/LMi0ORfWlDd6iDl0CIvryM"
-                                )
-                                
-                                SocialLinkButton(
-                                    icon: "whatsapp",
-                                    title: "Canal WhatsApp",
-                                    subtitle: "Recibe actualizaciones",
-                                    color: .green,
-                                    url: "https://whatsapp.com/channel/0029Vb8Pvbk0QeaiLOyydq1w"
-                                )
-                            }
-                            .padding(.horizontal)
-                        }
-                        
-                        Divider()
-                            .padding(.horizontal)
-                        
-                        // Credits
-                        VStack(spacing: 8) {
-                            Text("CRÉDITOS")
-                                .font(.caption)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.secondary)
-                            
-                            Text("Desarrollado por la comunidad X")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                            
-                            Text("Gracias por ser parte de nosotros")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding(.bottom, 32)
-                    }
+                Text("Step \(currentPage + 1) of \(totalPages)")
+                    .font(.caption)
+                    .foregroundStyle(.gray)
+                    .padding(.top, 8)
+                
+                // Content
+                TabView(selection: $currentPage) {
+                    Page1View().tag(0)
+                    Page2View().tag(1)
+                    Page3View().tag(2)
+                    Page4View().tag(3)
                 }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                
+                // Next button
+                Button {
+                    if currentPage < totalPages - 1 {
+                        withAnimation(.spring(response: 0.3)) {
+                            currentPage += 1
+                        }
+                    } else {
                         dismiss()
-                    } label: {
-                        Text("Continuar")
-                            .fontWeight(.semibold)
                     }
+                } label: {
+                    HStack {
+                        Text(currentPage < totalPages - 1 ? "Next" : "Get Started")
+                            .fontWeight(.semibold)
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(Color.orange)
+                    .cornerRadius(16)
                 }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 40)
             }
         }
         .interactiveDismissDisabled()
         .onAppear {
-            // Play welcome sound only once
             SoundPlayer.shared.playWelcome()
         }
     }
 }
 
-struct SocialLinkButton: View {
+// Page 1: Welcome
+struct Page1View: View {
+    var body: some View {
+        VStack(spacing: 32) {
+            Spacer()
+            
+            // Logo
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.1))
+                    .frame(width: 120, height: 120)
+                
+                Text("X")
+                    .font(.system(size: 60, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+            
+            VStack(spacing: 16) {
+                Text("Bienvenido a X")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundStyle(.white)
+                
+                Text("Personaliza tu experiencia Free Fire con patches exclusivos")
+                    .font(.subheadline)
+                    .foregroundStyle(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            }
+            
+            Spacer()
+            Spacer()
+        }
+    }
+}
+
+// Page 2: Certificate Warning
+struct Page2View: View {
+    var body: some View {
+        VStack(spacing: 32) {
+            Spacer()
+            
+            // Warning icon
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.1))
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: "exclamationmark.shield.fill")
+                    .font(.system(size: 50))
+                    .foregroundStyle(.orange)
+            }
+            
+            VStack(spacing: 16) {
+                Text("Certificado Requerido")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
+                
+                Text("X solo funciona cuando está firmado con un certificado enterprise. Otros métodos de instalación no son soportados.")
+                    .font(.subheadline)
+                    .foregroundStyle(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            }
+            
+            Spacer()
+            Spacer()
+        }
+    }
+}
+
+// Page 3: Community Links
+struct Page3View: View {
+    var body: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            VStack(spacing: 16) {
+                Text("Únete a la Comunidad")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
+                
+                Text("Conéctate con otros usuarios")
+                    .font(.subheadline)
+                    .foregroundStyle(.gray)
+            }
+            
+            VStack(spacing: 12) {
+                CommunityButton(
+                    icon: "bubble.left.and.bubble.right.fill",
+                    title: "Discord",
+                    subtitle: "Servidor oficial",
+                    color: .purple,
+                    url: "https://discord.gg/AksKwSWaKq"
+                )
+                
+                CommunityButton(
+                    icon: "message.fill",
+                    title: "Grupo WhatsApp",
+                    subtitle: "Chat comunitario",
+                    color: .green,
+                    url: "https://chat.whatsapp.com/LMi0ORfWlDd6iDl0CIvryM"
+                )
+                
+                CommunityButton(
+                    icon: "megaphone.fill",
+                    title: "Canal WhatsApp",
+                    subtitle: "Actualizaciones",
+                    color: .green,
+                    url: "https://whatsapp.com/channel/0029Vb8Pvbk0QeaiLOyydq1w"
+                )
+            }
+            .padding(.horizontal, 24)
+            
+            Spacer()
+        }
+    }
+}
+
+// Page 4: Credits
+struct Page4View: View {
+    var body: some View {
+        VStack(spacing: 32) {
+            Spacer()
+            
+            // Credits icon
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.1))
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 50))
+                    .foregroundStyle(.orange)
+            }
+            
+            VStack(spacing: 16) {
+                Text("Créditos")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
+                
+                VStack(spacing: 8) {
+                    Text("Desarrollado por")
+                        .font(.subheadline)
+                        .foregroundStyle(.gray)
+                    
+                    Text("Comunidad X")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.orange)
+                    
+                    Text("Gracias por ser parte de nosotros")
+                        .font(.caption)
+                        .foregroundStyle(.gray)
+                        .padding(.top, 4)
+                }
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            }
+            
+            Spacer()
+            Spacer()
+        }
+    }
+}
+
+struct CommunityButton: View {
     let icon: String
     let title: String
     let subtitle: String
@@ -163,45 +252,37 @@ struct SocialLinkButton: View {
                 UIApplication.shared.open(url)
             }
         } label: {
-            HStack(spacing: 12) {
-                // Icon
+            HStack(spacing: 16) {
                 ZStack {
                     Circle()
                         .fill(color.opacity(0.15))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 50, height: 50)
                     
-                    if icon == "discord" {
-                        Image(systemName: "bubble.left.and.bubble.right.fill")
-                            .font(.title3)
-                            .foregroundStyle(color)
-                    } else {
-                        Image(systemName: "message.fill")
-                            .font(.title3)
-                            .foregroundStyle(color)
-                    }
+                    Image(systemName: icon)
+                        .font(.title3)
+                        .foregroundStyle(color)
                 }
                 
-                // Text
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.subheadline)
+                        .font(.body)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.white)
                     
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.gray)
                 }
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.gray)
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(12)
+            .background(Color.white.opacity(0.05))
+            .cornerRadius(16)
         }
     }
 }
