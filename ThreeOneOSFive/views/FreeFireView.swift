@@ -64,8 +64,8 @@ struct FreeFireView: View {
             if let patch = selectedPatch {
                 PatchControlBottomSheet(patch: patch)
                     .environmentObject(patchStore)
-                    .presentationDetents([.height(280)])
-                    .presentationDragIndicator(.visible)
+                    .presentationDetents([.height(320)])
+                    .presentationDragIndicator(.hidden)
             }
         }
     }
