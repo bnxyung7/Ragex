@@ -53,6 +53,7 @@
 		0508BD06 /* KeyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0508BD05; };
 		DCE3C115 /* KeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCE3C114; };
 		90DFBCB8 /* AdminSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90DFBCB7; };
+		THEME011 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = THEME001; };
 		A2DE34D6 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2DE34D5; };
 		F25A548E /* AdminPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25A548D; };
 		SUP10011 /* SupportSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUP10001; };
@@ -161,6 +162,7 @@
 		0508BD05 /* KeyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyModels.swift; sourceTree = "<group>"; };
 		DCE3C114 /* KeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyStore.swift; sourceTree = "<group>"; };
 		90DFBCB7 /* AdminSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSettings.swift; sourceTree = "<group>"; };
+		THEME001 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		A2DE34D5 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		F25A548D /* AdminPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminPanelView.swift; sourceTree = "<group>"; };
 		SUP10001 /* SupportSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportSystem.swift; sourceTree = "<group>"; };
@@ -341,6 +343,7 @@
 				0508BD05 /* KeyModels.swift */,
 				DCE3C114 /* KeyStore.swift */,
 				90DFBCB7 /* AdminSettings.swift */,
+				THEME001 /* ThemeManager.swift */,
 				SUP10001 /* SupportSystem.swift */,
 			);
 			path = helpers;
@@ -483,6 +486,7 @@
 				0508BD06,
 				DCE3C115,
 				90DFBCB8,
+				THEME011,
 				A2DE34D6,
 				F25A548E,
 				SUP10011,
