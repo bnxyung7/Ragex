@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage(FeatureVisibility.cleanerStorageKey) private var cleanerEnabled = true
     @AppStorage(FeatureVisibility.developerModeStorageKey)
     private var developerModeEnabled = false
+    @State private var showChangelog = false
 
     var body: some View {
         NavigationStack {
@@ -27,50 +28,45 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
+                    Button {
+                        showChangelog = true
+                    } label: {
+                        HStack(spacing: 14) {
                             Image(systemName: "arrow.down.circle.fill")
                                 .foregroundStyle(.blue)
                                 .font(.title2)
+                            
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Updates")
                                     .font(.headline)
+                                    .foregroundStyle(.primary)
+                                
                                 Text("Version \(appVersion)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-                        }
-                        
-                        Divider()
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Latest Changes")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
                             
-                            Text("• Complete rebrand to X")
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
                                 .font(.caption)
-                            Text("• Removed Spanish language support")
-                                .font(.caption)
-                            Text("• Updated app icons and branding")
-                                .font(.caption)
-                            Text("• Bug fixes and improvements")
-                                .font(.caption)
+                                .foregroundStyle(.tertiary)
                         }
-                        .foregroundStyle(.secondary)
-                        
-                        Link(destination: URL(string: "https://discord.gg/AksKwSWaKq")!) {
-                            HStack {
-                                Image(systemName: "message.fill")
-                                Text("Join Discord for Updates")
-                                Spacer()
-                                Image(systemName: "arrow.up.right")
-                            }
-                            .font(.subheadline)
-                            .foregroundStyle(.blue)
-                        }
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 8)
+                    .buttonStyle(.plain)
+                }
+                
+                Section {
+                    Link(destination: URL(string: "https://discord.gg/AksKwSWaKq")!) {
+                        HStack {
+                            Image(systemName: "message.fill")
+                            Text("Join Discord for Updates")
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                        }
+                        .font(.subheadline)
+                    }
                 }
 
                 Section {
@@ -127,6 +123,11 @@ struct SettingsView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(language.text("common.done")) { dismiss() }
                         .fontWeight(.semibold)
+                }
+            }
+            .sheet(isPresented: $showChangelog) {
+                NavigationStack {
+                    ChangelogView()
                 }
             }
         }
