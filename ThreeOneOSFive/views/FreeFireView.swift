@@ -14,6 +14,7 @@ struct FreeFireView: View {
     enum PatchCategory: String, CaseIterable, Identifiable {
         case aimbot = "AIMBOT"
         case holograma = "HOLOGRAMA"
+        case others = "OTHERS"
         
         var id: String { rawValue }
         
@@ -21,6 +22,7 @@ struct FreeFireView: View {
             switch self {
             case .aimbot: return "scope"
             case .holograma: return "cube.transparent"
+            case .others: return "ellipsis.circle"
             }
         }
     }
@@ -406,8 +408,8 @@ struct BundlePatch: Identifiable {
             return .holograma
         }
         
-        // Default to aimbot
-        return .aimbot
+        // Default to others for unrecognized patches
+        return .others
     }
     
     var info: String? {
