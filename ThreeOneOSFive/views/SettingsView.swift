@@ -65,12 +65,40 @@ struct SettingsView: View {
                     Link(destination: URL(string: "https://discord.gg/AksKwSWaKq")!) {
                         HStack {
                             Image(systemName: "message.fill")
+                                .foregroundStyle(.blue)
                             Text("Join Discord for Updates")
                             Spacer()
                             Image(systemName: "arrow.up.right")
+                                .font(.caption)
                         }
                         .font(.subheadline)
                     }
+                    
+                    Link(destination: URL(string: "https://chat.whatsapp.com/LMi0ORfWlDd6iDl0CIvryM")!) {
+                        HStack {
+                            Image(systemName: "bubble.left.and.bubble.right.fill")
+                                .foregroundStyle(.green)
+                            Text("Join WhatsApp Group")
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption)
+                        }
+                        .font(.subheadline)
+                    }
+                    
+                    Link(destination: URL(string: "https://whatsapp.com/channel/0029Vb8Pvbk0QeaiLOyydq1w")!) {
+                        HStack {
+                            Image(systemName: "megaphone.fill")
+                                .foregroundStyle(.green)
+                            Text("Follow WhatsApp Channel")
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption)
+                        }
+                        .font(.subheadline)
+                    }
+                } header: {
+                    Text("Community")
                 }
 
                 Section {
