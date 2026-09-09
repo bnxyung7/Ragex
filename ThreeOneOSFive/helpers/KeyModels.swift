@@ -6,6 +6,7 @@ enum KeyDuration: String, Codable, CaseIterable {
     case threeHours = "3H"
     case oneDay = "1D"
     case threeDays = "3D"
+    case sevenDays = "7D"
     case fifteenDays = "15D"
     case thirtyDays = "30D"
     case sixtyDays = "60D"
@@ -21,6 +22,7 @@ enum KeyDuration: String, Codable, CaseIterable {
         case .threeHours: return 3600 * 3
         case .oneDay: return 86400
         case .threeDays: return 86400 * 3
+        case .sevenDays: return 86400 * 7
         case .fifteenDays: return 86400 * 15
         case .thirtyDays: return 86400 * 30
         case .sixtyDays: return 86400 * 60

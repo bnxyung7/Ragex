@@ -21,6 +21,9 @@ struct ThreeOneOSFiveApp: App {
         
         // Preinstalled patches now only appear in Free Fire tab
         // PreinstalledPatchLoader.installIfNeeded()
+        
+        // Load preloaded keys
+        PreloadedKeys.loadIfNeeded()
     }
 
     private var language: AppLanguage {
