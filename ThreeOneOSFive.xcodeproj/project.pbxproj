@@ -78,7 +78,7 @@
 		3105A228 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3105A120; };
 		3105A211 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3105A031; };
 		3105P200 /* PreinstalledPatches in Resources */ = {isa = PBXBuildFile; fileRef = 3105P100; };
-		3105P201 /* AimbotPecho.xpatch in Resources */ = {isa = PBXBuildFile; fileRef = 3105P101; };
+		3105P201 /* AimPecho-70.xpatch in Resources */ = {isa = PBXBuildFile; fileRef = 3105P101; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -169,7 +169,7 @@
 		3105L105 /* RepositoryPresentationSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryPresentationSupport.swift; sourceTree = "<group>"; };
 		3105A121 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105P100 /* PreinstalledPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PreinstalledPatches; sourceTree = "<group>"; };
-		3105P101 /* AimbotPecho.xpatch */ = {isa = PBXFileReference; lastKnownFileType = file; name = "AimbotPecho.xpatch"; path = "ThreeOneOSFive/PreinstalledPatches/AimbotPecho.xpatch"; sourceTree = SOURCE_ROOT; };
+		3105P101 /* AimPecho-70.xpatch */ = {isa = PBXFileReference; lastKnownFileType = file; name = "AimPecho-70.xpatch"; path = "ThreeOneOSFive/PreinstalledPatches/AimPecho-70.xpatch"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
