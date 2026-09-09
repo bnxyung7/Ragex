@@ -31,119 +31,139 @@ struct PatchControlSheet: View {
     }
     
     var body: some View {
-        NavigationView {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            
             VStack(spacing: 0) {
-                // Header with patch info
-                VStack(spacing: 12) {
-                    Image(systemName: isActive ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 60))
-                        .foregroundStyle(isActive ? .green : .gray)
-                    
-                    Text(patch.displayName)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .multilineTextAlignment(.center)
-                    
-                    if isActive {
-                        Text("ACTIVE")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.green)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 6)
-                            .background(Color.green.opacity(0.15))
-                            .cornerRadius(8)
-                    } else {
-                        Text("INACTIVE")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.gray)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 6)
-                            .background(Color.gray.opacity(0.15))
-                            .cornerRadius(8)
+                // Header
+                HStack {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.title3)
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
                     }
+                    
+                    Spacer()
                 }
-                .padding(.top, 40)
-                .padding(.bottom, 30)
+                .padding(.horizontal)
+                .padding(.top, 8)
+                
+                // Status banner
+                if isActive {
+                    HStack(spacing: 12) {
+                        Rectangle()
+                            .fill(Color.red)
+                            .frame(width: 4)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("OPCIÓN ACTIVADA")
+                                .font(.subheadline)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.white)
+                            
+                            Text(patch.displayName.uppercased())
+                                .font(.caption)
+                                .foregroundStyle(.gray)
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.red.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                            )
+                    )
+                    .padding(.horizontal)
+                    .padding(.top, 16)
+                }
                 
                 Spacer()
                 
-                // Control buttons
+                // Patch info
                 VStack(spacing: 16) {
-                    // ACTIVAR button
+                    Text(patch.displayName)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                    
+                    Text(isActive ? "Parche actualmente activado" : "Listo para activar")
+                        .font(.subheadline)
+                        .foregroundStyle(.gray)
+                }
+                .padding(.horizontal)
+                
+                Spacer()
+                
+                // Action buttons
+                VStack(spacing: 16) {
+                    // ACTIVADO button (when active, shows as disabled state)
                     Button {
-                        activatePatch()
+                        if !isActive {
+                            activatePatch()
+                        }
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack {
                             if isApplying {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            } else {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.title2)
                             }
-                            Text(isApplying ? "ACTIVANDO..." : "ACTIVAR")
-                                .font(.title3)
+                            Text(isApplying ? "ACTIVANDO..." : "ACTIVADO")
+                                .font(.headline)
                                 .fontWeight(.bold)
                         }
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 70)
+                        .frame(height: 56)
                         .background(
-                            LinearGradient(
-                                colors: isActive ? [.gray, .gray.opacity(0.8)] : [.green, .green.opacity(0.8)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(isActive ? Color.red.opacity(0.3) : Color.red.opacity(0.2))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(isActive ? Color.red : Color.red.opacity(0.3), lineWidth: 1)
+                                )
                         )
-                        .cornerRadius(16)
                     }
                     .disabled(isActive || isApplying || isRestoring)
-                    .opacity(isActive ? 0.5 : 1)
                     
-                    // DESACTIVAR button
+                    // DESACTIVAR button (when inactive, shows as disabled state)
                     Button {
-                        deactivatePatch()
+                        if isActive {
+                            deactivatePatch()
+                        }
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack {
                             if isRestoring {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            } else {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.title2)
                             }
                             Text(isRestoring ? "DESACTIVANDO..." : "DESACTIVAR")
-                                .font(.title3)
+                                .font(.headline)
                                 .fontWeight(.bold)
                         }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(isActive ? .red : .gray)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 70)
+                        .frame(height: 56)
                         .background(
-                            LinearGradient(
-                                colors: !isActive ? [.gray, .gray.opacity(0.8)] : [.red, .red.opacity(0.8)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.05))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(isActive ? Color.red.opacity(0.3) : Color.gray.opacity(0.2), lineWidth: 1)
+                                )
                         )
-                        .cornerRadius(16)
                     }
                     .disabled(!isActive || isApplying || isRestoring)
-                    .opacity(!isActive ? 0.5 : 1)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 30)
-            }
-            .navigationTitle("Patch Control")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 40)
             }
             .alert("Success", isPresented: $showSuccess) {
                 Button("OK") {
@@ -163,6 +183,9 @@ struct PatchControlSheet: View {
     private func activatePatch() {
         isApplying = true
         
+        // Play sound immediately for better feedback
+        SoundPlayer.shared.playActivate()
+        
         Task {
             do {
                 guard let project = patchProject else {
@@ -176,10 +199,6 @@ struct PatchControlSheet: View {
                 
                 await MainActor.run {
                     patchStore.reload()
-                    
-                    // Play activation sound
-                    SoundPlayer.shared.playActivate()
-                    
                     successMessage = "Patch activated successfully!"
                     showSuccess = true
                     isApplying = false
@@ -197,6 +216,9 @@ struct PatchControlSheet: View {
     private func deactivatePatch() {
         isRestoring = true
         
+        // Play sound immediately for better feedback
+        SoundPlayer.shared.playDeactivate()
+        
         Task {
             do {
                 guard let receipt = receipt else {
@@ -210,10 +232,6 @@ struct PatchControlSheet: View {
                 
                 await MainActor.run {
                     patchStore.reload()
-                    
-                    // Play deactivation sound
-                    SoundPlayer.shared.playDeactivate()
-                    
                     successMessage = "Patch deactivated. Original files restored."
                     showSuccess = true
                     isRestoring = false
