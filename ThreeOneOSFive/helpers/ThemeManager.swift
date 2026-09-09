@@ -39,16 +39,15 @@ enum AppThemeColor: String, CaseIterable, Identifiable {
 class ThemeManager: ObservableObject {
     static let shared = ThemeManager()
     
-    @AppStorage("appThemeColor") private var storedTheme: String = AppThemeColor.orange.rawValue
-    
     @Published var currentTheme: AppThemeColor {
         didSet {
-            storedTheme = currentTheme.rawValue
+            UserDefaults.standard.set(currentTheme.rawValue, forKey: "appThemeColor")
         }
     }
     
     private init() {
-        self.currentTheme = AppThemeColor(rawValue: storedTheme) ?? .orange
+        let stored = UserDefaults.standard.string(forKey: "appThemeColor")
+        self.currentTheme = AppThemeColor(rawValue: stored ?? "") ?? .orange
     }
     
     func setTheme(_ theme: AppThemeColor) {
