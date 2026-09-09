@@ -260,20 +260,19 @@ struct FreeFireView: View {
         var patches: [BundlePatch] = []
         var seenFilenames = Set<String>()
         
-        // Check PreinstalledPatches folder ONLY (not bundle root to avoid duplicates)
+        // Check PreinstalledPatches folder recursively (including subfolders)
         let preinstalledFolder = bundleURL.appendingPathComponent("PreinstalledPatches", isDirectory: true)
-        if fileManager.fileExists(atPath: preinstalledFolder.path),
-           let folderFiles = try? fileManager.contentsOfDirectory(
-            at: preinstalledFolder,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-           ) {
-            let patchFiles = folderFiles.filter { $0.pathExtension.lowercased() == "3105" }
-            for url in patchFiles {
-                let filename = url.lastPathComponent
-                if !seenFilenames.contains(filename) {
-                    seenFilenames.insert(filename)
-                    patches.append(BundlePatch(url: url))
+        if fileManager.fileExists(atPath: preinstalledFolder.path) {
+            // Scan all subdirectories for .3105 files
+            if let enumerator = fileManager.enumerator(at: preinstalledFolder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
+                for case let fileURL as URL in enumerator {
+                    if fileURL.pathExtension.lowercased() == "3105" {
+                        let filename = fileURL.lastPathComponent
+                        if !seenFilenames.contains(filename) {
+                            seenFilenames.insert(filename)
+                            patches.append(BundlePatch(url: fileURL))
+                        }
+                    }
                 }
             }
         }

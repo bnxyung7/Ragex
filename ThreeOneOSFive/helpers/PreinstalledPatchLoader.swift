@@ -52,20 +52,21 @@ enum PreinstalledPatchLoader {
         let patchFiles = allFiles.filter { $0.pathExtension.lowercased() == "3105" }
         print("[PreinstalledPatches] Found \(patchFiles.count) .3105 files in bundle root")
         
-        // Also check PreinstalledPatches subfolder
+        // Also check PreinstalledPatches subfolder recursively
         let preinstalledFolder = bundleURL.appendingPathComponent("PreinstalledPatches", isDirectory: true)
         var additionalPatches: [URL] = []
         
         if fileManager.fileExists(atPath: preinstalledFolder.path) {
             print("[PreinstalledPatches] Found PreinstalledPatches folder")
-            if let folderFiles = try? fileManager.contentsOfDirectory(
-                at: preinstalledFolder,
-                includingPropertiesForKeys: nil,
-                options: [.skipsHiddenFiles]
-            ) {
-                additionalPatches = folderFiles.filter { $0.pathExtension.lowercased() == "3105" }
-                print("[PreinstalledPatches] Found \(additionalPatches.count) .3105 files in PreinstalledPatches folder")
+            // Use enumerator to search recursively in subdirectories
+            if let enumerator = fileManager.enumerator(at: preinstalledFolder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
+                for case let fileURL as URL in enumerator {
+                    if fileURL.pathExtension.lowercased() == "3105" {
+                        additionalPatches.append(fileURL)
+                    }
+                }
             }
+            print("[PreinstalledPatches] Found \(additionalPatches.count) .3105 files in PreinstalledPatches folder (recursive)")
         } else {
             print("[PreinstalledPatches] PreinstalledPatches folder not found at: \(preinstalledFolder.path)")
         }
