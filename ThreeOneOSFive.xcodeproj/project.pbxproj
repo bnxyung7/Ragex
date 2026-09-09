@@ -48,6 +48,7 @@
 		3105FF200 /* FreeFireView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105FF100; };
 		3105WW200 /* WelcomeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105WW100; };
 		3105PC200 /* PatchControlSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105PC100; };
+		3105PB200 /* PatchControlBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105PB100; };
 		3105PR200 /* ProductCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105PR100; };
 		3105SP200 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105SP100; };
 		3105B222 /* PatchProjectEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105B122; };
@@ -149,6 +150,7 @@
 		3105FF100 /* FreeFireView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeFireView.swift; sourceTree = "<group>"; };
 		3105WW100 /* WelcomeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeSheet.swift; sourceTree = "<group>"; };
 		3105PC100 /* PatchControlSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchControlSheet.swift; sourceTree = "<group>"; };
+		3105PB100 /* PatchControlBottomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchControlBottomSheet.swift; sourceTree = "<group>"; };
 		3105PR100 /* ProductCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductCarouselView.swift; sourceTree = "<group>"; };
 		3105SP100 /* SoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPlayer.swift; sourceTree = "<group>"; };
 		3105SND01 /* activar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = activar.wav; sourceTree = "<group>"; };
@@ -262,6 +264,7 @@
 				3105FF100 /* FreeFireView.swift */,
 				3105WW100 /* WelcomeSheet.swift */,
 				3105PC100 /* PatchControlSheet.swift */,
+				3105PB100 /* PatchControlBottomSheet.swift */,
 				3105PR100 /* ProductCarouselView.swift */,
 				3105B122 /* PatchProjectEditorView.swift */,
 				3105C102 /* FolderPatchSelectionView.swift */,
@@ -457,6 +460,7 @@
 				3105FF200,
 				3105WW200,
 				3105PC200,
+				3105PB200,
 				3105PR200,
 				3105SP200,
 				3105B222,

@@ -62,8 +62,10 @@ struct FreeFireView: View {
         }
         .sheet(isPresented: $showPatchControl) {
             if let patch = selectedPatch {
-                PatchControlSheet(patch: patch)
+                PatchControlBottomSheet(patch: patch)
                     .environmentObject(patchStore)
+                    .presentationDetents([.height(280)])
+                    .presentationDragIndicator(.visible)
             }
         }
     }
