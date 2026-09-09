@@ -30,7 +30,7 @@ struct FreeFireView: View {
         .onAppear {
             loadBundlePatches()
         }
-        .alert(item: $actionAlert) { alert in
+        .alert(item: $actionAlert) { (alert: PatchStoreAlert) in
             Alert(
                 title: Text(language.text(alert.titleKey)),
                 message: Text(alert.message(language: language)),
@@ -228,26 +228,5 @@ struct BundlePatch: Identifiable {
         let formatter = ByteCountFormatter()
         formatter.countStyle = .file
         return formatter.string(fromByteCount: size)
-    }
-}
-
-struct PatchStoreAlert: Identifiable {
-    let id = UUID()
-    let titleKey: String
-    let messageKey: String
-    let messageArgument: String?
-    
-    init(titleKey: String, messageKey: String, messageArgument: String? = nil) {
-        self.titleKey = titleKey
-        self.messageKey = messageKey
-        self.messageArgument = messageArgument
-    }
-    
-    func message(language: AppLanguage) -> String {
-        if let argument = messageArgument {
-            return language.text(messageKey, argument)
-        } else {
-            return language.text(messageKey)
-        }
     }
 }
