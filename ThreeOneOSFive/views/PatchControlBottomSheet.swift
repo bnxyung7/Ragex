@@ -11,6 +11,11 @@ struct PatchControlBottomSheet: View {
     @State private var showError = false
     @State private var errorMessage = ""
     
+    // Check if patch is under maintenance (OTHERS category)
+    private var isUnderMaintenance: Bool {
+        return patch.category == .others
+    }
+    
     private var patchProject: PatchProject? {
         let items = patchStore.items
         guard let item = items.first(where: {
@@ -87,7 +92,22 @@ struct PatchControlBottomSheet: View {
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
                     
-                    if !isActive {
+                    if isUnderMaintenance {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                            Text("En Mantenimiento")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                        }
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .fill(Color.orange.opacity(0.15))
+                        )
+                    } else if !isActive {
                         Text("Listo para activar")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -96,10 +116,56 @@ struct PatchControlBottomSheet: View {
                 .padding(.top, isActive ? 16 : 24)
                 .padding(.horizontal, 20)
                 
-                Spacer()
-                
-                // Action buttons
-                VStack(spacing: 12) {
+                // Maintenance message for OTHERS
+                if isUnderMaintenance {
+                    VStack(spacing: 12) {
+                        Image(systemName: "wrench.and.screwdriver.fill")
+                            .font(.system(size: 50))
+                            .foregroundStyle(.orange)
+                            .padding(.top, 20)
+                        
+                        Text("No Disponible")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                        
+                        Text("Esta opción está en mantenimiento. Estará disponible próximamente.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+                    .padding(.vertical, 24)
+                    
+                    Spacer()
+                    
+                    // Close button
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title3)
+                            Text("CERRAR")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 54)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.gray)
+                        )
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 32)
+                    
+                } else {
+                    // Normal activation controls
+                    Spacer()
+                    
+                    // Action buttons
+                    VStack(spacing: 12) {
                     // ACTIVAR button
                     Button {
                         if !isActive && !isApplying && !isRestoring {
@@ -189,6 +255,7 @@ struct PatchControlBottomSheet: View {
                     }
                     .disabled(!isActive || isApplying || isRestoring)
                     .opacity(!isActive ? 0.5 : 1)
+                }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)

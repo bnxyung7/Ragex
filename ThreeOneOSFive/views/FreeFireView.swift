@@ -388,14 +388,21 @@ struct BundlePatch: Identifiable {
         // Replace underscores with spaces
         var name = filename.replacingOccurrences(of: "_", with: " ")
         
+        // Replace PERCENT with %
+        name = name.replacingOccurrences(of: " PERCENT", with: "%")
+        
         // Remove existing percentage if present (like "70" at end)
         if let lastWord = name.split(separator: " ").last,
            lastWord.allSatisfy({ $0.isNumber }) {
             name = name.replacingOccurrences(of: " \(lastWord)", with: "")
         }
         
-        // Always add 70% at the end
-        return "\(name) 70%"
+        // Always add 70% at the end if not already there
+        if !name.hasSuffix("%") {
+            return "\(name) 70%"
+        }
+        
+        return name
     }
     
     var category: FreeFireView.PatchCategory {
