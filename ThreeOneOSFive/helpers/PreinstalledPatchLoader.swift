@@ -93,10 +93,14 @@ enum PreinstalledPatchLoader {
                 sourceURL.lastPathComponent
             )
             
-            // Skip if already exists
+            // Remove existing file if present (for force reinstall)
             if fileManager.fileExists(atPath: destinationURL.path) {
-                print("[PreinstalledPatches] Skipping (already exists): \(sourceURL.lastPathComponent)")
-                continue
+                do {
+                    try fileManager.removeItem(at: destinationURL)
+                    print("[PreinstalledPatches] Removed existing: \(sourceURL.lastPathComponent)")
+                } catch {
+                    print("[PreinstalledPatches] ⚠️ Could not remove existing file: \(error)")
+                }
             }
             
             do {
