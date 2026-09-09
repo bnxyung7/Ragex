@@ -1,54 +1,103 @@
 import AVFoundation
+import UIKit
 
 class SoundPlayer {
     static let shared = SoundPlayer()
     private var player: AVAudioPlayer?
     
     private init() {
-        // Configure audio session
+        setupAudioSession()
+    }
+    
+    private func setupAudioSession() {
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
-            try AVAudioSession.sharedInstance().setActive(true)
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+            try session.setActive(true)
+            print("[SoundPlayer] ✅ Audio session configured")
         } catch {
-            print("[SoundPlayer] ❌ Audio session error: \(error.localizedDescription)")
+            print("[SoundPlayer] ❌ Audio session error: \(error)")
         }
     }
     
     func play(_ soundName: String) {
-        // Try subdirectory first
-        var url = Bundle.main.url(forResource: soundName, withExtension: "wav", subdirectory: "Sounds")
-        
-        // If not found, try root
-        if url == nil {
-            url = Bundle.main.url(forResource: soundName, withExtension: "wav")
+        DispatchQueue.main.async { [weak self] in
+            self?.playOnMainThread(soundName)
         }
+    }
+    
+    private func playOnMainThread(_ soundName: String) {
+        // Try different paths
+        let possiblePaths = [
+            Bundle.main.path(forResource: soundName, ofType: "wav", inDirectory: "Sounds"),
+            Bundle.main.path(forResource: soundName, ofType: "wav", inDirectory: "ThreeOneOSFive/Sounds"),
+            Bundle.main.path(forResource: soundName, ofType: "wav"),
+            Bundle.main.path(forResource: "Sounds/\(soundName)", ofType: "wav")
+        ]
         
-        guard let audioURL = url else {
+        guard let path = possiblePaths.compactMap({ $0 }).first else {
             print("[SoundPlayer] ❌ Sound not found: \(soundName).wav")
-            print("[SoundPlayer] Searched in: Sounds/ and root")
+            print("[SoundPlayer] Searched paths:")
+            possiblePaths.forEach { path in
+                print("  - \(path ?? "nil")")
+            }
+            
+            // List all bundle resources
+            if let resourcePath = Bundle.main.resourcePath {
+                print("[SoundPlayer] Bundle resources:")
+                if let contents = try? FileManager.default.contentsOfDirectory(atPath: resourcePath) {
+                    contents.filter { $0.hasSuffix(".wav") }.forEach { file in
+                        print("  - \(file)")
+                    }
+                }
+            }
             return
         }
         
+        let url = URL(fileURLWithPath: path)
+        
         do {
-            player = try AVAudioPlayer(contentsOf: audioURL)
+            // Stop previous sound
+            player?.stop()
+            
+            // Create new player
+            player = try AVAudioPlayer(contentsOf: url)
             player?.volume = 1.0
-            player?.prepareToPlay()
-            player?.play()
-            print("[SoundPlayer] ▶️ Playing: \(soundName).wav from \(audioURL.path)")
+            player?.numberOfLoops = 0
+            
+            // Prepare and play
+            if player?.prepareToPlay() == true {
+                if player?.play() == true {
+                    print("[SoundPlayer] ▶️ Playing: \(soundName).wav from \(path)")
+                } else {
+                    print("[SoundPlayer] ❌ Failed to start playback")
+                }
+            } else {
+                print("[SoundPlayer] ❌ Failed to prepare")
+            }
         } catch {
-            print("[SoundPlayer] ❌ Error playing sound: \(error.localizedDescription)")
+            print("[SoundPlayer] ❌ Error: \(error.localizedDescription)")
         }
     }
     
     func playActivate() {
+        print("[SoundPlayer] 🎵 Request: activar")
         play("activar")
+        // Also trigger haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
     }
     
     func playDeactivate() {
+        print("[SoundPlayer] 🎵 Request: desactivar")
         play("desactivar")
+        // Also trigger haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
     }
     
     func playWelcome() {
+        print("[SoundPlayer] 🎵 Request: Welcome")
         play("Welcome")
     }
 }
