@@ -92,22 +92,7 @@ struct PatchControlBottomSheet: View {
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
                     
-                    if isUnderMaintenance {
-                        HStack(spacing: 6) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.caption)
-                            Text("En Mantenimiento")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                        }
-                        .foregroundStyle(.orange)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(Color.orange.opacity(0.15))
-                        )
-                    } else if !isActive {
+                    if !isActive && !isUnderMaintenance {
                         Text("Listo para activar")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -118,23 +103,20 @@ struct PatchControlBottomSheet: View {
                 
                 // Maintenance message for OTHERS
                 if isUnderMaintenance {
-                    VStack(spacing: 12) {
-                        Image(systemName: "wrench.and.screwdriver.fill")
-                            .font(.system(size: 50))
-                            .foregroundStyle(.orange)
-                            .padding(.top, 20)
-                        
-                        Text("No Disponible")
-                            .font(.headline)
+                    VStack(spacing: 16) {
+                        Text("Mantenimiento")
+                            .font(.title2)
                             .fontWeight(.bold)
+                            .foregroundStyle(.primary)
+                            .padding(.top, 32)
                         
-                        Text("Esta opción está en mantenimiento. Estará disponible próximamente.")
-                            .font(.subheadline)
+                        Text("Esta opción no está disponible en este momento.")
+                            .font(.body)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
                     }
-                    .padding(.vertical, 24)
+                    .padding(.vertical, 32)
                     
                     Spacer()
                     
