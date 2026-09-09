@@ -94,8 +94,7 @@ enum DevicePatchService {
         }
         return try operation(roots)
     }
-}
-
+    
     /// Detect if applying this project would conflict with already applied patches
     static func detectConflicts(
         project: PatchProject,
