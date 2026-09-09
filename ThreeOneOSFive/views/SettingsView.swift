@@ -120,21 +120,13 @@ struct SettingsView: View {
                     LabeledContent(language.text("dashboard.hardware_model"), value: AppInfo.displayMachineName)
                     LabeledContent(language.text("settings.ios_version"), value: "\(AppInfo.osVersion) (\(AppInfo.osBuild))")
                     
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Debug Info")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.secondary)
-                        
-                        Text("Preinstalled patches in bundle: \(checkBundlePatches())")
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(.secondary)
-                        
-                        Text("Patches installed: \(UserDefaults.standard.bool(forKey: "PreinstalledPatchLoader.hasInstalled") ? "YES" : "NO")")
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
+                    Divider()
+                    
+                    LabeledContent("Patches in bundle", value: checkBundlePatches())
+                        .font(.caption)
+                    
+                    LabeledContent("Patches installed", value: UserDefaults.standard.bool(forKey: "PreinstalledPatchLoader.hasInstalled") ? "YES" : "NO")
+                        .font(.caption)
                 }
 
                 Section {
