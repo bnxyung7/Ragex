@@ -116,7 +116,7 @@ class AdminSettings: ObservableObject {
         }
     }
     
-    private func saveTabSettings() {
+    func saveTabSettings() {
         if let encoded = try? JSONEncoder().encode(tabSettings) {
             UserDefaults.standard.set(encoded, forKey: settingsKey)
         }
