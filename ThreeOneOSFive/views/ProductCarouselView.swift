@@ -12,43 +12,82 @@ struct ProductCarouselView: View {
         Product(
             imageName: "product-holograma-arma",
             title: "Holograma Arma Rojo Negro",
-            description: "Personaliza tu arma con este espectacular holograma rojo y negro. Impresiona a tus enemigos con un diseño único."
+            description: "Destaca en Free Fire con este holograma rojo y negro premium"
+        ),
+        Product(
+            imageName: "product-holograma-verde",
+            title: "Holograma Arma Verde",
+            description: "Holograma verde exclusivo para personalizar tu arsenal"
         )
     ]
     
     @State private var currentIndex = 0
     @State private var timer: Timer?
+    @State private var offset: CGFloat = 0
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("PREVIEW PRODUCTOS")
-                .font(.headline)
+                .font(.caption)
                 .fontWeight(.bold)
-                .foregroundStyle(.primary)
+                .foregroundStyle(.secondary)
                 .padding(.horizontal)
             
-            TabView(selection: $currentIndex) {
-                ForEach(Array(products.enumerated()), id: \.element.id) { index, product in
-                    ProductCardView(product: product)
-                        .tag(index)
+            GeometryReader { geometry in
+                HStack(spacing: 16) {
+                    ForEach(Array(products.enumerated()), id: \.element.id) { index, product in
+                        ProductCardView(product: product)
+                            .frame(width: geometry.size.width - 40)
+                    }
+                }
+                .offset(x: offset)
+                .gesture(
+                    DragGesture()
+                        .onEnded { value in
+                            let threshold: CGFloat = 50
+                            if value.translation.width > threshold && currentIndex > 0 {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    currentIndex -= 1
+                                }
+                            } else if value.translation.width < -threshold && currentIndex < products.count - 1 {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    currentIndex += 1
+                                }
+                            }
+                        }
+                )
+                .onAppear {
+                    startAutoScroll()
+                }
+                .onDisappear {
+                    stopAutoScroll()
+                }
+                .onChange(of: currentIndex) { _ in
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        offset = -CGFloat(currentIndex) * (geometry.size.width - 24)
+                    }
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .always))
-            .indexViewStyle(.page(backgroundDisplayMode: .always))
-            .frame(height: 280)
-            .onAppear {
-                startAutoScroll()
+            .frame(height: 160)
+            
+            // Page indicators
+            HStack(spacing: 6) {
+                ForEach(0..<products.count, id: \.self) { index in
+                    Circle()
+                        .fill(currentIndex == index ? Color.accentColor : Color.gray.opacity(0.3))
+                        .frame(width: currentIndex == index ? 8 : 6, height: currentIndex == index ? 8 : 6)
+                        .animation(.spring(response: 0.3), value: currentIndex)
+                }
             }
-            .onDisappear {
-                stopAutoScroll()
-            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 8)
         }
-        .padding(.vertical)
+        .padding(.vertical, 12)
     }
     
     private func startAutoScroll() {
-        timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
-            withAnimation(.easeInOut(duration: 0.5)) {
+        timer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { _ in
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 currentIndex = (currentIndex + 1) % products.count
             }
         }
@@ -64,58 +103,66 @@ struct ProductCardView: View {
     let product: Product
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Image with fallback
+        HStack(spacing: 12) {
+            // Image
             if let uiImage = UIImage(named: product.imageName) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(height: 200)
-                    .clipped()
-                    .cornerRadius(12)
+                    .frame(width: 120, height: 140)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             } else {
-                Rectangle()
+                RoundedRectangle(cornerRadius: 12)
                     .fill(LinearGradient(
-                        colors: [.red, .black],
+                        colors: [.red.opacity(0.8), .black],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ))
-                    .frame(height: 200)
+                    .frame(width: 120, height: 140)
                     .overlay {
-                        VStack {
-                            Image(systemName: "photo")
-                                .font(.largeTitle)
-                                .foregroundStyle(.white.opacity(0.7))
-                            Text(product.title)
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-                        }
+                        Image(systemName: "photo")
+                            .font(.title)
+                            .foregroundStyle(.white.opacity(0.5))
                     }
-                    .cornerRadius(12)
             }
             
-            // Description
-            VStack(alignment: .leading, spacing: 6) {
+            // Info
+            VStack(alignment: .leading, spacing: 8) {
                 Text(product.title)
                     .font(.subheadline)
                     .fontWeight(.bold)
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(2)
                 
                 Text(product.description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                    .lineLimit(3)
+                
+                Spacer()
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "star.fill")
+                        .font(.caption2)
+                    Image(systemName: "star.fill")
+                        .font(.caption2)
+                    Image(systemName: "star.fill")
+                        .font(.caption2)
+                    Image(systemName: "star.fill")
+                        .font(.caption2)
+                    Image(systemName: "star.fill")
+                        .font(.caption2)
+                }
+                .foregroundStyle(.yellow)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            
+            Spacer()
         }
-        .background(Color(.systemBackground))
+        .padding(12)
+        .background(Color(.secondarySystemGroupedBackground))
         .cornerRadius(16)
-        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-        .padding(.horizontal)
+        .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
+        .padding(.horizontal, 20)
     }
 }
