@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var tabNavigation: AppTabNavigationState
     @State private var showSettings = false
     @State private var showLogs = false
+    @State private var showWelcome = false
 
     init() {
 #if targetEnvironment(simulator)
@@ -54,9 +55,16 @@ struct ContentView: View {
         }
         .onAppear {
             tabNavigation.reconcileSelection(with: featureVisibility)
+            
+            // Show welcome sheet on first launch
+            if !UserDefaults.standard.bool(forKey: "hasSeenWelcome") {
+                showWelcome = true
+                UserDefaults.standard.set(true, forKey: "hasSeenWelcome")
+            }
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
         .sheet(isPresented: $showLogs) { LogView() }
+        .sheet(isPresented: $showWelcome) { WelcomeSheet() }
         .patchStorePresentation(patchStore)
         .repositoryStorePresentation(repositoryStore, patchStore: patchStore)
     }
