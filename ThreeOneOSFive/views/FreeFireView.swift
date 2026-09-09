@@ -4,16 +4,39 @@ struct FreeFireView: View {
     @Environment(\.appLanguage) private var language
     @EnvironmentObject private var patchStore: PatchProjectStore
     @State private var bundlePatches: [BundlePatch] = []
+    @State private var selectedCategory: PatchCategory = .aimbot
     @State private var isApplying = false
     @State private var actionAlert: PatchStoreAlert?
     
+    enum PatchCategory: String, CaseIterable, Identifiable {
+        case aimbot = "AIMBOT"
+        case hologramaArma = "HOLOGRAMA ARMA"
+        case hologramaPersonaje = "HOLOGRAMA PERSONAJE"
+        
+        var id: String { rawValue }
+        
+        var icon: String {
+            switch self {
+            case .aimbot: return "scope"
+            case .hologramaArma: return "hammer.fill"
+            case .hologramaPersonaje: return "person.fill"
+            }
+        }
+    }
+    
     var body: some View {
         NavigationView {
-            Group {
-                if bundlePatches.isEmpty {
-                    emptyState
-                } else {
-                    patchList
+            VStack(spacing: 0) {
+                // Category selector
+                categoryPicker
+                
+                // Patch list
+                Group {
+                    if filteredPatches.isEmpty {
+                        emptyState
+                    } else {
+                        patchList
+                    }
                 }
             }
             .navigationTitle("Free Fire")
@@ -39,6 +62,42 @@ struct FreeFireView: View {
         }
     }
     
+    private var categoryPicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(PatchCategory.allCases) { category in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedCategory = category
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: category.icon)
+                                .font(.system(size: 14, weight: .semibold))
+                            Text(category.rawValue)
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundStyle(selectedCategory == category ? .white : .primary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(
+                            Capsule()
+                                .fill(selectedCategory == category ? AppTheme.accent : Color(.systemGray5))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 12)
+        }
+        .background(Color(.systemBackground))
+    }
+    
+    private var filteredPatches: [BundlePatch] {
+        bundlePatches.filter { $0.category == selectedCategory }
+    }
+    
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "shippingbox")
@@ -61,11 +120,11 @@ struct FreeFireView: View {
     private var patchList: some View {
         List {
             Section {
-                ForEach(bundlePatches) { patch in
+                ForEach(filteredPatches) { patch in
                     patchRow(patch)
                 }
             } header: {
-                Text("Bundle Patches")
+                Text(selectedCategory.rawValue)
                     .textCase(.none)
                     .font(.headline)
             } footer: {
@@ -125,18 +184,9 @@ struct FreeFireView: View {
         }
         
         var patches: [BundlePatch] = []
+        var seenFilenames = Set<String>()
         
-        // Check bundle root
-        if let files = try? fileManager.contentsOfDirectory(
-            at: bundleURL,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
-        ) {
-            let patchFiles = files.filter { $0.pathExtension.lowercased() == "3105" }
-            patches.append(contentsOf: patchFiles.map { BundlePatch(url: $0) })
-        }
-        
-        // Check PreinstalledPatches folder
+        // Check PreinstalledPatches folder ONLY (not bundle root to avoid duplicates)
         let preinstalledFolder = bundleURL.appendingPathComponent("PreinstalledPatches", isDirectory: true)
         if fileManager.fileExists(atPath: preinstalledFolder.path),
            let folderFiles = try? fileManager.contentsOfDirectory(
@@ -145,11 +195,17 @@ struct FreeFireView: View {
             options: [.skipsHiddenFiles]
            ) {
             let patchFiles = folderFiles.filter { $0.pathExtension.lowercased() == "3105" }
-            patches.append(contentsOf: patchFiles.map { BundlePatch(url: $0) })
+            for url in patchFiles {
+                let filename = url.lastPathComponent
+                if !seenFilenames.contains(filename) {
+                    seenFilenames.insert(filename)
+                    patches.append(BundlePatch(url: url))
+                }
+            }
         }
         
         bundlePatches = patches
-        print("[FreeFire] Found \(patches.count) patches in bundle")
+        print("[FreeFire] Found \(patches.count) unique patches in bundle")
     }
     
     private func applyPatch(_ patch: BundlePatch) {
@@ -223,6 +279,21 @@ struct BundlePatch: Identifiable {
         let filename = url.deletingPathExtension().lastPathComponent
         // Replace underscores with spaces and format nicely
         return filename.replacingOccurrences(of: "_", with: " ")
+    }
+    
+    var category: FreeFireView.PatchCategory {
+        let filename = url.lastPathComponent.uppercased()
+        
+        if filename.contains("AIM") || filename.contains("PECHO") {
+            return .aimbot
+        } else if filename.contains("ARMA") || filename.contains("WEAPON") {
+            return .hologramaArma
+        } else if filename.contains("PERSONAJE") || filename.contains("CHARACTER") || filename.contains("SKIN") {
+            return .hologramaPersonaje
+        }
+        
+        // Default to aimbot
+        return .aimbot
     }
     
     var info: String? {
