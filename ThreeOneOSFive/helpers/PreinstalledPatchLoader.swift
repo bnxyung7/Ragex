@@ -31,7 +31,7 @@ enum PreinstalledPatchLoader {
         
         print("[PreinstalledPatches] Looking for patch file in bundle...")
         
-        // Try to find the .xpatch file directly in the bundle
+        // Try to find the .3105 file directly in the bundle
         guard let bundleURL = Bundle.main.resourceURL else {
             print("[PreinstalledPatches] ERROR: Could not get bundle resource URL")
             return
@@ -39,7 +39,7 @@ enum PreinstalledPatchLoader {
         
         print("[PreinstalledPatches] Bundle resource URL: \(bundleURL.path)")
         
-        // Look for .xpatch files in bundle
+        // Look for .3105 files in bundle
         guard let allFiles = try? fileManager.contentsOfDirectory(
             at: bundleURL,
             includingPropertiesForKeys: nil,
@@ -49,8 +49,8 @@ enum PreinstalledPatchLoader {
             return
         }
         
-        let patchFiles = allFiles.filter { $0.pathExtension.lowercased() == "xpatch" }
-        print("[PreinstalledPatches] Found \(patchFiles.count) .xpatch files in bundle root")
+        let patchFiles = allFiles.filter { $0.pathExtension.lowercased() == "3105" }
+        print("[PreinstalledPatches] Found \(patchFiles.count) .3105 files in bundle root")
         
         // Also check PreinstalledPatches subfolder
         let preinstalledFolder = bundleURL.appendingPathComponent("PreinstalledPatches", isDirectory: true)
@@ -63,8 +63,8 @@ enum PreinstalledPatchLoader {
                 includingPropertiesForKeys: nil,
                 options: [.skipsHiddenFiles]
             ) {
-                additionalPatches = folderFiles.filter { $0.pathExtension.lowercased() == "xpatch" }
-                print("[PreinstalledPatches] Found \(additionalPatches.count) .xpatch files in PreinstalledPatches folder")
+                additionalPatches = folderFiles.filter { $0.pathExtension.lowercased() == "3105" }
+                print("[PreinstalledPatches] Found \(additionalPatches.count) .3105 files in PreinstalledPatches folder")
             }
         } else {
             print("[PreinstalledPatches] PreinstalledPatches folder not found at: \(preinstalledFolder.path)")
@@ -73,7 +73,7 @@ enum PreinstalledPatchLoader {
         let allPatchFiles = patchFiles + additionalPatches
         
         guard !allPatchFiles.isEmpty else {
-            print("[PreinstalledPatches] No .xpatch files found in bundle")
+            print("[PreinstalledPatches] No .3105 files found in bundle")
             return
         }
         

@@ -65,7 +65,10 @@ struct SettingsView: View {
                         PreinstalledPatchLoader.forceReinstall()
                         
                         // Reload patch store to show newly installed patches
-                        patchStore.reload()
+                        // Add small delay to ensure file system is ready
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            patchStore.reload()
+                        }
                         
                         // Show success toast
                         toastMessage = "Patches reinstalled successfully"
@@ -213,7 +216,7 @@ struct SettingsView: View {
         
         let fileManager = FileManager.default
         guard let files = try? fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
-            .filter({ $0.pathExtension.lowercased() == "xpatch" }) else {
+            .filter({ $0.pathExtension.lowercased() == "3105" }) else {
             return "ERROR"
         }
         
