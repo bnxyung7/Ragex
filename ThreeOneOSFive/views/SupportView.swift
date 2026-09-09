@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SupportView: View {
     @Environment(\.appLanguage) private var language
+    @StateObject private var themeManager = ThemeManager.shared
     @State private var showCopiedAlert = false
     
     // Detectar idioma del sistema
@@ -20,13 +21,7 @@ struct SupportView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "headphones.circle.fill")
                             .font(.system(size: 60))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [SupportTheme.primary, SupportTheme.secondary],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
+                            .foregroundStyle(themeManager.currentTheme.color)
                             .padding(.top, 20)
                         
                         Text(isSpanish ? "Soporte" : "Support")
@@ -44,32 +39,10 @@ struct SupportView: View {
                         icon: "message.fill",
                         title: "WhatsApp",
                         subtitle: isSpanish ? "Chatea con nosotros directamente" : "Chat with us directly",
-                        color: SupportTheme.primary,
+                        color: themeManager.currentTheme.color,
                         detail: SupportContact.whatsappNumber
                     ) {
                         openWhatsApp()
-                    }
-                    
-                    // Telegram Support
-                    SupportCard(
-                        icon: "paperplane.fill",
-                        title: "Telegram",
-                        subtitle: isSpanish ? "Respuestas rápidas en Telegram" : "Fast responses on Telegram",
-                        color: SupportTheme.secondary,
-                        detail: "@\(SupportContact.telegramUsername)"
-                    ) {
-                        openTelegram()
-                    }
-                    
-                    // Email Support
-                    SupportCard(
-                        icon: "envelope.fill",
-                        title: isSpanish ? "Correo Electrónico" : "Email",
-                        subtitle: isSpanish ? "Envíanos un correo" : "Send us an email",
-                        color: SupportTheme.accent,
-                        detail: SupportContact.email
-                    ) {
-                        openEmail()
                     }
                     
                     // Developer Info
@@ -89,7 +62,7 @@ struct SupportView: View {
                             Text(SupportContact.developerName)
                                 .font(.title3)
                                 .fontWeight(.semibold)
-                                .foregroundStyle(SupportTheme.primary)
+                                .foregroundStyle(themeManager.currentTheme.color)
                             
                             Text(SupportContact.whatsappNumber)
                                 .font(.subheadline)
@@ -120,7 +93,7 @@ struct SupportView: View {
                         
                         HStack(spacing: 12) {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(SupportTheme.primary)
+                                .foregroundStyle(themeManager.currentTheme.color)
                             
                             Text(isSpanish ? "¡Copiado al portapapeles!" : "Copied to clipboard!")
                                 .font(.subheadline)
@@ -147,23 +120,6 @@ struct SupportView: View {
         let number = SupportContact.whatsappNumber.replacingOccurrences(of: "+", with: "")
         let message = isSpanish ? "Hola, necesito ayuda con X" : "Hello, I need help with X"
         let urlString = "https://wa.me/\(number)?text=\(message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-        
-        if let url = URL(string: urlString) {
-            UIApplication.shared.open(url)
-        }
-    }
-    
-    private func openTelegram() {
-        let urlString = "https://t.me/\(SupportContact.telegramUsername)"
-        
-        if let url = URL(string: urlString) {
-            UIApplication.shared.open(url)
-        }
-    }
-    
-    private func openEmail() {
-        let subject = isSpanish ? "Soporte X - Ayuda" : "X Support - Help"
-        let urlString = "mailto:\(SupportContact.email)?subject=\(subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
         
         if let url = URL(string: urlString) {
             UIApplication.shared.open(url)

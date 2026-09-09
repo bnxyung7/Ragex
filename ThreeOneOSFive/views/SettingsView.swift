@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(\.appLanguage) private var language
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var patchStore: PatchProjectStore
+    @StateObject private var themeManager = ThemeManager.shared
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.english.rawValue
     @AppStorage(FeatureVisibility.cleanerStorageKey) private var cleanerEnabled = true
     @AppStorage(FeatureVisibility.developerModeStorageKey)
@@ -115,6 +116,39 @@ struct SettingsView: View {
                     Text(language.text("dashboard.features"))
                 } footer: {
                     Text(language.text("settings.developer_mode_footer"))
+                }
+
+                // Theme Selector
+                Section {
+                    ForEach(AppThemeColor.allCases) { theme in
+                        Button {
+                            themeManager.setTheme(theme)
+                        } label: {
+                            HStack(spacing: 14) {
+                                Image(systemName: theme.icon)
+                                    .font(.title2)
+                                    .foregroundStyle(theme.color)
+                                
+                                Text(theme.displayName)
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                                
+                                Spacer()
+                                
+                                if themeManager.currentTheme == theme {
+                                    Image(systemName: "checkmark")
+                                        .font(.body.weight(.semibold))
+                                        .foregroundStyle(theme.color)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text("Tema")
+                } footer: {
+                    Text("Selecciona el color del tema de la aplicación")
                 }
 
                 Section(language.text("common.device")) {
