@@ -7,6 +7,8 @@ struct FreeFireView: View {
     @State private var selectedCategory: PatchCategory = .aimbot
     @State private var isApplying = false
     @State private var actionAlert: PatchStoreAlert?
+    @State private var selectedPatch: BundlePatch?
+    @State private var showPatchControl = false
     
     enum PatchCategory: String, CaseIterable, Identifiable {
         case aimbot = "AIMBOT"
@@ -57,6 +59,13 @@ struct FreeFireView: View {
                 message: Text(alert.message(language: language)),
                 dismissButton: .default(Text(language.text("common.ok")))
             )
+        }
+        .sheet(isPresented: $showPatchControl) {
+            if let patch = selectedPatch {
+                PatchControlSheet(patch: patch)
+                    .environmentObject(patchStore)
+                    .environmentObject(DevicePatchService.shared)
+            }
         }
     }
     
@@ -135,7 +144,7 @@ struct FreeFireView: View {
     
     private func patchRow(_ patch: BundlePatch) -> some View {
         Button {
-            applyPatch(patch)
+            openPatchControl(patch)
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "shippingbox.fill")
@@ -204,6 +213,40 @@ struct FreeFireView: View {
         
         bundlePatches = patches
         print("[FreeFire] Found \(patches.count) unique patches in bundle")
+    }
+    
+    private func openPatchControl(_ patch: BundlePatch) {
+        // First ensure patch is in library
+        Task {
+            do {
+                let fileManager = FileManager.default
+                guard let destinationRoot = try? PatchProjectLibrary.packageRootURL(
+                    fileManager: fileManager
+                ) else {
+                    return
+                }
+                
+                let destinationURL = destinationRoot.appendingPathComponent(patch.url.lastPathComponent)
+                
+                // Copy if doesn't exist
+                if !fileManager.fileExists(atPath: destinationURL.path) {
+                    try fileManager.copyItem(at: patch.url, to: destinationURL)
+                    print("[FreeFire] Copied patch to library: \(patch.displayName)")
+                    
+                    // Reload patch store
+                    await MainActor.run {
+                        patchStore.reload()
+                    }
+                }
+                
+                await MainActor.run {
+                    selectedPatch = patch
+                    showPatchControl = true
+                }
+            } catch {
+                print("[FreeFire] Error preparing patch: \(error)")
+            }
+        }
     }
     
     private func applyPatch(_ patch: BundlePatch) {

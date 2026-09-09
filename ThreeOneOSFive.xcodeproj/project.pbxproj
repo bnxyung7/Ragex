@@ -47,6 +47,8 @@
 		3105B221 /* PatchProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105B121; };
 		3105FF200 /* FreeFireView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105FF100; };
 		3105WW200 /* WelcomeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105WW100; };
+		3105PC200 /* PatchControlSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105PC100; };
+		3105SP200 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105SP100; };
 		3105B222 /* PatchProjectEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105B122; };
 		3105C200 /* PatchDraftService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105C100; };
 		3105C201 /* PatchDraftCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105C101; };
@@ -81,6 +83,9 @@
 		3105A211 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3105A031; };
 		3105P200 /* PreinstalledPatches in Resources */ = {isa = PBXBuildFile; fileRef = 3105P100; };
 		3105P201 /* AIM_PECHO_DISIMULADO_70.3105 in Resources */ = {isa = PBXBuildFile; fileRef = 3105P101; };
+		3105SND11 /* activar.wav in Resources */ = {isa = PBXBuildFile; fileRef = 3105SND01; };
+		3105SND12 /* desactivar.wav in Resources */ = {isa = PBXBuildFile; fileRef = 3105SND02; };
+		3105SND13 /* Welcome.wav in Resources */ = {isa = PBXBuildFile; fileRef = 3105SND03; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -142,6 +147,11 @@
 		3105B121 /* PatchProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchProjectsView.swift; sourceTree = "<group>"; };
 		3105FF100 /* FreeFireView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeFireView.swift; sourceTree = "<group>"; };
 		3105WW100 /* WelcomeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeSheet.swift; sourceTree = "<group>"; };
+		3105PC100 /* PatchControlSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchControlSheet.swift; sourceTree = "<group>"; };
+		3105SP100 /* SoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPlayer.swift; sourceTree = "<group>"; };
+		3105SND01 /* activar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = activar.wav; sourceTree = "<group>"; };
+		3105SND02 /* desactivar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = desactivar.wav; sourceTree = "<group>"; };
+		3105SND03 /* Welcome.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = Welcome.wav; sourceTree = "<group>"; };
 		3105B122 /* PatchProjectEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchProjectEditorView.swift; sourceTree = "<group>"; };
 		3105C100 /* PatchDraftService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchDraftService.swift; sourceTree = "<group>"; };
 		3105C101 /* PatchDraftCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchDraftCoordinator.swift; sourceTree = "<group>"; };
@@ -209,6 +219,7 @@
 				3105A120 /* Localizable.strings */,
 				3105A031 /* Assets.xcassets */,
 				3105P100 /* PreinstalledPatches */,
+				3105SND00 /* Sounds */,
 			);
 			path = ThreeOneOSFive;
 			sourceTree = "<group>";
@@ -248,6 +259,7 @@
 				3105B121 /* PatchProjectsView.swift */,
 				3105FF100 /* FreeFireView.swift */,
 				3105WW100 /* WelcomeSheet.swift */,
+				3105PC100 /* PatchControlSheet.swift */,
 				3105B122 /* PatchProjectEditorView.swift */,
 				3105C102 /* FolderPatchSelectionView.swift */,
 				3105E101 /* CleanerView.swift */,
@@ -305,6 +317,7 @@
 				3105A025 /* Utils.swift */,
 				3105A026 /* SBX.swift */,
 				3105A027 /* MG.swift */,
+				3105SP100 /* SoundPlayer.swift */,
 			);
 			path = helpers;
 			sourceTree = "<group>";
@@ -328,6 +341,16 @@
 				3105A097 /* xpaci.h */,
 			);
 			path = kexploit;
+			sourceTree = "<group>";
+		};
+		3105SND00 /* Sounds */ = {
+			isa = PBXGroup;
+			children = (
+				3105SND01 /* activar.wav */,
+				3105SND02 /* desactivar.wav */,
+				3105SND03 /* Welcome.wav */,
+			);
+			path = Sounds;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -387,6 +410,9 @@
 				3105A228,
 				3105P200,
 				3105P201,
+				3105SND11,
+				3105SND12,
+				3105SND13,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -427,6 +453,8 @@
 				3105B221,
 				3105FF200,
 				3105WW200,
+				3105PC200,
+				3105SP200,
 				3105B222,
 				3105C200,
 				3105C201,

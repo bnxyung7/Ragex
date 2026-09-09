@@ -109,6 +109,10 @@ struct WelcomeSheet: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .interactiveDismissDisabled()
+        .onAppear {
+            // Play welcome sound only once
+            SoundPlayer.shared.playWelcome()
+        }
     }
     
     private func socialLink(icon: String, title: String, color: Color, url: String) -> some View {
