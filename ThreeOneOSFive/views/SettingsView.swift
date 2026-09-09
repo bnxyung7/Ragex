@@ -9,6 +9,9 @@ struct SettingsView: View {
     @AppStorage(FeatureVisibility.developerModeStorageKey)
     private var developerModeEnabled = false
     @State private var showChangelog = false
+    @State private var showToast = false
+    @State private var toastMessage = ""
+    @State private var toastIcon = ""
 
     var body: some View {
         NavigationStack {
@@ -60,6 +63,20 @@ struct SettingsView: View {
                     Button {
                         PreinstalledPatchLoader.resetInstallationFlag()
                         PreinstalledPatchLoader.installIfNeeded()
+                        
+                        // Show success toast
+                        toastMessage = "Patches reinstalled successfully"
+                        toastIcon = "checkmark.circle.fill"
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            showToast = true
+                        }
+                        
+                        // Hide toast after 2 seconds
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            withAnimation {
+                                showToast = false
+                            }
+                        }
                     } label: {
                         HStack {
                             Image(systemName: "arrow.clockwise.circle.fill")
@@ -160,6 +177,13 @@ struct SettingsView: View {
                     ChangelogView()
                 }
             }
+            .overlay(alignment: .top) {
+                if showToast {
+                    ToastView(message: toastMessage, icon: toastIcon)
+                        .padding(.top, 50)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
         }
     }
 
@@ -199,5 +223,30 @@ struct SettingsView: View {
         }
         
         return files.map { $0.lastPathComponent }.joined(separator: ", ")
+    }
+}
+
+struct ToastView: View {
+    let message: String
+    let icon: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(.white)
+            
+            Text(message)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(
+            Capsule()
+                .fill(Color.green)
+                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+        )
     }
 }
