@@ -391,17 +391,6 @@ struct BundlePatch: Identifiable {
         // Replace PERCENT with %
         name = name.replacingOccurrences(of: " PERCENT", with: "%")
         
-        // Remove existing percentage if present (like "70" at end)
-        if let lastWord = name.split(separator: " ").last,
-           lastWord.allSatisfy({ $0.isNumber }) {
-            name = name.replacingOccurrences(of: " \(lastWord)", with: "")
-        }
-        
-        // Always add 70% at the end if not already there
-        if !name.hasSuffix("%") {
-            return "\(name) 70%"
-        }
-        
         return name
     }
     
