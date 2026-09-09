@@ -169,7 +169,7 @@
 		3105L105 /* RepositoryPresentationSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryPresentationSupport.swift; sourceTree = "<group>"; };
 		3105A121 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105P100 /* PreinstalledPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PreinstalledPatches; sourceTree = "<group>"; };
-		3105P101 /* AimbotPecho.xpatch */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PreinstalledPatches/AimbotPecho.xpatch"; sourceTree = "<group>"; };
+		3105P101 /* AimbotPecho.xpatch */ = {isa = PBXFileReference; lastKnownFileType = file; name = "AimbotPecho.xpatch"; path = "ThreeOneOSFive/PreinstalledPatches/AimbotPecho.xpatch"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
