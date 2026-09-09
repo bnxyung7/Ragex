@@ -106,13 +106,7 @@ enum PatchTransaction {
         guard !project.rules.isEmpty || !project.directories.isEmpty else {
             throw PatchPackageError.invalidProject
         }
-        guard latestReceipt(
-            projectID: project.id,
-            backupRoot: backupRoot,
-            fileManager: fileManager
-        ) == nil else {
-            throw PatchPackageError.projectAlreadyApplied
-        }
+        // Allow multiple patches to be active - removed projectAlreadyApplied check
 
         var roots: [String: URL] = [:]
         var resolvedRules: [ResolvedRule] = []

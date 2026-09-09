@@ -1008,9 +1008,29 @@ private struct PatchProjectDetailView: View {
         )
         
         if !conflicts.isEmpty {
-            // Show conflict warning
-            conflictingPatches = conflicts
-            showConflictWarning = true
+            // Auto-resolve conflicts: restore conflicting patches and apply
+            isWorking = true
+            Task.detached(priority: .userInitiated) {
+                do {
+                    // Restore all conflicting patches
+                    for conflict in conflicts {
+                        try DevicePatchService.restore(receipt: conflict.receipt, allowChangedTargets: true)
+                    }
+                    
+                    // Now apply the new patch
+                    await MainActor.run {
+                        performApply()
+                    }
+                } catch {
+                    await MainActor.run {
+                        isWorking = false
+                        actionAlert = PatchStoreAlert(
+                            titleKey: "common.failed",
+                            messageKey: "patch.error.restore"
+                        )
+                    }
+                }
+            }
             return
         }
         
