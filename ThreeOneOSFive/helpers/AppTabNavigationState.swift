@@ -1,10 +1,11 @@
 import Foundation
 
 enum AppSection: Int, CaseIterable, Identifiable {
-    case home
-    case files
-    case patches
-    case freeFire
+    case home = 0
+    case files = 1
+    case patches = 2
+    case freeFire = 3
+    case profile = 4
 
     var id: Int { rawValue }
 }
@@ -35,9 +36,11 @@ struct FeatureVisibility: Equatable {
     static let developerModeStorageKey = "feature.developer_mode.enabled"
 
     let developerModeEnabled: Bool
+    let adminSettings: AdminSettings
 
-    init(developerModeEnabled: Bool) {
+    init(developerModeEnabled: Bool, adminSettings: AdminSettings = .shared) {
         self.developerModeEnabled = developerModeEnabled
+        self.adminSettings = adminSettings
     }
 
     var visibleSections: [AppSection] {
@@ -45,7 +48,18 @@ struct FeatureVisibility: Equatable {
     }
 
     func isVisible(_ section: AppSection) -> Bool {
-        return true
+        switch section {
+        case .home:
+            return true
+        case .files:
+            return adminSettings.tabSettings.filesEnabled
+        case .patches:
+            return adminSettings.tabSettings.patchesEnabled
+        case .freeFire:
+            return adminSettings.tabSettings.freeFireEnabled
+        case .profile:
+            return true // Always visible
+        }
     }
 }
 

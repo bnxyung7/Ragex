@@ -51,6 +51,11 @@
 		3105PB200 /* PatchControlBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105PB100; };
 		3105PR200 /* ProductCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105PR100; };
 		3105SP200 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105SP100; };
+		0508BD06 /* KeyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0508BD05; };
+		DCE3C115 /* KeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCE3C114; };
+		90DFBCB8 /* AdminSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90DFBCB7; };
+		A2DE34D6 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2DE34D5; };
+		F25A548E /* AdminPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25A548D; };
 		3105B222 /* PatchProjectEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105B122; };
 		3105C200 /* PatchDraftService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105C100; };
 		3105C201 /* PatchDraftCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105C101; };
@@ -153,6 +158,11 @@
 		3105PB100 /* PatchControlBottomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchControlBottomSheet.swift; sourceTree = "<group>"; };
 		3105PR100 /* ProductCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductCarouselView.swift; sourceTree = "<group>"; };
 		3105SP100 /* SoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPlayer.swift; sourceTree = "<group>"; };
+		0508BD05 /* KeyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyModels.swift; sourceTree = "<group>"; };
+		DCE3C114 /* KeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyStore.swift; sourceTree = "<group>"; };
+		90DFBCB7 /* AdminSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSettings.swift; sourceTree = "<group>"; };
+		A2DE34D5 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		F25A548D /* AdminPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminPanelView.swift; sourceTree = "<group>"; };
 		3105SND01 /* activar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = activar.wav; sourceTree = "<group>"; };
 		3105SND02 /* desactivar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = desactivar.wav; sourceTree = "<group>"; };
 		3105SND03 /* Welcome.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = Welcome.wav; sourceTree = "<group>"; };
@@ -274,6 +284,8 @@
 				3105L102 /* RepositoryMarketplaceView.swift */,
 				3105L103 /* RepositoryHomeView.swift */,
 				3105L104 /* RepositorySourcesView.swift */,
+				A2DE34D5 /* ProfileView.swift */,
+				F25A548D /* AdminPanelView.swift */,
 			);
 			path = views;
 			sourceTree = "<group>";
@@ -324,6 +336,9 @@
 				3105A026 /* SBX.swift */,
 				3105A027 /* MG.swift */,
 				3105SP100 /* SoundPlayer.swift */,
+				0508BD05 /* KeyModels.swift */,
+				DCE3C114 /* KeyStore.swift */,
+				90DFBCB7 /* AdminSettings.swift */,
 			);
 			path = helpers;
 			sourceTree = "<group>";
@@ -463,6 +478,11 @@
 				3105PB200,
 				3105PR200,
 				3105SP200,
+				0508BD06,
+				DCE3C115,
+				90DFBCB8,
+				A2DE34D6,
+				F25A548E,
 				3105B222,
 				3105C200,
 				3105C201,

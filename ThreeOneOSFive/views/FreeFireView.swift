@@ -3,6 +3,7 @@ import SwiftUI
 struct FreeFireView: View {
     @Environment(\.appLanguage) private var language
     @EnvironmentObject private var patchStore: PatchProjectStore
+    @StateObject private var keyStore = KeyStore.shared
     @State private var bundlePatches: [BundlePatch] = []
     @State private var selectedCategory: PatchCategory = .aimbot
     @State private var isApplying = false
@@ -26,17 +27,25 @@ struct FreeFireView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Category selector
-                categoryPicker
-                
-                // Patch list
-                Group {
-                    if filteredPatches.isEmpty {
-                        emptyState
-                    } else {
-                        patchList
+            Group {
+                if keyStore.hasValidAccess() {
+                    // User has valid Key - show content
+                    VStack(spacing: 0) {
+                        // Category selector
+                        categoryPicker
+                        
+                        // Patch list
+                        Group {
+                            if filteredPatches.isEmpty {
+                                emptyState
+                            } else {
+                                patchList
+                            }
+                        }
                     }
+                } else {
+                    // No valid Key - show locked state
+                    lockedView
                 }
             }
             .navigationTitle("Free Fire")
@@ -68,6 +77,61 @@ struct FreeFireView: View {
                     .presentationDragIndicator(.hidden)
             }
         }
+    }
+    
+    // MARK: - Locked View
+    
+    private var lockedView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            // Lock icon
+            Image(systemName: "lock.fill")
+                .font(.system(size: 80))
+                .foregroundStyle(.orange)
+            
+            // Title
+            Text("Free Fire Bloqueado")
+                .font(.title2)
+                .fontWeight(.bold)
+            
+            // Message
+            Text("Free Fire está bloqueado. Activa tu Key desde Perfil.")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            
+            // Info box
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundStyle(.blue)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("¿Cómo activar?")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        Text("Ve a la pestaña Perfil e introduce tu Key")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Spacer()
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(.secondarySystemBackground))
+                )
+            }
+            .padding(.horizontal, 32)
+            
+            Spacer()
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
     }
     
     private var categoryPicker: some View {

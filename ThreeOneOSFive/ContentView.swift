@@ -7,6 +7,7 @@ struct ContentView: View {
     @EnvironmentObject private var patchDraftCoordinator: PatchDraftCoordinator
     @EnvironmentObject private var patchStore: PatchProjectStore
     @EnvironmentObject private var repositoryStore: PackageRepositoryStore
+    @StateObject private var adminSettings = AdminSettings.shared
     @AppStorage(FeatureVisibility.developerModeStorageKey)
     private var developerModeEnabled = false
     @State private var tabNavigation: AppTabNavigationState
@@ -51,6 +52,9 @@ struct ContentView: View {
             if requestID != nil { tabNavigation.select(AppSection.patches.rawValue) }
         }
         .onChange(of: developerModeEnabled) { _ in
+            tabNavigation.reconcileSelection(with: featureVisibility)
+        }
+        .onChange(of: adminSettings.tabSettings) { _ in
             tabNavigation.reconcileSelection(with: featureVisibility)
         }
         .onAppear {
@@ -142,6 +146,8 @@ struct ContentView: View {
             )
         case .freeFire:
             FreeFireView()
+        case .profile:
+            ProfileView()
         }
     }
 
@@ -160,7 +166,7 @@ struct ContentView: View {
     }
 
     private var featureVisibility: FeatureVisibility {
-        FeatureVisibility(developerModeEnabled: developerModeActive)
+        FeatureVisibility(developerModeEnabled: developerModeActive, adminSettings: adminSettings)
     }
 
     private var developerModeActive: Bool {
@@ -215,6 +221,7 @@ private extension AppSection {
         case .files: return "tab.files"
         case .patches: return "tab.patches"
         case .freeFire: return "Free Fire"
+        case .profile: return "Perfil"
         }
     }
 
@@ -224,6 +231,7 @@ private extension AppSection {
         case .files: return "folder.fill"
         case .patches: return "shippingbox.fill"
         case .freeFire: return "flame.fill"
+        case .profile: return "person.fill"
         }
     }
 }
