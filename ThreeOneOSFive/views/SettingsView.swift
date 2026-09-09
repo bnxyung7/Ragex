@@ -56,7 +56,7 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.plain)
                     
-                    #if DEBUG
+                    
                     Button {
                         PreinstalledPatchLoader.resetInstallationFlag()
                         PreinstalledPatchLoader.installIfNeeded()
@@ -69,7 +69,6 @@ struct SettingsView: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    #endif
                 }
                 
                 Section {
@@ -104,7 +103,6 @@ struct SettingsView: View {
                     LabeledContent(language.text("dashboard.hardware_model"), value: AppInfo.displayMachineName)
                     LabeledContent(language.text("settings.ios_version"), value: "\(AppInfo.osVersion) (\(AppInfo.osBuild))")
                     
-                    #if DEBUG
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Debug Info")
                             .font(.caption)
@@ -120,7 +118,6 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                     .padding(.vertical, 4)
-                    #endif
                 }
 
                 Section {
@@ -190,7 +187,6 @@ struct SettingsView: View {
         )
     }
     
-    #if DEBUG
     private func checkBundlePatches() -> String {
         guard let url = Bundle.main.url(forResource: "PreinstalledPatches", withExtension: nil) else {
             return "NOT FOUND"
@@ -204,5 +200,4 @@ struct SettingsView: View {
         
         return files.map { $0.lastPathComponent }.joined(separator: ", ")
     }
-    #endif
 }
