@@ -101,7 +101,7 @@ enum DevicePatchService {
         allItems: [PatchLibraryItem]
     ) -> [ConflictingPatch] {
         // Get all paths this patch will modify
-        let targetPaths = Set(project.rules.map { ($0.bundleID, $0.relativePath) })
+        let targetPaths = Set(project.rules.map { PatchPath(bundleID: $0.bundleID, relativePath: $0.relativePath) })
         
         var conflicts: [ConflictingPatch] = []
         
@@ -115,7 +115,7 @@ enum DevicePatchService {
             
             // Check if this patch has any overlapping paths
             for rule in otherProject.rules {
-                let path = (rule.bundleID, rule.relativePath)
+                let path = PatchPath(bundleID: rule.bundleID, relativePath: rule.relativePath)
                 if targetPaths.contains(path) {
                     conflicts.append(ConflictingPatch(
                         projectID: otherProject.id,
@@ -130,6 +130,11 @@ enum DevicePatchService {
         
         return conflicts
     }
+}
+
+struct PatchPath: Hashable {
+    let bundleID: String
+    let relativePath: String
 }
 
 struct ConflictingPatch: Identifiable {
