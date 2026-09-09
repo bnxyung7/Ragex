@@ -4,6 +4,7 @@ enum AppSection: Int, CaseIterable, Identifiable {
     case home
     case files
     case patches
+    case freeFire
 
     var id: Int { rawValue }
 }

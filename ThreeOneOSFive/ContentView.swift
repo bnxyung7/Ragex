@@ -129,6 +129,8 @@ struct ContentView: View {
                 onOpenSettings: openSettings,
                 onOpenLogs: openLogs
             )
+        case .freeFire:
+            FreeFireView()
         }
     }
 
@@ -201,6 +203,7 @@ private extension AppSection {
         case .home: return "tab.home"
         case .files: return "tab.files"
         case .patches: return "tab.patches"
+        case .freeFire: return "Free Fire"
         }
     }
 
@@ -209,6 +212,7 @@ private extension AppSection {
         case .home: return "house.fill"
         case .files: return "folder.fill"
         case .patches: return "shippingbox.fill"
+        case .freeFire: return "flame.fill"
         }
     }
 }
