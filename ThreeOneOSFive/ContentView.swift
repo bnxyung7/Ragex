@@ -56,7 +56,10 @@ struct ContentView: View {
         .onAppear {
             tabNavigation.reconcileSelection(with: featureVisibility)
             
-            // Show welcome sheet on first launch
+            // Play welcome sound every time app opens
+            SoundPlayer.shared.playWelcome()
+            
+            // Show welcome sheet on first launch only
             if !UserDefaults.standard.bool(forKey: "hasSeenWelcome") {
                 showWelcome = true
                 UserDefaults.standard.set(true, forKey: "hasSeenWelcome")

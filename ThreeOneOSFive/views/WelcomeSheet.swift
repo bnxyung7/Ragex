@@ -65,9 +65,6 @@ struct WelcomeSheet: View {
             }
         }
         .interactiveDismissDisabled()
-        .onAppear {
-            SoundPlayer.shared.playWelcome()
-        }
     }
 }
 
@@ -203,7 +200,7 @@ struct Page4View: View {
                     .fill(Color.orange.opacity(0.1))
                     .frame(width: 120, height: 120)
                 
-                Image(systemName: "heart.fill")
+                Image(systemName: "person.fill")
                     .font(.system(size: 50))
                     .foregroundStyle(.orange)
             }
@@ -214,20 +211,39 @@ struct Page4View: View {
                     .fontWeight(.bold)
                     .foregroundStyle(.white)
                 
-                VStack(spacing: 8) {
-                    Text("Desarrollado por")
+                VStack(spacing: 12) {
+                    Text("Desarrollador")
                         .font(.subheadline)
                         .foregroundStyle(.gray)
                     
-                    Text("Comunidad X")
-                        .font(.title3)
-                        .fontWeight(.semibold)
+                    Text("Bnxyung7")
+                        .font(.title2)
+                        .fontWeight(.bold)
                         .foregroundStyle(.orange)
                     
-                    Text("Gracias por ser parte de nosotros")
+                    // Contact button
+                    Button {
+                        if let url = URL(string: "tel:+18099289722") {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "phone.fill")
+                                .font(.caption)
+                            Text("+1 (809) 928-9722")
+                                .font(.subheadline)
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(20)
+                    }
+                    
+                    Text("Gracias por usar X")
                         .font(.caption)
                         .foregroundStyle(.gray)
-                        .padding(.top, 4)
+                        .padding(.top, 8)
                 }
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
