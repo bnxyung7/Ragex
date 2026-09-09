@@ -255,10 +255,10 @@ struct PatchControlBottomSheet: View {
                     }
                     .disabled(!isActive || isApplying || isRestoring)
                     .opacity(!isActive ? 0.5 : 1)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
                 }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 24)
             }
         }
         .alert("Error", isPresented: $showError) {
