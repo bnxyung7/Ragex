@@ -148,6 +148,8 @@ struct ContentView: View {
             FreeFireView()
         case .profile:
             ProfileView()
+        case .support:
+            SupportView()
         }
     }
 
@@ -222,6 +224,7 @@ private extension AppSection {
         case .patches: return "tab.patches"
         case .freeFire: return "Free Fire"
         case .profile: return "Perfil"
+        case .support: return "Soporte"
         }
     }
 
@@ -232,6 +235,7 @@ private extension AppSection {
         case .patches: return "shippingbox.fill"
         case .freeFire: return "flame.fill"
         case .profile: return "person.fill"
+        case .support: return "headphones.circle.fill"
         }
     }
 }
