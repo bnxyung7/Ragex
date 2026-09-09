@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appLanguage) private var language
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var patchStore: PatchProjectStore
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.english.rawValue
     @AppStorage(FeatureVisibility.cleanerStorageKey) private var cleanerEnabled = true
     @AppStorage(FeatureVisibility.developerModeStorageKey)
@@ -63,6 +64,9 @@ struct SettingsView: View {
                     Button {
                         PreinstalledPatchLoader.resetInstallationFlag()
                         PreinstalledPatchLoader.installIfNeeded()
+                        
+                        // Reload patch store to show newly installed patches
+                        patchStore.reload()
                         
                         // Show success toast
                         toastMessage = "Patches reinstalled successfully"
