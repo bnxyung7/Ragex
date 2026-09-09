@@ -22,18 +22,53 @@ enum PreinstalledPatchLoader {
     private static func installPreinstalledPatches() {
         let fileManager = FileManager.default
         
-        print("[PreinstalledPatches] Looking for bundle patches folder...")
+        print("[PreinstalledPatches] Looking for patch file in bundle...")
         
-        // Get bundle directory with preinstalled patches
-        guard let bundlePatchesURL = Bundle.main.url(
-            forResource: "PreinstalledPatches",
-            withExtension: nil
-        ) else {
-            print("[PreinstalledPatches] ERROR: PreinstalledPatches folder not found in bundle")
-            return // No preinstalled patches folder
+        // Try to find the .xpatch file directly in the bundle
+        guard let bundleURL = Bundle.main.resourceURL else {
+            print("[PreinstalledPatches] ERROR: Could not get bundle resource URL")
+            return
         }
         
-        print("[PreinstalledPatches] Found folder at: \(bundlePatchesURL.path)")
+        print("[PreinstalledPatches] Bundle resource URL: \(bundleURL.path)")
+        
+        // Look for .xpatch files in bundle
+        guard let allFiles = try? fileManager.contentsOfDirectory(
+            at: bundleURL,
+            includingPropertiesForKeys: nil,
+            options: [.skipsSubdirectoryDescendants, .skipsHiddenFiles]
+        ) else {
+            print("[PreinstalledPatches] ERROR: Could not list bundle contents")
+            return
+        }
+        
+        let patchFiles = allFiles.filter { $0.pathExtension.lowercased() == "xpatch" }
+        print("[PreinstalledPatches] Found \(patchFiles.count) .xpatch files in bundle root")
+        
+        // Also check PreinstalledPatches subfolder
+        let preinstalledFolder = bundleURL.appendingPathComponent("PreinstalledPatches", isDirectory: true)
+        var additionalPatches: [URL] = []
+        
+        if fileManager.fileExists(atPath: preinstalledFolder.path) {
+            print("[PreinstalledPatches] Found PreinstalledPatches folder")
+            if let folderFiles = try? fileManager.contentsOfDirectory(
+                at: preinstalledFolder,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            ) {
+                additionalPatches = folderFiles.filter { $0.pathExtension.lowercased() == "xpatch" }
+                print("[PreinstalledPatches] Found \(additionalPatches.count) .xpatch files in PreinstalledPatches folder")
+            }
+        } else {
+            print("[PreinstalledPatches] PreinstalledPatches folder not found at: \(preinstalledFolder.path)")
+        }
+        
+        let allPatchFiles = patchFiles + additionalPatches
+        
+        guard !allPatchFiles.isEmpty else {
+            print("[PreinstalledPatches] No .xpatch files found in bundle")
+            return
+        }
         
         // Get destination directory
         guard let destinationRoot = try? PatchProjectLibrary.packageRootURL(
@@ -45,20 +80,8 @@ enum PreinstalledPatchLoader {
         
         print("[PreinstalledPatches] Destination: \(destinationRoot.path)")
         
-        // Get all .xpatch files from bundle
-        guard let patchFiles = try? fileManager.contentsOfDirectory(
-            at: bundlePatchesURL,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        ).filter({ $0.pathExtension.lowercased() == "xpatch" }) else {
-            print("[PreinstalledPatches] ERROR: Could not read bundle patches folder")
-            return
-        }
-        
-        print("[PreinstalledPatches] Found \(patchFiles.count) .xpatch files")
-        
         // Copy each patch to destination
-        for sourceURL in patchFiles {
+        for sourceURL in allPatchFiles {
             let destinationURL = destinationRoot.appendingPathComponent(
                 sourceURL.lastPathComponent
             )
@@ -71,9 +94,9 @@ enum PreinstalledPatchLoader {
             
             do {
                 try fileManager.copyItem(at: sourceURL, to: destinationURL)
-                print("[PreinstalledPatches] Installed: \(sourceURL.lastPathComponent)")
+                print("[PreinstalledPatches] ✅ Installed: \(sourceURL.lastPathComponent)")
             } catch {
-                print("[PreinstalledPatches] Failed to install \(sourceURL.lastPathComponent): \(error)")
+                print("[PreinstalledPatches] ❌ Failed to install \(sourceURL.lastPathComponent): \(error)")
             }
         }
     }

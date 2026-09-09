@@ -78,6 +78,7 @@
 		3105A228 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3105A120; };
 		3105A211 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3105A031; };
 		3105P200 /* PreinstalledPatches in Resources */ = {isa = PBXBuildFile; fileRef = 3105P100; };
+		3105P201 /* AimbotPecho.xpatch in Resources */ = {isa = PBXBuildFile; fileRef = 3105P101; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -168,6 +169,7 @@
 		3105L105 /* RepositoryPresentationSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryPresentationSupport.swift; sourceTree = "<group>"; };
 		3105A121 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105P100 /* PreinstalledPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PreinstalledPatches; sourceTree = "<group>"; };
+		3105P101 /* AimbotPecho.xpatch */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PreinstalledPatches/AimbotPecho.xpatch"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -378,6 +380,7 @@
 				3105A211,
 				3105A228,
 				3105P200,
+				3105P201,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
