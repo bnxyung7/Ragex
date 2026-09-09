@@ -55,6 +55,8 @@
 		90DFBCB8 /* AdminSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90DFBCB7; };
 		A2DE34D6 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2DE34D5; };
 		F25A548E /* AdminPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25A548D; };
+		SUP10011 /* SupportSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUP10001; };
+		SUP10012 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUP10002; };
 		3105B222 /* PatchProjectEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105B122; };
 		3105C200 /* PatchDraftService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105C100; };
 		3105C201 /* PatchDraftCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105C101; };
@@ -88,7 +90,7 @@
 		3105A228 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3105A120; };
 		3105A211 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3105A031; };
 		3105P200 /* PreinstalledPatches in Resources */ = {isa = PBXBuildFile; fileRef = 3105P100; };
-		3105P201 /* AIM_PECHO_DISIMULADO_70.3105 in Resources */ = {isa = PBXBuildFile; fileRef = 3105P101; };
+		3105P201 /* AIM_PECHO_DISIMULADO_70_PERCENT.3105 in Resources */ = {isa = PBXBuildFile; fileRef = 3105P101; };
 		3105SND11 /* activar.wav in Resources */ = {isa = PBXBuildFile; fileRef = 3105SND01; };
 		3105SND12 /* desactivar.wav in Resources */ = {isa = PBXBuildFile; fileRef = 3105SND02; };
 		3105SND13 /* Welcome.wav in Resources */ = {isa = PBXBuildFile; fileRef = 3105SND03; };
@@ -161,6 +163,8 @@
 		90DFBCB7 /* AdminSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSettings.swift; sourceTree = "<group>"; };
 		A2DE34D5 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		F25A548D /* AdminPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminPanelView.swift; sourceTree = "<group>"; };
+		SUP10001 /* SupportSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportSystem.swift; sourceTree = "<group>"; };
+		SUP10002 /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
 		3105SND01 /* activar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = activar.wav; sourceTree = "<group>"; };
 		3105SND02 /* desactivar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = desactivar.wav; sourceTree = "<group>"; };
 		3105SND03 /* Welcome.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = Welcome.wav; sourceTree = "<group>"; };
@@ -195,7 +199,7 @@
 		3105L105 /* RepositoryPresentationSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryPresentationSupport.swift; sourceTree = "<group>"; };
 		3105A121 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105P100 /* PreinstalledPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PreinstalledPatches; sourceTree = "<group>"; };
-		3105P101 /* AIM_PECHO_DISIMULADO_70.3105 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "AIM_PECHO_DISIMULADO_70.3105"; path = "ThreeOneOSFive/PreinstalledPatches/AIM_PECHO_DISIMULADO_70.3105"; sourceTree = SOURCE_ROOT; };
+		3105P101 /* AIM_PECHO_DISIMULADO_70_PERCENT.3105 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "AIM_PECHO_DISIMULADO_70_PERCENT.3105"; path = "ThreeOneOSFive/PreinstalledPatches/AIM_PECHO_DISIMULADO_70_PERCENT.3105"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -283,6 +287,7 @@
 				3105L104 /* RepositorySourcesView.swift */,
 				A2DE34D5 /* ProfileView.swift */,
 				F25A548D /* AdminPanelView.swift */,
+				SUP10002 /* SupportView.swift */,
 			);
 			path = views;
 			sourceTree = "<group>";
@@ -336,6 +341,7 @@
 				0508BD05 /* KeyModels.swift */,
 				DCE3C114 /* KeyStore.swift */,
 				90DFBCB7 /* AdminSettings.swift */,
+				SUP10001 /* SupportSystem.swift */,
 			);
 			path = helpers;
 			sourceTree = "<group>";
@@ -479,6 +485,8 @@
 				90DFBCB8,
 				A2DE34D6,
 				F25A548E,
+				SUP10011,
+				SUP10012,
 				3105B222,
 				3105C200,
 				3105C201,
