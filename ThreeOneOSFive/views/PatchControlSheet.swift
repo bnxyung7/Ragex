@@ -21,11 +21,13 @@ struct PatchControlSheet: View {
         return item.project
     }
     
+    private var receipt: PatchTransactionReceipt? {
+        guard let project = patchProject else { return nil }
+        return DevicePatchService.latestReceipt(projectID: project.id)
+    }
+    
     private var isActive: Bool {
-        guard let project = patchProject else { return false }
-        return patchStore.appliedReceipts.contains(where: { receipt in
-            receipt.patchKey == project.key
-        })
+        receipt != nil
     }
     
     var body: some View {
@@ -197,14 +199,7 @@ struct PatchControlSheet: View {
         
         Task {
             do {
-                guard let project = patchProject else {
-                    throw NSError(domain: "PatchControl", code: 1, userInfo: [
-                        NSLocalizedDescriptionKey: "Patch project not found"
-                    ])
-                }
-                
-                // Find the receipt
-                guard let receipt = patchStore.appliedReceipts.first(where: { $0.patchKey == project.key }) else {
+                guard let receipt = receipt else {
                     throw NSError(domain: "PatchControl", code: 2, userInfo: [
                         NSLocalizedDescriptionKey: "No active receipt found for this patch"
                     ])
