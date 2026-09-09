@@ -95,3 +95,49 @@ enum DevicePatchService {
         return try operation(roots)
     }
 }
+
+    /// Detect if applying this project would conflict with already applied patches
+    static func detectConflicts(
+        project: PatchProject,
+        allItems: [PatchLibraryItem]
+    ) -> [ConflictingPatch] {
+        // Get all paths this patch will modify
+        let targetPaths = Set(project.rules.map { ($0.bundleID, $0.relativePath) })
+        
+        var conflicts: [ConflictingPatch] = []
+        
+        // Check each other patch
+        for item in allItems {
+            guard item.id != project.id,
+                  let otherProject = item.project,
+                  let receipt = latestReceipt(projectID: otherProject.id) else {
+                continue
+            }
+            
+            // Check if this patch has any overlapping paths
+            for rule in otherProject.rules {
+                let path = (rule.bundleID, rule.relativePath)
+                if targetPaths.contains(path) {
+                    conflicts.append(ConflictingPatch(
+                        projectID: otherProject.id,
+                        projectName: otherProject.name,
+                        conflictingPath: "\(rule.bundleID)/\(rule.relativePath)",
+                        receipt: receipt
+                    ))
+                    break // Only report each project once
+                }
+            }
+        }
+        
+        return conflicts
+    }
+}
+
+struct ConflictingPatch: Identifiable {
+    let projectID: UUID
+    let projectName: String
+    let conflictingPath: String
+    let receipt: PatchTransactionReceipt
+    
+    var id: UUID { projectID }
+}

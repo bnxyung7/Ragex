@@ -666,6 +666,8 @@ private struct PatchProjectDetailView: View {
     @State private var isWorking = false
     @State private var actionAlert: PatchStoreAlert?
     @State private var shareRequest: PatchShareRequest?
+    @State private var showConflictWarning = false
+    @State private var conflictingPatches: [ConflictingPatch] = []
 
     private var item: PatchLibraryItem? {
         store.items.first(where: { $0.id == projectID })
@@ -900,6 +902,18 @@ private struct PatchProjectDetailView: View {
         } message: {
             Text(language.text("patch.reset_confirm_message"))
         }
+        .alert(
+            "Patch Conflict Detected",
+            isPresented: $showConflictWarning,
+            presenting: conflictingPatches.first
+        ) { conflict in
+            Button("Cancel", role: .cancel) {}
+            Button("Remove Conflicting & Apply", role: .destructive) {
+                resolveConflict(conflict)
+            }
+        } message: { conflict in
+            Text("The patch '\(conflict.projectName)' is already modifying the same files. Remove it before applying this patch?\n\nConflicting path: \(conflict.conflictingPath)")
+        }
         .alert(item: $actionAlert) { alert in
             Alert(
                 title: Text(language.text(alert.titleKey)),
@@ -986,6 +1000,26 @@ private struct PatchProjectDetailView: View {
 
     private func apply() {
         guard let item, let baseProject = item.project else { return }
+        
+        // Check for conflicts with other applied patches
+        let conflicts = DevicePatchService.detectConflicts(
+            project: baseProject,
+            allItems: store.items
+        )
+        
+        if !conflicts.isEmpty {
+            // Show conflict warning
+            conflictingPatches = conflicts
+            showConflictWarning = true
+            return
+        }
+        
+        // No conflicts, apply directly
+        performApply()
+    }
+    
+    private func performApply() {
+        guard let item, let baseProject = item.project else { return }
         isWorking = true
         Task.detached(priority: .userInitiated) {
             do {
@@ -1011,6 +1045,29 @@ private struct PatchProjectDetailView: View {
                 await MainActor.run {
                     isWorking = false
                     actionAlert = PatchStoreAlert(titleKey: "common.failed", messageKey: "patch.error.apply")
+                }
+            }
+        }
+    }
+    
+    private func resolveConflict(_ conflict: ConflictingPatch) {
+        isWorking = true
+        Task.detached(priority: .userInitiated) {
+            do {
+                // Restore the conflicting patch first
+                try DevicePatchService.restore(receipt: conflict.receipt, allowChangedTargets: true)
+                
+                // Now apply the new patch
+                await MainActor.run {
+                    performApply()
+                }
+            } catch {
+                await MainActor.run {
+                    isWorking = false
+                    actionAlert = PatchStoreAlert(
+                        titleKey: "common.failed",
+                        messageKey: "patch.error.restore"
+                    )
                 }
             }
         }
