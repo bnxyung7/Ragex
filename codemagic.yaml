@@ -52,6 +52,104 @@ workflows:
             CODE_SIGNING_REQUIRED=NO \
             build | xcpretty
 
+  # ── Simulator: generate .app for iOS Simulator ───────────────────────────
+  x-simulator:
+    name: X — iOS Simulator Build
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      xcode: latest
+      vars:
+        XCODE_PROJECT: ThreeOneOSFive.xcodeproj
+        XCODE_SCHEME: X
+        BUILD_DIR: $CM_BUILD_DIR/build
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: "simulator"
+          include: true
+        - pattern: "main"
+          include: true
+
+    scripts:
+      - name: Xcode version
+        script: xcodebuild -version
+
+      - name: Resolve Swift Packages
+        script: |
+          xcodebuild -resolvePackageDependencies \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME"
+
+      - name: Build for iOS Simulator (x86_64/arm64)
+        script: |
+          set -o pipefail
+          mkdir -p "$BUILD_DIR"
+          xcodebuild \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath "$BUILD_DIR/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            build | xcpretty
+
+      - name: Locate and package Simulator .app
+        script: |
+          # Find the simulator build .app (Release-iphonesimulator)
+          APP_PATH=$(find "$BUILD_DIR/DerivedData" \
+            -path "*/Release-iphonesimulator/X.app" -type d | head -1)
+
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: X.app for simulator not found"
+            find "$BUILD_DIR/DerivedData" -name "*.app" -type d 2>/dev/null || true
+            exit 1
+          fi
+          echo "Found Simulator .app: $APP_PATH"
+
+          # Verify it's a simulator binary (x86_64 or arm64 simulator)
+          BINARY="$APP_PATH/X"
+          if [ ! -f "$BINARY" ]; then
+            echo "ERROR: Binary not found at $BINARY"
+            exit 1
+          fi
+          echo "=== Binary info ==="
+          file "$BINARY"
+
+          # Package the .app as a zip for download
+          cd "$(dirname "$APP_PATH")"
+          zip -qr "$CM_BUILD_DIR/X-Simulator.app.zip" "X.app"
+          cd "$CM_BUILD_DIR"
+
+          echo "=== Simulator .app packaged ==="
+          ls -lh "$CM_BUILD_DIR/X-Simulator.app.zip"
+
+      - name: Verify Simulator build
+        script: |
+          ZIP="$CM_BUILD_DIR/X-Simulator.app.zip"
+          test -f "$ZIP" || { echo "ERROR: Simulator ZIP not found"; exit 1; }
+
+          echo "=== ZIP contents (first 40 lines) ==="
+          unzip -l "$ZIP" | head -40
+
+          echo "=== Verifying X.app/ structure ==="
+          unzip -l "$ZIP" | grep "X.app/" \
+            || { echo "ERROR: X.app not found in ZIP"; exit 1; }
+
+          echo "=== Simulator build ready ==="
+          echo "Download X-Simulator.app.zip"
+          echo "Extract and drag X.app to Xcode Simulator"
+
+    artifacts:
+      - $CM_BUILD_DIR/X-Simulator.app.zip
+      - $CM_BUILD_DIR/**/*.dSYM.zip
+
   # ── Release: unsigned IPA for iOS device — sign later with ESign ─────────
   # No Apple signing required.
   # Output: X-unsigned.ipa  (Payload/X.app)
