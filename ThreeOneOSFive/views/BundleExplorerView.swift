@@ -328,8 +328,14 @@ struct AppBundleBrowserView: View {
                                 } label: {
                                     FileSystemRow(item: item)
                                 }
+                                .contextMenu {
+                                    fileActions(for: item)
+                                }
                             } else {
                                 FileSystemRow(item: item)
+                                    .contextMenu {
+                                        fileActions(for: item)
+                                    }
                             }
                         }
                     } header: {
@@ -419,6 +425,41 @@ struct AppBundleBrowserView: View {
             } else {
                 return item1.name.localizedCaseInsensitiveCompare(item2.name) == .orderedAscending
             }
+        }
+    }
+    
+    @ViewBuilder
+    private func fileActions(for item: FileSystemItem) -> some View {
+        // Share
+        ShareLink(item: item.url) {
+            Label("Share", systemImage: "square.and.arrow.up")
+        }
+        
+        Divider()
+        
+        // Copy path to clipboard
+        Button {
+            UIPasteboard.general.string = item.url.path
+        } label: {
+            Label("Copy Path", systemImage: "doc.on.doc")
+        }
+        
+        // Create Patch (for files only)
+        if !item.isDirectory {
+            Button {
+                // TODO: Implement create patch from this file
+            } label: {
+                Label("Create Patch", systemImage: "shippingbox")
+            }
+        }
+        
+        Divider()
+        
+        // View Info
+        Button {
+            // TODO: Show file info (size, dates, permissions)
+        } label: {
+            Label("Info", systemImage: "info.circle")
         }
     }
 }
