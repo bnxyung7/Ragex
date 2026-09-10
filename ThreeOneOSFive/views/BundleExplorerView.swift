@@ -168,9 +168,11 @@ struct BundleExplorerView: View {
         return apps.sorted { $0.displayName < $1.displayName }
     }
     
-    private func grantContainerAccess(_ path: String) -> Int32 {
+    private func grantContainerAccess(_ path: String) -> Int64 {
         // Use bad_query to grant temporary access to container
-        return bad_query(path, 0)
+        let clean = path.hasSuffix("/") ? String(path.dropLast()) : path
+        var pathC = clean.utf8CString.map { Int8($0) }
+        return bad_query(&pathC, true, nil, false)
     }
 }
 
