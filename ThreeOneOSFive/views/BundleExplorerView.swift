@@ -263,8 +263,8 @@ struct AppBundleBrowserView: View {
     @State private var isLoading = false
     @State private var searchText = ""
     
-    // Replace system
-    @State private var replacementRequest: FileReplacementRequest?
+    // Replace system - using manual presentation instead of sheet
+    @State private var targetForReplacement: FileSystemItem?
     @State private var replacementNotice: BundleOperationNotice?
     @State private var activityText: String?
     
@@ -364,18 +364,6 @@ struct AppBundleBrowserView: View {
         }
         .onAppear {
             loadContents()
-        }
-        .sheet(item: $replacementRequest) { (request: FileReplacementRequest) in
-            BundleFileDocumentPicker(
-                allowsMultipleSelection: false,
-                onSelection: { result in
-                    handleReplacementImport(result, request: request)
-                    replacementRequest = nil
-                },
-                onCancel: {
-                    replacementRequest = nil
-                }
-            )
         }
         .alert(item: $replacementNotice) { notice in
             Alert(
@@ -479,15 +467,17 @@ struct AppBundleBrowserView: View {
         // Replace (only for files)
         if !item.isDirectory {
             Button {
-                requestReplacement(for: item)
+                print("[Bundle] 🔵 Replace button tapped for: \(item.name)")
+                presentFilePicker(for: item)
             } label: {
-                Label("Replace", systemImage: "arrow.triangle.2.circlepath")
+                Label("Replace File", systemImage: "arrow.triangle.2.circlepath")
             }
         }
         
         // Create Patch (only for files)
         if !item.isDirectory {
             Button {
+                print("[Bundle] 🔵 Create Patch button tapped")
                 requestCreatePatch(for: item)
             } label: {
                 Label("Create Patch", systemImage: "shippingbox.fill")
@@ -518,22 +508,43 @@ struct AppBundleBrowserView: View {
         }
     }
     
-    // MARK: - Replace System
+    // MARK: - Replace System (Manual Presentation)
     
-    private func requestReplacement(for item: FileSystemItem) {
-        print("[Bundle] 🔵 requestReplacement called for: \(item.name)")
-        replacementRequest = FileReplacementRequest(
-            targetURL: item.url,
-            targetName: item.name
-        )
-        print("[Bundle] 🔵 replacementRequest set")
+    private func presentFilePicker(for item: FileSystemItem) {
+        print("[Bundle] 🔵 presentFilePicker called for: \(item.name)")
+        targetForReplacement = item
+        
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item, .data, .content])
+        picker.allowsMultipleSelection = false
+        picker.shouldShowFileExtensions = true
+        
+        // Create coordinator
+        let coordinator = ReplacementPickerCoordinator(targetItem: item, parentView: self)
+        picker.delegate = coordinator
+        
+        // Store coordinator to prevent deallocation
+        objc_setAssociatedObject(picker, "coordinator", coordinator, .OBJC_ASSOCIATION_RETAIN)
+        
+        // Present picker
+        DispatchQueue.main.async {
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first,
+               let rootVC = window.rootViewController {
+                
+                var topVC = rootVC
+                while let presented = topVC.presentedViewController {
+                    topVC = presented
+                }
+                
+                topVC.present(picker, animated: true) {
+                    print("[Bundle] ✅ File picker presented")
+                }
+            }
+        }
     }
     
-    private func handleReplacementImport(_ result: Result<[URL], Error>, request: FileReplacementRequest) {
-        guard case .success(let urls) = result, let sourceURL = urls.first else {
-            return
-        }
-        
+    func handleReplacement(sourceURL: URL, targetItem: FileSystemItem) {
+        print("[Bundle] 🔵 handleReplacement called")
         activityText = "Replacing file..."
         
         Task.detached {
@@ -548,7 +559,8 @@ struct AppBundleBrowserView: View {
                     }
                 }
                 
-                // Copy to temp location first (iOS security requirement)
+                print("[Bundle] 🔵 Copying to temp...")
+                // Copy to temp location first
                 let tempDir = fileManager.temporaryDirectory
                 let tempFile = tempDir.appendingPathComponent(UUID().uuidString).appendingPathExtension(sourceURL.pathExtension)
                 
@@ -557,30 +569,36 @@ struct AppBundleBrowserView: View {
                 }
                 
                 try fileManager.copyItem(at: sourceURL, to: tempFile)
+                print("[Bundle] ✅ Copied to temp")
                 
                 // Backup original file
-                let backupURL = request.targetURL.appendingPathExtension("backup")
+                print("[Bundle] 🔵 Creating backup...")
+                let backupURL = targetItem.url.appendingPathExtension("backup")
                 if fileManager.fileExists(atPath: backupURL.path) {
                     try? fileManager.removeItem(at: backupURL)
                 }
-                try fileManager.copyItem(at: request.targetURL, to: backupURL)
+                try fileManager.copyItem(at: targetItem.url, to: backupURL)
+                print("[Bundle] ✅ Backup created")
                 
-                // Replace file with temp file
-                try fileManager.removeItem(at: request.targetURL)
-                try fileManager.copyItem(at: tempFile, to: request.targetURL)
+                // Replace file
+                print("[Bundle] 🔵 Replacing file...")
+                try fileManager.removeItem(at: targetItem.url)
+                try fileManager.copyItem(at: tempFile, to: targetItem.url)
+                print("[Bundle] ✅ File replaced")
                 
-                // Clean up temp file
+                // Clean up
                 try? fileManager.removeItem(at: tempFile)
                 
                 await MainActor.run {
                     activityText = nil
                     replacementNotice = BundleOperationNotice(
                         title: "Success",
-                        message: "File '\(request.targetName)' replaced successfully.\nBackup saved as '\(request.targetName).backup'"
+                        message: "File '\(targetItem.name)' replaced successfully.\nBackup saved as '\(targetItem.name).backup'"
                     )
                     loadContents()
                 }
             } catch {
+                print("[Bundle] ❌ Replace failed: \(error)")
                 await MainActor.run {
                     activityText = nil
                     replacementNotice = BundleOperationNotice(
@@ -804,6 +822,30 @@ struct BundleOperationNotice: Identifiable {
     let id = UUID()
     let title: String
     let message: String
+}
+
+// Coordinator for file replacement picker
+class ReplacementPickerCoordinator: NSObject, UIDocumentPickerDelegate {
+    let targetItem: FileSystemItem
+    weak var parentView: AppBundleBrowserView?
+    
+    init(targetItem: FileSystemItem, parentView: AppBundleBrowserView) {
+        self.targetItem = targetItem
+        self.parentView = parentView
+    }
+    
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        print("[Bundle] ✅ Document picked: \(urls)")
+        guard let sourceURL = urls.first else { return }
+        
+        DispatchQueue.main.async {
+            self.parentView?.handleReplacement(sourceURL: sourceURL, targetItem: self.targetItem)
+        }
+    }
+    
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        print("[Bundle] 🔵 Picker cancelled")
+    }
 }
 
 struct BundleFileDocumentPicker: UIViewControllerRepresentable {
