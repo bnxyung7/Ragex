@@ -90,6 +90,26 @@ struct BundleExplorerView: View {
         isLoading = true
         
         Task { @MainActor in
+            // Make sure exploit is running first
+            let appState = AppState.shared
+            if appState.exploitStatus != .success(method: "kexploit") && !appState.kernelExploitRunning {
+                print("[Bundle] ⚠️ Exploit not running, triggering now...")
+                appState.runKernelExploitIfNeeded()
+                
+                // Wait for exploit to complete
+                var attempts = 0
+                while appState.kernelExploitRunning && attempts < 30 {
+                    try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
+                    attempts += 1
+                }
+                
+                if case .success = appState.exploitStatus {
+                    print("[Bundle] ✅ Exploit successful")
+                } else {
+                    print("[Bundle] ❌ Exploit failed or timed out")
+                }
+            }
+            
             // Try API first (works with exploit/jailbreak)
             var loadedApps = ContainerStore.installedAppsFromAPI()
             
