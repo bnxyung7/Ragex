@@ -518,8 +518,10 @@ struct AppBundleBrowserView: View {
         picker.allowsMultipleSelection = false
         picker.shouldShowFileExtensions = true
         
-        // Create coordinator
-        let coordinator = ReplacementPickerCoordinator(targetItem: item, parentView: self)
+        // Create coordinator with closure callback
+        let coordinator = ReplacementPickerCoordinator(targetItem: item) { [weak self] sourceURL, targetItem in
+            self?.handleReplacement(sourceURL: sourceURL, targetItem: targetItem)
+        }
         picker.delegate = coordinator
         
         // Store coordinator to prevent deallocation
@@ -827,11 +829,11 @@ struct BundleOperationNotice: Identifiable {
 // Coordinator for file replacement picker
 class ReplacementPickerCoordinator: NSObject, UIDocumentPickerDelegate {
     let targetItem: FileSystemItem
-    weak var parentView: AppBundleBrowserView?
+    let onReplacement: (URL, FileSystemItem) -> Void
     
-    init(targetItem: FileSystemItem, parentView: AppBundleBrowserView) {
+    init(targetItem: FileSystemItem, onReplacement: @escaping (URL, FileSystemItem) -> Void) {
         self.targetItem = targetItem
-        self.parentView = parentView
+        self.onReplacement = onReplacement
     }
     
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
@@ -839,7 +841,7 @@ class ReplacementPickerCoordinator: NSObject, UIDocumentPickerDelegate {
         guard let sourceURL = urls.first else { return }
         
         DispatchQueue.main.async {
-            self.parentView?.handleReplacement(sourceURL: sourceURL, targetItem: self.targetItem)
+            self.onReplacement(sourceURL, self.targetItem)
         }
     }
     
