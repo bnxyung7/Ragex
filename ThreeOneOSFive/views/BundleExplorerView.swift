@@ -90,12 +90,16 @@ struct BundleExplorerView: View {
         isLoading = true
         
         Task.detached {
+            // Try API first (works with exploit/jailbreak)
             var loadedApps = ContainerStore.installedAppsFromAPI()
             
-            // Fallback for Simulator or when API returns empty
+            // If API returns empty, use filesystem scan (works without jailbreak)
             if loadedApps.isEmpty {
-                #if targetEnvironment(simulator)
-                // Simulator: Add current app only
+                loadedApps = ContainerStore.containersFromFilesystem()
+            }
+            
+            // Final fallback: at least show current app
+            if loadedApps.isEmpty {
                 let homeDir = NSHomeDirectory()
                 loadedApps = [
                     InstalledApp(
@@ -106,19 +110,6 @@ struct BundleExplorerView: View {
                         icon: nil
                     )
                 ]
-                #else
-                // Real device: Add fallback entry
-                let homeDir = NSHomeDirectory()
-                loadedApps = [
-                    InstalledApp(
-                        bundleID: Bundle.main.bundleIdentifier ?? "com.x.app",
-                        name: "X (This App)",
-                        containerPath: homeDir,
-                        version: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0",
-                        icon: nil
-                    )
-                ]
-                #endif
             }
             
             await MainActor.run {
