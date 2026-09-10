@@ -519,8 +519,11 @@ struct AppBundleBrowserView: View {
         picker.shouldShowFileExtensions = true
         
         // Create coordinator with closure callback
-        let coordinator = ReplacementPickerCoordinator(targetItem: item) { [weak self] sourceURL, targetItem in
-            self?.handleReplacement(sourceURL: sourceURL, targetItem: targetItem)
+        let coordinator = ReplacementPickerCoordinator(targetItem: item) { sourceURL, targetItem in
+            // Call handleReplacement directly - no need for weak self in struct
+            Task { @MainActor in
+                self.handleReplacement(sourceURL: sourceURL, targetItem: targetItem)
+            }
         }
         picker.delegate = coordinator
         
