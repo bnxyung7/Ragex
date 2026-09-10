@@ -90,7 +90,36 @@ struct BundleExplorerView: View {
         isLoading = true
         
         Task.detached {
-            let loadedApps = ContainerStore.installedAppsFromAPI()
+            var loadedApps = ContainerStore.installedAppsFromAPI()
+            
+            // Fallback for Simulator or when API returns empty
+            if loadedApps.isEmpty {
+                #if targetEnvironment(simulator)
+                // Simulator: Add current app only
+                let homeDir = NSHomeDirectory()
+                loadedApps = [
+                    InstalledApp(
+                        bundleID: Bundle.main.bundleIdentifier ?? "com.x.app",
+                        name: "X (This App)",
+                        containerPath: homeDir,
+                        version: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0",
+                        icon: nil
+                    )
+                ]
+                #else
+                // Real device: Add fallback entry
+                let homeDir = NSHomeDirectory()
+                loadedApps = [
+                    InstalledApp(
+                        bundleID: Bundle.main.bundleIdentifier ?? "com.x.app",
+                        name: "X (This App)",
+                        containerPath: homeDir,
+                        version: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0",
+                        icon: nil
+                    )
+                ]
+                #endif
+            }
             
             await MainActor.run {
                 apps = loadedApps
