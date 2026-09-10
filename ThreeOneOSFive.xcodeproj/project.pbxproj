@@ -59,6 +59,7 @@
 		F25A548E /* AdminPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25A548D; };
 		SUP10011 /* SupportSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUP10001; };
 		SUP10012 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUP10002; };
+		BUNDLE11 /* BundleExplorerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BUNDLE01; };
 		3105B222 /* PatchProjectEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105B122; };
 		3105C200 /* PatchDraftService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105C100; };
 		3105C201 /* PatchDraftCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105C101; };
@@ -169,6 +170,7 @@
 		F25A548D /* AdminPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminPanelView.swift; sourceTree = "<group>"; };
 		SUP10001 /* SupportSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportSystem.swift; sourceTree = "<group>"; };
 		SUP10002 /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
+		BUNDLE01 /* BundleExplorerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleExplorerView.swift; sourceTree = "<group>"; };
 		3105SND01 /* activar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = activar.wav; sourceTree = "<group>"; };
 		3105SND02 /* desactivar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = desactivar.wav; sourceTree = "<group>"; };
 		3105SND03 /* Welcome.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = Welcome.wav; sourceTree = "<group>"; };
@@ -292,6 +294,7 @@
 				A2DE34D5 /* ProfileView.swift */,
 				F25A548D /* AdminPanelView.swift */,
 				SUP10002 /* SupportView.swift */,
+				BUNDLE01 /* BundleExplorerView.swift */,
 			);
 			path = views;
 			sourceTree = "<group>";
@@ -495,6 +498,7 @@
 				F25A548E,
 				SUP10011,
 				SUP10012,
+				BUNDLE11,
 				3105B222,
 				3105C200,
 				3105C201,
