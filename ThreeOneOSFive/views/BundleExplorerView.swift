@@ -270,10 +270,9 @@ struct AppBundleBrowserView: View {
     @State private var replacementNotice: BundleOperationNotice?
     @State private var activityText: String?
     
-    // Create Patch system
-    @State private var patchCreationItem: FileSystemItem?
-    @State private var patchName: String = ""
-    @State private var showPatchNamePrompt = false
+    // Create Patch system (using PatchDraftCoordinator like Files tab)
+    @EnvironmentObject private var patchDraftCoordinator: PatchDraftCoordinator
+    @Environment(\.appLanguage) private var language
     
     init(app: InstalledApp) {
         self.app = app
@@ -380,21 +379,6 @@ struct AppBundleBrowserView: View {
                     replacementRequest = nil
                 }
             )
-        }
-        .alert("Create Patch", isPresented: $showPatchNamePrompt) {
-            TextField("Patch name (without .3105)", text: $patchName)
-                .autocapitalization(.none)
-            Button("Create") {
-                if let item = patchCreationItem {
-                    createPatch(from: item)
-                }
-            }
-            Button("Cancel", role: .cancel) {
-                patchCreationItem = nil
-                patchName = ""
-            }
-        } message: {
-            Text("Enter name for the patch file")
         }
         .alert(item: $replacementNotice) { notice in
             Alert(
@@ -588,64 +572,65 @@ struct AppBundleBrowserView: View {
         }
     }
     
-    // MARK: - Create Patch System
+    // MARK: - Create Patch System (same as Files tab)
     
     private func requestCreatePatch(for item: FileSystemItem) {
-        patchCreationItem = item
-        patchName = item.name.replacingOccurrences(of: ".\(item.url.pathExtension)", with: "")
-        showPatchNamePrompt = true
-    }
-    
-    private func createPatch(from item: FileSystemItem) {
-        let currentPatchName = patchName
-        guard !currentPatchName.isEmpty else { return }
+        let itemURL = item.url
+        let containerURL = URL(fileURLWithPath: app.containerPath, isDirectory: true)
+        let suggestedName = item.isDirectory
+            ? item.name
+            : itemURL.deletingPathExtension().lastPathComponent
         
-        activityText = "Creating patch..."
+        activityText = language.text("patch.preparing_from_browser")
         
         Task.detached {
             do {
-                let fileManager = FileManager.default
-                
-                // Get Documents directory
-                let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                let patchesFolder = documentsURL.appendingPathComponent("Patches")
-                
-                // Create Patches folder if needed
-                if !fileManager.fileExists(atPath: patchesFolder.path) {
-                    try fileManager.createDirectory(at: patchesFolder, withIntermediateDirectories: true)
-                }
-                
-                // Create patch file with .3105 extension
-                let cleanName = currentPatchName.replacingOccurrences(of: ".3105", with: "")
-                let patchURL = patchesFolder.appendingPathComponent("\(cleanName).3105")
-                
-                // Copy source file to patch location
-                if fileManager.fileExists(atPath: patchURL.path) {
-                    try fileManager.removeItem(at: patchURL)
-                }
-                try fileManager.copyItem(at: item.url, to: patchURL)
+                let draft = try PatchDraftService.makeDraft(
+                    bundleID: app.bundleID,
+                    containerRoot: containerURL,
+                    itemURL: itemURL,
+                    suggestedName: suggestedName
+                )
                 
                 await MainActor.run {
                     activityText = nil
-                    replacementNotice = BundleOperationNotice(
-                        title: "Patch Created",
-                        message: "Patch '\(cleanName).3105' created successfully in Documents/Patches/\n\nYou can now use it in Free Fire tab."
-                    )
-                    patchCreationItem = nil
-                    patchName = ""
+                    patchDraftCoordinator.present(draft)
+                }
+            } catch let error as PatchPackageError {
+                await MainActor.run {
+                    activityText = nil
+                    showPatchCreationError(error)
                 }
             } catch {
                 await MainActor.run {
                     activityText = nil
-                    replacementNotice = BundleOperationNotice(
-                        title: "Error",
-                        message: "Failed to create patch: \(error.localizedDescription)"
-                    )
-                    patchCreationItem = nil
-                    patchName = ""
+                    showPatchCreationError(.invalidProject)
                 }
             }
         }
+    }
+    
+    private func showPatchCreationError(_ error: PatchPackageError) {
+        let message: String
+        switch error {
+        case .invalidProject:
+            message = "Invalid patch project structure"
+        case .archiveFailure:
+            message = "Failed to create patch archive"
+        case .compressionFailure:
+            message = "Failed to compress patch"
+        case .encryptionFailure:
+            message = "Failed to encrypt patch"
+        case .missingBundleIdentifier:
+            message = "Missing bundle identifier"
+        case .unsupportedFormat:
+            message = "Unsupported file format"
+        }
+        
+        replacementNotice = BundleOperationNotice(
+            title: "Patch Creation Failed",
+            message: message
+        )
     }
     
     private func showFileInfo(for item: FileSystemItem) {
