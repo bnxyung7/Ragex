@@ -369,7 +369,7 @@ struct AppBundleBrowserView: View {
         .onAppear {
             loadContents()
         }
-        .sheet(item: $replacementRequest) { request in
+        .sheet(item: $replacementRequest) { (request: FileReplacementRequest) in
             FileDocumentPicker(
                 allowsMultipleSelection: false,
                 onSelection: { result in
@@ -597,7 +597,8 @@ struct AppBundleBrowserView: View {
     }
     
     private func createPatch(from item: FileSystemItem) {
-        guard !patchName.isEmpty else { return }
+        let currentPatchName = patchName
+        guard !currentPatchName.isEmpty else { return }
         
         activityText = "Creating patch..."
         
@@ -615,7 +616,7 @@ struct AppBundleBrowserView: View {
                 }
                 
                 // Create patch file with .3105 extension
-                let cleanName = patchName.replacingOccurrences(of: ".3105", with: "")
+                let cleanName = currentPatchName.replacingOccurrences(of: ".3105", with: "")
                 let patchURL = patchesFolder.appendingPathComponent("\(cleanName).3105")
                 
                 // Copy source file to patch location
