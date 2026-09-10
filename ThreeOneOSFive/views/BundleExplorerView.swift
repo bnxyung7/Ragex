@@ -270,7 +270,6 @@ struct AppBundleBrowserView: View {
     
     // Create Patch system (using PatchDraftCoordinator like Files tab)
     @EnvironmentObject private var patchDraftCoordinator: PatchDraftCoordinator
-    @EnvironmentObject private var language: LanguageManager
     
     init(app: InstalledApp) {
         self.app = app
