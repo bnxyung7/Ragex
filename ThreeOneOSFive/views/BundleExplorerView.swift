@@ -89,7 +89,7 @@ struct BundleExplorerView: View {
     private func loadApps() {
         isLoading = true
         
-        Task.detached {
+        Task.detached { @Sendable in
             // Try API first (works with exploit/jailbreak)
             var loadedApps = ContainerStore.installedAppsFromAPI()
             
@@ -784,12 +784,6 @@ struct FileSystemItem: Identifiable {
 }
 
 // MARK: - Supporting Types
-
-struct FileReplacementRequest: Identifiable {
-    let id = UUID()
-    let targetURL: URL
-    let targetName: String
-}
 
 struct BundleOperationNotice: Identifiable {
     let id = UUID()
