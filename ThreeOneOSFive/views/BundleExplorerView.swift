@@ -6,7 +6,7 @@ struct BundleExplorerView: View {
     @State private var searchText = ""
     @State private var isLoading = false
     
-    private var filteredApps: [ApplicationContainer] {
+    private var filteredApps: [InstalledApp] {
         if searchText.isEmpty {
             return containerStore.applications
         } else {
@@ -100,13 +100,13 @@ struct BundleExplorerView: View {
 }
 
 struct AppBundleRow: View {
-    let app: ApplicationContainer
+    let app: InstalledApp
     @EnvironmentObject private var themeManager: ThemeManager
     
     var body: some View {
         HStack(spacing: 12) {
             // App icon
-            if let iconImage = app.iconImage {
+            if let iconImage = app.icon {
                 Image(uiImage: iconImage)
                     .resizable()
                     .frame(width: 44, height: 44)
@@ -144,16 +144,16 @@ struct AppBundleRow: View {
 }
 
 struct AppBundleBrowserView: View {
-    let app: ApplicationContainer
+    let app: InstalledApp
     @State private var currentPath: URL
     @State private var items: [FileSystemItem] = []
     @State private var isLoading = false
     @State private var searchText = ""
     @EnvironmentObject private var themeManager: ThemeManager
     
-    init(app: ApplicationContainer) {
+    init(app: InstalledApp) {
         self.app = app
-        self._currentPath = State(initialValue: app.dataURL)
+        self._currentPath = State(initialValue: URL(fileURLWithPath: app.containerPath))
     }
     
     private var filteredItems: [FileSystemItem] {
@@ -207,7 +207,7 @@ struct AppBundleBrowserView: View {
                     }
                     
                     Section {
-                        ForEach(filteredItems) { item in
+                        ForEach(filteredItems, id: \.id) { item in
                             if item.isDirectory {
                                 NavigationLink {
                                     AppBundleBrowserView(app: app, currentPath: item.url)
@@ -225,7 +225,7 @@ struct AppBundleBrowserView: View {
                 .searchable(text: $searchText, prompt: "Search files...")
             }
         }
-        .navigationTitle(currentPath == app.dataURL ? app.displayName : currentPath.lastPathComponent)
+        .navigationTitle(currentPath.path == app.containerPath ? app.displayName : currentPath.lastPathComponent)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -241,7 +241,7 @@ struct AppBundleBrowserView: View {
         }
     }
     
-    init(app: ApplicationContainer, currentPath: URL) {
+    init(app: InstalledApp, currentPath: URL) {
         self.app = app
         self._currentPath = State(initialValue: currentPath)
     }
@@ -250,7 +250,9 @@ struct AppBundleBrowserView: View {
         isLoading = true
         
         Task.detached {
-            let contents = scanDirectory(at: currentPath)
+            let contents = await Task { 
+                scanDirectory(at: currentPath)
+            }.value
             
             await MainActor.run {
                 items = contents
