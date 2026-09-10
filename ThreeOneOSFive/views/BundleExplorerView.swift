@@ -2,15 +2,15 @@ import SwiftUI
 
 /// Bundle Explorer - Browse all installed apps like File App Data
 struct BundleExplorerView: View {
-    @EnvironmentObject private var containerStore: ContainerStore
+    @State private var apps: [InstalledApp] = []
     @State private var searchText = ""
     @State private var isLoading = false
     
     private var filteredApps: [InstalledApp] {
         if searchText.isEmpty {
-            return containerStore.applications
+            return apps
         } else {
-            return containerStore.applications.filter { app in
+            return apps.filter { app in
                 app.displayName.localizedCaseInsensitiveContains(searchText) ||
                 app.bundleID.localizedCaseInsensitiveContains(searchText)
             }
@@ -25,7 +25,7 @@ struct BundleExplorerView: View {
                 
                 if isLoading {
                     ProgressView("Loading apps...")
-                } else if containerStore.applications.isEmpty {
+                } else if apps.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "app.badge.questionmark")
                             .font(.system(size: 60))
@@ -61,7 +61,7 @@ struct BundleExplorerView: View {
                                 }
                             }
                         } header: {
-                            Text("Installed Apps (\(containerStore.applications.count))")
+                            Text("Installed Apps (\(apps.count))")
                         }
                     }
                     .searchable(text: $searchText, prompt: "Search apps...")
@@ -80,7 +80,7 @@ struct BundleExplorerView: View {
             }
         }
         .onAppear {
-            if containerStore.applications.isEmpty {
+            if apps.isEmpty {
                 loadApps()
             }
         }
@@ -89,10 +89,11 @@ struct BundleExplorerView: View {
     private func loadApps() {
         isLoading = true
         
-        Task {
-            await containerStore.refresh()
+        Task.detached {
+            let loadedApps = ContainerStore.installedAppsFromAPI()
             
             await MainActor.run {
+                apps = loadedApps
                 isLoading = false
             }
         }
@@ -101,7 +102,6 @@ struct BundleExplorerView: View {
 
 struct AppBundleRow: View {
     let app: InstalledApp
-    @EnvironmentObject private var themeManager: ThemeManager
     
     var body: some View {
         HStack(spacing: 12) {
@@ -149,7 +149,6 @@ struct AppBundleBrowserView: View {
     @State private var items: [FileSystemItem] = []
     @State private var isLoading = false
     @State private var searchText = ""
-    @EnvironmentObject private var themeManager: ThemeManager
     
     init(app: InstalledApp) {
         self.app = app
@@ -249,10 +248,8 @@ struct AppBundleBrowserView: View {
     private func loadContents() {
         isLoading = true
         
-        Task.detached {
-            let contents = await Task { 
-                scanDirectory(at: currentPath)
-            }.value
+        Task {
+            let contents = scanDirectory(at: currentPath)
             
             await MainActor.run {
                 items = contents
