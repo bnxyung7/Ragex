@@ -10,6 +10,7 @@ struct ProfileView: View {
     @State private var showKeyActivation = false
     @State private var keyInput = ""
     @State private var activationError: String?
+    @State private var isLoading = false
     
     var body: some View {
         NavigationView {
@@ -313,25 +314,28 @@ struct ProfileView: View {
     
     private func activateKey() {
         activationError = nil
+        isLoading = true
         
-        let result = keyStore.activateKey(keyInput)
-        
-        switch result {
-        case .success:
-            withAnimation {
-                showKeyActivation = false
-                keyInput = ""
+        keyStore.activateKey(keyInput) { result in
+            isLoading = false
+            
+            switch result {
+            case .success:
+                withAnimation {
+                    showKeyActivation = false
+                    keyInput = ""
+                }
+                
+                // Play activation sound
+                SoundPlayer.shared.playActivate()
+                
+            case .failure(let error):
+                activationError = error.localizedDescription
+                
+                // Haptic feedback
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.error)
             }
-            
-            // Play activation sound
-            SoundPlayer.shared.playActivate()
-            
-        case .failure(let error):
-            activationError = error.localizedDescription
-            
-            // Haptic feedback
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(.error)
         }
     }
 }

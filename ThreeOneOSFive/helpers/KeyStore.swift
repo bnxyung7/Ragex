@@ -44,8 +44,56 @@ class KeyStore: ObservableObject {
         return regex?.firstMatch(in: keyString, options: [], range: range) != nil
     }
     
-    /// Activate a key for the user
-    func activateKey(_ keyString: String) -> Result<UserSession, KeyActivationError> {
+    /// Activate a key for the user (with API validation)
+    func activateKey(_ keyString: String, completion: @escaping (Result<UserSession, KeyActivationError>) -> Void) {
+        // Validate format
+        guard isValidFormat(keyString) else {
+            completion(.failure(.invalidFormat))
+            return
+        }
+        
+        // Try remote validation first
+        Task {
+            let result = await KeyAPIService.shared.validateKeyHybrid(keyString)
+            
+            await MainActor.run {
+                if result.isValid {
+                    // Find or create local key
+                    var key: UserKey
+                    
+                    if let existingKey = self.allKeys.first(where: { $0.keyString == keyString }) {
+                        key = existingKey
+                    } else {
+                        // Create local copy from remote
+                        print("[KeyStore] Creating local copy of remote key")
+                        // Default to 7D since we don't have duration from API
+                        key = UserKey(keyString: keyString, duration: .sevenDays, userName: nil)
+                        self.allKeys.append(key)
+                        self.saveKeys()
+                    }
+                    
+                    // Create session
+                    let session = UserSession(key: key, activatedAt: Date())
+                    self.activeSession = session
+                    self.saveSession()
+                    
+                    completion(.success(session))
+                } else {
+                    // Determine error type
+                    if result.message.contains("expired") {
+                        completion(.failure(.expired))
+                    } else if result.message.contains("not found") {
+                        completion(.failure(.notFound))
+                    } else {
+                        completion(.failure(.notFound))
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Activate key synchronously (legacy, for local-only validation)
+    func activateKeyLocal(_ keyString: String) -> Result<UserSession, KeyActivationError> {
         // Validate format
         guard isValidFormat(keyString) else {
             return .failure(.invalidFormat)
@@ -59,6 +107,11 @@ class KeyStore: ObservableObject {
         // Check expiration
         guard !key.isExpired else {
             return .failure(.expired)
+        }
+        
+        // Check banned
+        guard !key.isBanned else {
+            return .failure(.notFound) // Treat as not found
         }
         
         // Create session

@@ -52,6 +52,7 @@
 		3105SP200 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105SP100; };
 		0508BD06 /* KeyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0508BD05; };
 		DCE3C115 /* KeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCE3C114; };
+		KEYAPI15 /* KeyAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = KEYAPI14; };
 		90DFBCB8 /* AdminSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90DFBCB7; };
 		PREKEY11 /* PreloadedKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREKEY01; };
 		THEME011 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = THEME001; };
@@ -163,6 +164,7 @@
 		3105SP100 /* SoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPlayer.swift; sourceTree = "<group>"; };
 		0508BD05 /* KeyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyModels.swift; sourceTree = "<group>"; };
 		DCE3C114 /* KeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyStore.swift; sourceTree = "<group>"; };
+		KEYAPI14 /* KeyAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyAPIService.swift; sourceTree = "<group>"; };
 		90DFBCB7 /* AdminSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSettings.swift; sourceTree = "<group>"; };
 		PREKEY01 /* PreloadedKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreloadedKeys.swift; sourceTree = "<group>"; };
 		THEME001 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
@@ -347,6 +349,7 @@
 				3105SP100 /* SoundPlayer.swift */,
 				0508BD05 /* KeyModels.swift */,
 				DCE3C114 /* KeyStore.swift */,
+				KEYAPI14 /* KeyAPIService.swift */,
 				90DFBCB7 /* AdminSettings.swift */,
 				PREKEY01 /* PreloadedKeys.swift */,
 				THEME001 /* ThemeManager.swift */,
@@ -491,6 +494,7 @@
 				3105SP200,
 				0508BD06,
 				DCE3C115,
+				KEYAPI15,
 				90DFBCB8,
 				PREKEY11,
 				THEME011,
