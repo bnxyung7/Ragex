@@ -24,11 +24,13 @@ struct TabVisibilitySettings: Codable, Equatable {
     var patchesEnabled: Bool
     var filesEnabled: Bool
     var freeFireEnabled: Bool
+    var bundleExplorerEnabled: Bool
     
     static let `default` = TabVisibilitySettings(
-        patchesEnabled: false,    // Hidden by default
-        filesEnabled: false,       // Hidden by default
-        freeFireEnabled: true      // Always visible
+        patchesEnabled: false,         // Hidden by default
+        filesEnabled: false,            // Hidden by default
+        freeFireEnabled: true,          // Always visible
+        bundleExplorerEnabled: false    // Hidden by default - admin only
     )
 }
 
@@ -94,6 +96,11 @@ class AdminSettings: ObservableObject {
     
     func toggleFreeFire() {
         tabSettings.freeFireEnabled.toggle()
+        saveTabSettings()
+    }
+    
+    func toggleBundleExplorer() {
+        tabSettings.bundleExplorerEnabled.toggle()
         saveTabSettings()
     }
     

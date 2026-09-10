@@ -7,6 +7,7 @@ enum AppSection: Int, CaseIterable, Identifiable {
     case freeFire = 3
     case profile = 4
     case support = 5
+    case bundleExplorer = 6
 
     var id: Int { rawValue }
 }
@@ -62,6 +63,8 @@ struct FeatureVisibility: Equatable {
             return true // Always visible
         case .support:
             return true // Always visible
+        case .bundleExplorer:
+            return tabSettings.bundleExplorerEnabled
         }
     }
 }

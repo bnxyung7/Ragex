@@ -82,6 +82,18 @@ struct AdminPanelView: View {
                     adminSettings.saveTabSettings()
                 }
                 
+                Toggle(isOn: $adminSettings.tabSettings.bundleExplorerEnabled) {
+                    HStack {
+                        Image(systemName: "folder.badge.gearshape")
+                            .foregroundStyle(adminSettings.tabSettings.bundleExplorerEnabled ? .green : .gray)
+                        Text("Bundle Explorer")
+                            .fontWeight(.medium)
+                    }
+                }
+                .onChange(of: adminSettings.tabSettings.bundleExplorerEnabled) { _ in
+                    adminSettings.saveTabSettings()
+                }
+                
             } header: {
                 Text("Control de Pestañas")
             } footer: {

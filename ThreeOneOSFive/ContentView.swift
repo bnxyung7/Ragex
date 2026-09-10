@@ -150,6 +150,8 @@ struct ContentView: View {
             ProfileView()
         case .support:
             SupportView()
+        case .bundleExplorer:
+            BundleExplorerView()
         }
     }
 
@@ -225,6 +227,7 @@ private extension AppSection {
         case .freeFire: return "Free Fire"
         case .profile: return "Perfil"
         case .support: return "Soporte"
+        case .bundleExplorer: return "Bundle"
         }
     }
 
@@ -236,6 +239,7 @@ private extension AppSection {
         case .freeFire: return "flame.fill"
         case .profile: return "person.fill"
         case .support: return "headphones.circle.fill"
+        case .bundleExplorer: return "folder.badge.gearshape"
         }
     }
 }
