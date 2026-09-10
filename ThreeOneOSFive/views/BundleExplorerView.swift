@@ -541,6 +541,24 @@ struct AppBundleBrowserView: View {
             do {
                 let fileManager = FileManager.default
                 
+                // Start accessing security-scoped resource
+                let canAccess = sourceURL.startAccessingSecurityScopedResource()
+                defer {
+                    if canAccess {
+                        sourceURL.stopAccessingSecurityScopedResource()
+                    }
+                }
+                
+                // Copy to temp location first (iOS security requirement)
+                let tempDir = fileManager.temporaryDirectory
+                let tempFile = tempDir.appendingPathComponent(UUID().uuidString).appendingPathExtension(sourceURL.pathExtension)
+                
+                if fileManager.fileExists(atPath: tempFile.path) {
+                    try? fileManager.removeItem(at: tempFile)
+                }
+                
+                try fileManager.copyItem(at: sourceURL, to: tempFile)
+                
                 // Backup original file
                 let backupURL = request.targetURL.appendingPathExtension("backup")
                 if fileManager.fileExists(atPath: backupURL.path) {
@@ -548,9 +566,12 @@ struct AppBundleBrowserView: View {
                 }
                 try fileManager.copyItem(at: request.targetURL, to: backupURL)
                 
-                // Replace file
+                // Replace file with temp file
                 try fileManager.removeItem(at: request.targetURL)
-                try fileManager.copyItem(at: sourceURL, to: request.targetURL)
+                try fileManager.copyItem(at: tempFile, to: request.targetURL)
+                
+                // Clean up temp file
+                try? fileManager.removeItem(at: tempFile)
                 
                 await MainActor.run {
                     activityText = nil
@@ -782,8 +803,9 @@ struct BundleFileDocumentPicker: UIViewControllerRepresentable {
     let onCancel: () -> Void
     
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item])
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item, .data, .content])
         picker.allowsMultipleSelection = allowsMultipleSelection
+        picker.shouldShowFileExtensions = true
         picker.delegate = context.coordinator
         return picker
     }
