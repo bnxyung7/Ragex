@@ -89,7 +89,7 @@ struct BundleExplorerView: View {
     private func loadApps() {
         isLoading = true
         
-        Task.detached { @Sendable in
+        Task { @MainActor in
             // Try API first (works with exploit/jailbreak)
             var loadedApps = ContainerStore.installedAppsFromAPI()
             
@@ -112,10 +112,8 @@ struct BundleExplorerView: View {
                 ]
             }
             
-            await MainActor.run {
-                apps = loadedApps
-                isLoading = false
-            }
+            apps = loadedApps
+            isLoading = false
         }
     }
     
@@ -636,16 +634,12 @@ struct AppBundleBrowserView: View {
         switch error {
         case .invalidProject:
             message = "Invalid patch project structure"
-        case .archiveFailure:
-            message = "Failed to create patch archive"
-        case .compressionFailure:
-            message = "Failed to compress patch"
-        case .encryptionFailure:
-            message = "Failed to encrypt patch"
-        case .missingBundleIdentifier:
-            message = "Missing bundle identifier"
         case .unsupportedFormat:
             message = "Unsupported file format"
+        case .invalidBundleIdentifier:
+            message = "Invalid bundle identifier"
+        default:
+            message = "Failed to create patch: \(error.localizedDescription)"
         }
         
         replacementNotice = BundleOperationNotice(
