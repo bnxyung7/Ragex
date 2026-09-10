@@ -95,7 +95,7 @@ struct BundleExplorerView: View {
             
             // If API returns empty, use filesystem scan (works without jailbreak)
             if loadedApps.isEmpty {
-                loadedApps = ContainerStore.containersFromFilesystem()
+                loadedApps = await scanAppsFromFilesystem()
             }
             
             // Final fallback: at least show current app
@@ -117,6 +117,45 @@ struct BundleExplorerView: View {
                 isLoading = false
             }
         }
+    }
+    
+    private func scanAppsFromFilesystem() async -> [InstalledApp] {
+        let appDataRoot = "/var/mobile/Containers/Data/Application"
+        let fileManager = FileManager.default
+        var apps: [InstalledApp] = []
+        
+        // Get all container directories
+        guard let containers = try? fileManager.contentsOfDirectory(atPath: appDataRoot) else {
+            return []
+        }
+        
+        for containerUUID in containers {
+            // Verify it's a valid UUID
+            guard UUID(uuidString: containerUUID) != nil else { continue }
+            
+            let containerPath = "\(appDataRoot)/\(containerUUID)"
+            
+            // Try to read metadata plist
+            let metadataPath = "\(containerPath)/.com.apple.mobile_container_manager.metadata.plist"
+            
+            if let metadataData = try? Data(contentsOf: URL(fileURLWithPath: metadataPath)),
+               let metadata = try? PropertyListSerialization.propertyList(from: metadataData, format: nil) as? [String: Any],
+               let bundleID = metadata["MCMMetadataIdentifier"] as? String {
+                
+                // Get display name from metadata or use bundle ID
+                let displayName = (metadata["MCMMetadataInfo"] as? [String: Any])?["DisplayName"] as? String ?? bundleID
+                
+                apps.append(InstalledApp(
+                    bundleID: bundleID,
+                    name: displayName,
+                    containerPath: containerPath,
+                    version: "",
+                    icon: nil
+                ))
+            }
+        }
+        
+        return apps.sorted { $0.displayName < $1.displayName }
     }
 }
 
