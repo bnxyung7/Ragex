@@ -120,48 +120,58 @@ struct BundleExplorerView: View {
     }
     
     private func scanAppsFromFilesystem() async -> [InstalledApp] {
-        let appDataRoot = "/var/mobile/Containers/Data/Application"
-        let fileManager = FileManager.default
         var apps: [InstalledApp] = []
+        let fileManager = FileManager.default
         
-        // Get all container directories
-        guard let containers = try? fileManager.contentsOfDirectory(atPath: appDataRoot) else {
-            return []
-        }
+        // Scan both Data containers AND Bundle containers
+        let roots = [
+            "/var/mobile/Containers/Data/Application",  // Data containers
+            "/var/containers/Bundle/Application"         // App bundles (Free Fire, etc.)
+        ]
         
-        for containerUUID in containers {
-            // Verify it's a valid UUID
-            guard UUID(uuidString: containerUUID) != nil else { continue }
-            
-            let containerPath = "\(appDataRoot)/\(containerUUID)"
-            
-            // Grant access to this container using bad_query
-            let handle = grantContainerAccess(containerPath)
-            defer {
-                if handle >= 0 { bad_query_release(handle) }
+        for appDataRoot in roots {
+            // Get all container directories
+            guard let containers = try? fileManager.contentsOfDirectory(atPath: appDataRoot) else {
+                continue
             }
             
-            // Try to read metadata plist
-            let metadataPath = "\(containerPath)/.com.apple.mobile_container_manager.metadata.plist"
-            
-            if let metadataData = try? Data(contentsOf: URL(fileURLWithPath: metadataPath)),
-               let metadata = try? PropertyListSerialization.propertyList(from: metadataData, format: nil) as? [String: Any],
-               let bundleID = metadata["MCMMetadataIdentifier"] as? String {
+            for containerUUID in containers {
+                // Verify it's a valid UUID
+                guard UUID(uuidString: containerUUID) != nil else { continue }
                 
-                // Get display name from metadata or use bundle ID
-                var displayName = bundleID
-                if let metadataInfo = metadata["MCMMetadataInfo"] as? [String: Any],
-                   let name = metadataInfo["DisplayName"] as? String, !name.isEmpty {
-                    displayName = name
+                let containerPath = "\(appDataRoot)/\(containerUUID)"
+                
+                // Grant access to this container using bad_query
+                let handle = grantContainerAccess(containerPath)
+                defer {
+                    if handle >= 0 { bad_query_release(handle) }
                 }
                 
-                apps.append(InstalledApp(
-                    bundleID: bundleID,
-                    name: displayName,
-                    containerPath: containerPath,
-                    version: "",
-                    icon: nil
-                ))
+                // Try to read metadata plist
+                let metadataPath = "\(containerPath)/.com.apple.mobile_container_manager.metadata.plist"
+                
+                if let metadataData = try? Data(contentsOf: URL(fileURLWithPath: metadataPath)),
+                   let metadata = try? PropertyListSerialization.propertyList(from: metadataData, format: nil) as? [String: Any],
+                   let bundleID = metadata["MCMMetadataIdentifier"] as? String {
+                    
+                    // Get display name from metadata or use bundle ID
+                    var displayName = bundleID
+                    if let metadataInfo = metadata["MCMMetadataInfo"] as? [String: Any],
+                       let name = metadataInfo["DisplayName"] as? String, !name.isEmpty {
+                        displayName = name
+                    }
+                    
+                    // Check if we already have this bundleID (avoid duplicates)
+                    if !apps.contains(where: { $0.bundleID == bundleID }) {
+                        apps.append(InstalledApp(
+                            bundleID: bundleID,
+                            name: displayName,
+                            containerPath: containerPath,
+                            version: "",
+                            icon: nil
+                        ))
+                    }
+                }
             }
         }
         
