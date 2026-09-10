@@ -1001,40 +1001,8 @@ private struct PatchProjectDetailView: View {
     private func apply() {
         guard let item, let baseProject = item.project else { return }
         
-        // Check for conflicts with other applied patches
-        let conflicts = DevicePatchService.detectConflicts(
-            project: baseProject,
-            allItems: store.items
-        )
-        
-        if !conflicts.isEmpty {
-            // Auto-resolve conflicts: restore conflicting patches and apply
-            isWorking = true
-            Task.detached(priority: .userInitiated) {
-                do {
-                    // Restore all conflicting patches
-                    for conflict in conflicts {
-                        try DevicePatchService.restore(receipt: conflict.receipt, allowChangedTargets: true)
-                    }
-                    
-                    // Now apply the new patch
-                    await MainActor.run {
-                        performApply()
-                    }
-                } catch {
-                    await MainActor.run {
-                        isWorking = false
-                        actionAlert = PatchStoreAlert(
-                            titleKey: "common.failed",
-                            messageKey: "patch.error.restore"
-                        )
-                    }
-                }
-            }
-            return
-        }
-        
-        // No conflicts, apply directly
+        // Skip conflict detection - allow multiple patches to be active simultaneously
+        // No need to restore conflicting patches, just apply on top
         performApply()
     }
     
