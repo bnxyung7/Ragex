@@ -370,7 +370,7 @@ struct AppBundleBrowserView: View {
             loadContents()
         }
         .sheet(item: $replacementRequest) { (request: FileReplacementRequest) in
-            FileDocumentPicker(
+            BundleFileDocumentPicker(
                 allowsMultipleSelection: false,
                 onSelection: { result in
                     handleReplacementImport(result, request: request)
@@ -797,7 +797,7 @@ struct BundleOperationNotice: Identifiable {
     let message: String
 }
 
-struct FileDocumentPicker: UIViewControllerRepresentable {
+struct BundleFileDocumentPicker: UIViewControllerRepresentable {
     let allowsMultipleSelection: Bool
     let onSelection: (Result<[URL], Error>) -> Void
     let onCancel: () -> Void
@@ -816,9 +816,9 @@ struct FileDocumentPicker: UIViewControllerRepresentable {
     }
     
     class Coordinator: NSObject, UIDocumentPickerDelegate {
-        let parent: FileDocumentPicker
+        let parent: BundleFileDocumentPicker
         
-        init(_ parent: FileDocumentPicker) {
+        init(_ parent: BundleFileDocumentPicker) {
             self.parent = parent
         }
         
