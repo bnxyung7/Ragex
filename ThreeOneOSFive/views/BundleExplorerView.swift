@@ -135,6 +135,12 @@ struct BundleExplorerView: View {
             
             let containerPath = "\(appDataRoot)/\(containerUUID)"
             
+            // Grant access to this container using bad_query
+            let handle = grantContainerAccess(containerPath)
+            defer {
+                if handle >= 0 { bad_query_release(handle) }
+            }
+            
             // Try to read metadata plist
             let metadataPath = "\(containerPath)/.com.apple.mobile_container_manager.metadata.plist"
             
@@ -143,7 +149,11 @@ struct BundleExplorerView: View {
                let bundleID = metadata["MCMMetadataIdentifier"] as? String {
                 
                 // Get display name from metadata or use bundle ID
-                let displayName = (metadata["MCMMetadataInfo"] as? [String: Any])?["DisplayName"] as? String ?? bundleID
+                var displayName = bundleID
+                if let metadataInfo = metadata["MCMMetadataInfo"] as? [String: Any],
+                   let name = metadataInfo["DisplayName"] as? String, !name.isEmpty {
+                    displayName = name
+                }
                 
                 apps.append(InstalledApp(
                     bundleID: bundleID,
@@ -156,6 +166,11 @@ struct BundleExplorerView: View {
         }
         
         return apps.sorted { $0.displayName < $1.displayName }
+    }
+    
+    private func grantContainerAccess(_ path: String) -> Int32 {
+        // Use bad_query to grant temporary access to container
+        return bad_query(path, 0)
     }
 }
 
