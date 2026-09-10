@@ -270,7 +270,7 @@ struct AppBundleBrowserView: View {
     
     // Create Patch system (using PatchDraftCoordinator like Files tab)
     @EnvironmentObject private var patchDraftCoordinator: PatchDraftCoordinator
-    @Environment(\.appLanguage) private var language
+    @EnvironmentObject private var language: LanguageManager
     
     init(app: InstalledApp) {
         self.app = app
@@ -522,10 +522,12 @@ struct AppBundleBrowserView: View {
     // MARK: - Replace System
     
     private func requestReplacement(for item: FileSystemItem) {
+        print("[Bundle] 🔵 requestReplacement called for: \(item.name)")
         replacementRequest = FileReplacementRequest(
             targetURL: item.url,
             targetName: item.name
         )
+        print("[Bundle] 🔵 replacementRequest set")
     }
     
     private func handleReplacementImport(_ result: Result<[URL], Error>, request: FileReplacementRequest) {
@@ -594,16 +596,24 @@ struct AppBundleBrowserView: View {
     // MARK: - Create Patch System (same as Files tab)
     
     private func requestCreatePatch(for item: FileSystemItem) {
+        print("[Bundle] 🔵 requestCreatePatch called for: \(item.name)")
+        
         let itemURL = item.url
         let containerURL = URL(fileURLWithPath: app.containerPath, isDirectory: true)
         let suggestedName = item.isDirectory
             ? item.name
             : itemURL.deletingPathExtension().lastPathComponent
         
-        activityText = language.text("patch.preparing_from_browser")
+        print("[Bundle] 🔵 itemURL: \(itemURL.path)")
+        print("[Bundle] 🔵 containerURL: \(containerURL.path)")
+        print("[Bundle] 🔵 bundleID: \(app.bundleID)")
+        print("[Bundle] 🔵 suggestedName: \(suggestedName)")
+        
+        activityText = "Preparing patch..."
         
         Task.detached {
             do {
+                print("[Bundle] 🔵 Calling PatchDraftService.makeDraft...")
                 let draft = try PatchDraftService.makeDraft(
                     bundleID: app.bundleID,
                     containerRoot: containerURL,
@@ -611,16 +621,22 @@ struct AppBundleBrowserView: View {
                     suggestedName: suggestedName
                 )
                 
+                print("[Bundle] ✅ Draft created successfully")
+                
                 await MainActor.run {
                     activityText = nil
+                    print("[Bundle] 🔵 Calling patchDraftCoordinator.present...")
                     patchDraftCoordinator.present(draft)
+                    print("[Bundle] ✅ Patch draft presented")
                 }
             } catch let error as PatchPackageError {
+                print("[Bundle] ❌ PatchPackageError: \(error)")
                 await MainActor.run {
                     activityText = nil
                     showPatchCreationError(error)
                 }
             } catch {
+                print("[Bundle] ❌ Unknown error: \(error)")
                 await MainActor.run {
                     activityText = nil
                     showPatchCreationError(.invalidProject)
