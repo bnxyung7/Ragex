@@ -30,7 +30,7 @@ struct TabVisibilitySettings: Codable, Equatable {
         patchesEnabled: false,         // Hidden by default
         filesEnabled: false,            // Hidden by default
         freeFireEnabled: true,          // Always visible
-        bundleExplorerEnabled: false    // Hidden by default - admin only
+        bundleExplorerEnabled: true     // Visible by default (public access)
     )
 }
 
