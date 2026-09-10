@@ -123,46 +123,75 @@ struct BundleExplorerView: View {
         var apps: [InstalledApp] = []
         let fileManager = FileManager.default
         
-        // Scan both Data containers AND Bundle containers
-        let roots = [
-            "/var/mobile/Containers/Data/Application",  // Data containers
-            "/var/containers/Bundle/Application"         // App bundles (Free Fire, etc.)
-        ]
+        // Scan Bundle containers first (FreeFire.app, etc.)
+        let bundleRoot = "/var/containers/Bundle/Application"
         
-        for appDataRoot in roots {
-            // Get all container directories
-            guard let containers = try? fileManager.contentsOfDirectory(atPath: appDataRoot) else {
-                continue
-            }
-            
-            for containerUUID in containers {
-                // Verify it's a valid UUID
+        if let bundleContainers = try? fileManager.contentsOfDirectory(atPath: bundleRoot) {
+            for containerUUID in bundleContainers {
                 guard UUID(uuidString: containerUUID) != nil else { continue }
                 
-                let containerPath = "\(appDataRoot)/\(containerUUID)"
-                
-                // Grant access to this container using bad_query
+                let containerPath = "\(bundleRoot)/\(containerUUID)"
                 let handle = grantContainerAccess(containerPath)
                 defer {
                     if handle >= 0 { bad_query_release(handle) }
                 }
                 
-                // Try to read metadata plist
-                let metadataPath = "\(containerPath)/.com.apple.mobile_container_manager.metadata.plist"
+                // Find the .app folder inside
+                if let contents = try? fileManager.contentsOfDirectory(atPath: containerPath) {
+                    for item in contents {
+                        if item.hasSuffix(".app") {
+                            let appPath = "\(containerPath)/\(item)"
+                            
+                            // Read Info.plist to get bundle ID and name
+                            let infoPlistPath = "\(appPath)/Info.plist"
+                            if let plistData = try? Data(contentsOf: URL(fileURLWithPath: infoPlistPath)),
+                               let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
+                               let bundleID = plist["CFBundleIdentifier"] as? String {
+                                
+                                let displayName = plist["CFBundleDisplayName"] as? String 
+                                    ?? plist["CFBundleName"] as? String 
+                                    ?? item.replacingOccurrences(of: ".app", with: "")
+                                
+                                apps.append(InstalledApp(
+                                    bundleID: bundleID,
+                                    name: displayName,
+                                    containerPath: appPath,  // Point to FreeFire.app
+                                    version: plist["CFBundleShortVersionString"] as? String ?? "",
+                                    icon: nil
+                                ))
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Also scan Data containers for apps without bundles
+        let dataRoot = "/var/mobile/Containers/Data/Application"
+        if let dataContainers = try? fileManager.contentsOfDirectory(atPath: dataRoot) {
+            for containerUUID in dataContainers {
+                guard UUID(uuidString: containerUUID) != nil else { continue }
                 
+                let containerPath = "\(dataRoot)/\(containerUUID)"
+                let handle = grantContainerAccess(containerPath)
+                defer {
+                    if handle >= 0 { bad_query_release(handle) }
+                }
+                
+                let metadataPath = "\(containerPath)/.com.apple.mobile_container_manager.metadata.plist"
                 if let metadataData = try? Data(contentsOf: URL(fileURLWithPath: metadataPath)),
                    let metadata = try? PropertyListSerialization.propertyList(from: metadataData, format: nil) as? [String: Any],
                    let bundleID = metadata["MCMMetadataIdentifier"] as? String {
                     
-                    // Get display name from metadata or use bundle ID
-                    var displayName = bundleID
-                    if let metadataInfo = metadata["MCMMetadataInfo"] as? [String: Any],
-                       let name = metadataInfo["DisplayName"] as? String, !name.isEmpty {
-                        displayName = name
-                    }
-                    
-                    // Check if we already have this bundleID (avoid duplicates)
+                    // Only add if not already in list
                     if !apps.contains(where: { $0.bundleID == bundleID }) {
+                        var displayName = bundleID
+                        if let metadataInfo = metadata["MCMMetadataInfo"] as? [String: Any],
+                           let name = metadataInfo["DisplayName"] as? String, !name.isEmpty {
+                            displayName = name
+                        }
+                        
                         apps.append(InstalledApp(
                             bundleID: bundleID,
                             name: displayName,
