@@ -265,6 +265,16 @@ struct AppBundleBrowserView: View {
     @State private var isLoading = false
     @State private var searchText = ""
     
+    // Replace system
+    @State private var replacementRequest: FileReplacementRequest?
+    @State private var replacementNotice: BundleOperationNotice?
+    @State private var activityText: String?
+    
+    // Create Patch system
+    @State private var patchCreationItem: FileSystemItem?
+    @State private var patchName: String = ""
+    @State private var showPatchNamePrompt = false
+    
     init(app: InstalledApp) {
         self.app = app
         self._currentPath = State(initialValue: URL(fileURLWithPath: app.containerPath))
@@ -359,6 +369,61 @@ struct AppBundleBrowserView: View {
         .onAppear {
             loadContents()
         }
+        .sheet(item: $replacementRequest) { request in
+            FileDocumentPicker(
+                allowsMultipleSelection: false,
+                onSelection: { result in
+                    handleReplacementImport(result, request: request)
+                    replacementRequest = nil
+                },
+                onCancel: {
+                    replacementRequest = nil
+                }
+            )
+        }
+        .alert("Create Patch", isPresented: $showPatchNamePrompt) {
+            TextField("Patch name (without .3105)", text: $patchName)
+                .autocapitalization(.none)
+            Button("Create") {
+                if let item = patchCreationItem {
+                    createPatch(from: item)
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                patchCreationItem = nil
+                patchName = ""
+            }
+        } message: {
+            Text("Enter name for the patch file")
+        }
+        .alert(item: $replacementNotice) { notice in
+            Alert(
+                title: Text(notice.title),
+                message: Text(notice.message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+        .overlay {
+            if let text = activityText {
+                ZStack {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                    
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .tint(.white)
+                        Text(text)
+                            .foregroundStyle(.white)
+                            .font(.subheadline)
+                    }
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.systemGray))
+                    )
+                }
+            }
+        }
     }
     
     init(app: InstalledApp, currentPath: URL) {
@@ -430,12 +495,30 @@ struct AppBundleBrowserView: View {
     
     @ViewBuilder
     private func fileActions(for item: FileSystemItem) -> some View {
+        // Replace (only for files)
+        if !item.isDirectory {
+            Button {
+                requestReplacement(for: item)
+            } label: {
+                Label("Replace", systemImage: "arrow.triangle.2.circlepath")
+            }
+        }
+        
+        // Create Patch (only for files)
+        if !item.isDirectory {
+            Button {
+                requestCreatePatch(for: item)
+            } label: {
+                Label("Create Patch", systemImage: "shippingbox.fill")
+            }
+        }
+        
+        Divider()
+        
         // Share
         ShareLink(item: item.url) {
             Label("Share", systemImage: "square.and.arrow.up")
         }
-        
-        Divider()
         
         // Copy path to clipboard
         Button {
@@ -444,23 +527,148 @@ struct AppBundleBrowserView: View {
             Label("Copy Path", systemImage: "doc.on.doc")
         }
         
-        // Create Patch (for files only)
-        if !item.isDirectory {
-            Button {
-                // TODO: Implement create patch from this file
-            } label: {
-                Label("Create Patch", systemImage: "shippingbox")
-            }
-        }
-        
         Divider()
         
         // View Info
         Button {
-            // TODO: Show file info (size, dates, permissions)
+            showFileInfo(for: item)
         } label: {
             Label("Info", systemImage: "info.circle")
         }
+    }
+    
+    // MARK: - Replace System
+    
+    private func requestReplacement(for item: FileSystemItem) {
+        replacementRequest = FileReplacementRequest(
+            targetURL: item.url,
+            targetName: item.name
+        )
+    }
+    
+    private func handleReplacementImport(_ result: Result<[URL], Error>, request: FileReplacementRequest) {
+        guard case .success(let urls) = result, let sourceURL = urls.first else {
+            return
+        }
+        
+        activityText = "Replacing file..."
+        
+        Task.detached {
+            do {
+                let fileManager = FileManager.default
+                
+                // Backup original file
+                let backupURL = request.targetURL.appendingPathExtension("backup")
+                if fileManager.fileExists(atPath: backupURL.path) {
+                    try? fileManager.removeItem(at: backupURL)
+                }
+                try fileManager.copyItem(at: request.targetURL, to: backupURL)
+                
+                // Replace file
+                try fileManager.removeItem(at: request.targetURL)
+                try fileManager.copyItem(at: sourceURL, to: request.targetURL)
+                
+                await MainActor.run {
+                    activityText = nil
+                    replacementNotice = BundleOperationNotice(
+                        title: "Success",
+                        message: "File '\(request.targetName)' replaced successfully.\nBackup saved as '\(request.targetName).backup'"
+                    )
+                    loadContents()
+                }
+            } catch {
+                await MainActor.run {
+                    activityText = nil
+                    replacementNotice = BundleOperationNotice(
+                        title: "Error",
+                        message: "Failed to replace file: \(error.localizedDescription)"
+                    )
+                }
+            }
+        }
+    }
+    
+    // MARK: - Create Patch System
+    
+    private func requestCreatePatch(for item: FileSystemItem) {
+        patchCreationItem = item
+        patchName = item.name.replacingOccurrences(of: ".\(item.url.pathExtension)", with: "")
+        showPatchNamePrompt = true
+    }
+    
+    private func createPatch(from item: FileSystemItem) {
+        guard !patchName.isEmpty else { return }
+        
+        activityText = "Creating patch..."
+        
+        Task.detached {
+            do {
+                let fileManager = FileManager.default
+                
+                // Get Documents directory
+                let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                let patchesFolder = documentsURL.appendingPathComponent("Patches")
+                
+                // Create Patches folder if needed
+                if !fileManager.fileExists(atPath: patchesFolder.path) {
+                    try fileManager.createDirectory(at: patchesFolder, withIntermediateDirectories: true)
+                }
+                
+                // Create patch file with .3105 extension
+                let cleanName = patchName.replacingOccurrences(of: ".3105", with: "")
+                let patchURL = patchesFolder.appendingPathComponent("\(cleanName).3105")
+                
+                // Copy source file to patch location
+                if fileManager.fileExists(atPath: patchURL.path) {
+                    try fileManager.removeItem(at: patchURL)
+                }
+                try fileManager.copyItem(at: item.url, to: patchURL)
+                
+                await MainActor.run {
+                    activityText = nil
+                    replacementNotice = BundleOperationNotice(
+                        title: "Patch Created",
+                        message: "Patch '\(cleanName).3105' created successfully in Documents/Patches/\n\nYou can now use it in Free Fire tab."
+                    )
+                    patchCreationItem = nil
+                    patchName = ""
+                }
+            } catch {
+                await MainActor.run {
+                    activityText = nil
+                    replacementNotice = BundleOperationNotice(
+                        title: "Error",
+                        message: "Failed to create patch: \(error.localizedDescription)"
+                    )
+                    patchCreationItem = nil
+                    patchName = ""
+                }
+            }
+        }
+    }
+    
+    private func showFileInfo(for item: FileSystemItem) {
+        let sizeText = formatFileSize(item.size)
+        let dateText = item.modificationDate.map { formatDate($0) } ?? "Unknown"
+        let pathText = item.url.path
+        
+        replacementNotice = BundleOperationNotice(
+            title: item.name,
+            message: "Size: \(sizeText)\nModified: \(dateText)\nPath: \(pathText)"
+        )
+    }
+    
+    private func formatFileSize(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
 
@@ -572,4 +780,53 @@ struct FileSystemItem: Identifiable {
     let size: Int64
     let isDirectory: Bool
     let modificationDate: Date?
+}
+
+// MARK: - Supporting Types
+
+struct FileReplacementRequest: Identifiable {
+    let id = UUID()
+    let targetURL: URL
+    let targetName: String
+}
+
+struct BundleOperationNotice: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+}
+
+struct FileDocumentPicker: UIViewControllerRepresentable {
+    let allowsMultipleSelection: Bool
+    let onSelection: (Result<[URL], Error>) -> Void
+    let onCancel: () -> Void
+    
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item])
+        picker.allowsMultipleSelection = allowsMultipleSelection
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let parent: FileDocumentPicker
+        
+        init(_ parent: FileDocumentPicker) {
+            self.parent = parent
+        }
+        
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            parent.onSelection(.success(urls))
+        }
+        
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            parent.onCancel()
+        }
+    }
 }
