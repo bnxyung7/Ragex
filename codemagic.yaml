@@ -295,7 +295,7 @@ workflows:
         XCODE_SCHEME: X
         BUNDLE_ID: com.apple.mobile.MobileHouseArrest
       ios_signing:
-        distribution_type: adhoc
+        distribution_type: ad_hoc
         bundle_identifier: com.apple.mobile.MobileHouseArrest
 
     triggering:
