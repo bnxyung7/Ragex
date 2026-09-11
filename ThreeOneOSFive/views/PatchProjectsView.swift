@@ -999,7 +999,7 @@ private struct PatchProjectDetailView: View {
     }
 
     private func apply() {
-        guard let item, let baseProject = item.project else { return }
+        guard let item, let _ = item.project else { return }
         
         // Skip conflict detection - allow multiple patches to be active simultaneously
         // No need to restore conflicting patches, just apply on top

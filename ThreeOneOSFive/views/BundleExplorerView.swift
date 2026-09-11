@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Bundle Explorer - Browse all installed apps like File App Data
 struct BundleExplorerView: View {
+    @EnvironmentObject private var appState: AppState
     @State private var apps: [InstalledApp] = []
     @State private var searchText = ""
     @State private var isLoading = false
@@ -91,7 +92,6 @@ struct BundleExplorerView: View {
         
         Task { @MainActor in
             // Make sure exploit is running first
-            let appState = AppState.shared
             if appState.exploitStatus != .success(method: "kexploit") && !appState.kernelExploitRunning {
                 print("[Bundle] ⚠️ Exploit not running, triggering now...")
                 appState.runKernelExploitIfNeeded()
