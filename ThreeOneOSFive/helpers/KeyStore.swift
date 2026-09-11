@@ -62,10 +62,11 @@ class KeyStore: ObservableObject {
             
             while attempts < maxAttempts {
                 do {
-                    let remoteKey = try await KeyAPIService.shared.createKeyFromIPA(
+                    let deviceName = await MainActor.run { UIDevice.current.name }
+                    _ = try await KeyAPIService.shared.createKeyFromIPA(
                         keyString: keyString,
                         duration: duration.rawValue,
-                        userName: userName ?? UIDevice.current.name
+                        userName: userName ?? deviceName
                     )
                     print("[KeyStore] ✅ Key registered on server: \(keyString)")
                     break
@@ -132,10 +133,11 @@ class KeyStore: ObservableObject {
             // Key doesn't exist, create it
             print("[KeyStore] 📤 Key not found on server, registering...")
             do {
+                let deviceName = await MainActor.run { UIDevice.current.name }
                 _ = try await KeyAPIService.shared.createKeyFromIPA(
                     keyString: keyString,
                     duration: duration.rawValue,
-                    userName: UIDevice.current.name
+                    userName: deviceName
                 )
                 print("[KeyStore] ✅ Key registered successfully")
             } catch {

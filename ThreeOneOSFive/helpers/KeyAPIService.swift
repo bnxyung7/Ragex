@@ -83,12 +83,8 @@ class KeyAPIService {
         let decoder = JSONDecoder()
         let createResponse = try decoder.decode(CreateKeyResponse.self, from: data)
         
-        guard let keyInfo = createResponse.key else {
-            throw KeyAPIError.invalidResponse
-        }
-        
-        print("✅ Key created on server: \(keyInfo.keyString)")
-        return keyInfo
+        print("✅ Key created on server: \(createResponse.key.keyString)")
+        return createResponse.key
     }
     
     /// Create a new key on the server (legacy method for backward compatibility)
