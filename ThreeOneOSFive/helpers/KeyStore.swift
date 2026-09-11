@@ -25,13 +25,29 @@ class KeyStore: ObservableObject {
         return "\(prefix)-\(part1)-\(part2)"
     }
     
-    /// Create a new key
+    /// Create a new key (local + remote API)
     func createKey(duration: KeyDuration, userName: String? = nil) -> UserKey {
         let keyString = generateKey()
         let key = UserKey(keyString: keyString, duration: duration, userName: userName)
         
+        // Save locally
         allKeys.append(key)
         saveKeys()
+        
+        // Also send to API for cross-device validation
+        Task {
+            do {
+                try await KeyAPIService.shared.createKeyOnServer(
+                    keyString: keyString,
+                    duration: duration.rawValue,
+                    userName: userName
+                )
+                print("[KeyStore] Key created on server: \(keyString)")
+            } catch {
+                print("[KeyStore] Failed to create key on server: \(error.localizedDescription)")
+                // Key is still valid locally even if API fails
+            }
+        }
         
         return key
     }
@@ -377,3 +393,4 @@ enum KeyActivationError: LocalizedError {
         }
     }
 }
+    

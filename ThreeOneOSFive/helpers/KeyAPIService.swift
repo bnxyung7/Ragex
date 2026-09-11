@@ -33,6 +33,52 @@ class KeyAPIService {
         let isValid: Bool
     }
     
+    struct CreateKeyResponse: Codable {
+        let success: Bool
+        let message: String
+        let key: RemoteKeyInfo
+    }
+    
+    // MARK: - Create Key
+    
+    /// Create a new key on the server
+    func createKeyOnServer(keyString: String, duration: String, userName: String?) async throws {
+        let url = URL(string: "\(baseURL)/keys/create")!
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Build request body
+        var body: [String: Any] = [
+            "duration": duration
+        ]
+        
+        if let userName = userName {
+            body["userName"] = userName
+        }
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw KeyAPIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 201 || httpResponse.statusCode == 200 else {
+            throw KeyAPIError.httpError(statusCode: httpResponse.statusCode)
+        }
+        
+        // Decode response to verify success
+        let decoder = JSONDecoder()
+        let createResponse = try decoder.decode(CreateKeyResponse.self, from: data)
+        
+        if !createResponse.success {
+            throw KeyAPIError.invalidResponse
+        }
+    }
+    
     // MARK: - Validate Key
     
     /// Validate a key against the remote API
