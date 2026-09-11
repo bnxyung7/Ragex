@@ -57,14 +57,15 @@ struct ProfileView: View {
                 // Active key info
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Image(systemName: session.key.isBanned ? "lock.fill" : "checkmark.circle.fill")
-                            .foregroundStyle(session.key.isBanned ? .orange : .green)
+                        Image(systemName: session.key.isBanned ? "xmark.octagon.fill" : "checkmark.circle.fill")
+                            .foregroundStyle(session.key.isBanned ? .red : .green)
                             .font(.title2)
                         
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(session.key.isBanned ? "Free Fire Baneado" : "Free Fire Activo")
+                            Text(session.key.isBanned ? "⛔ ACCESO BANEADO" : "Free Fire Activo")
                                 .font(.headline)
-                            Text(session.key.isBanned ? "Tu Key ha sido baneada" : "Tu Key está activa")
+                                .foregroundStyle(session.key.isBanned ? .red : .primary)
+                            Text(session.key.isBanned ? "Tu Key ha sido inhabilitada por la administración" : "Tu Key está activa")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -224,7 +225,7 @@ struct ProfileView: View {
         } header: {
             Text("Activación")
         } footer: {
-            Text("Introduce tu Key en formato: JUSTINRAGEX-XXX-XXX")
+            Text("Introduce tu Key estándar o personalizada asignada")
         }
     }
     
@@ -373,7 +374,7 @@ struct KeyActivationSheet: View {
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
                     
-                    TextField("JUSTINRAGEX-XXX-XXX", text: $keyInput)
+                    TextField("Ej: JUSTINRAGEX-001-002 o TU-KEY", text: $keyInput)
                         .textFieldStyle(.roundedBorder)
                         .textInputAutocapitalization(.characters)
                         .font(.system(.body, design: .monospaced))

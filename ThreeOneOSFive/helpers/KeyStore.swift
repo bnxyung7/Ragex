@@ -98,18 +98,22 @@ class KeyStore: ObservableObject {
         return key
     }
     
-    /// Validate key format
+    /// Validate key format - supports standard JUSTINRAGEX-XXX-XXX and custom keys
     func isValidFormat(_ keyString: String) -> Bool {
-        let pattern = "^JUSTINRAGEX-\\d{3}-\\d{3}$"
+        let trimmed = keyString.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard trimmed.count >= 3 && trimmed.count <= 64 else { return false }
+        let pattern = "^[A-Z0-9_-]{3,64}$"
         let regex = try? NSRegularExpression(pattern: pattern)
-        let range = NSRange(keyString.startIndex..., in: keyString)
-        return regex?.firstMatch(in: keyString, options: [], range: range) != nil
+        let range = NSRange(trimmed.startIndex..., in: trimmed)
+        return regex?.firstMatch(in: trimmed, options: [], range: range) != nil
     }
     
     /// Activate a key for the user (with API validation and device binding)
     func activateKey(_ keyString: String, completion: @escaping (Result<UserSession, KeyActivationError>) -> Void) {
+        let cleanKey = keyString.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        
         // Validate format
-        guard isValidFormat(keyString) else {
+        guard isValidFormat(cleanKey) else {
             completion(.failure(.invalidFormat))
             return
         }
@@ -117,18 +121,18 @@ class KeyStore: ObservableObject {
         let deviceId = getDeviceId()
         
         // Check if key exists locally first
-        if let localKey = allKeys.first(where: { $0.keyString == keyString }) {
+        if let localKey = allKeys.first(where: { $0.keyString == cleanKey }) {
             // Ensure it's registered on server
             Task {
-                await self.ensureKeyExistsOnServer(keyString, duration: localKey.duration)
+                await self.ensureKeyExistsOnServer(cleanKey, duration: localKey.duration)
                 
                 // Now proceed with normal validation
-                await self.validateAndActivateRemotely(keyString: keyString, deviceId: deviceId, completion: completion)
+                await self.validateAndActivateRemotely(keyString: cleanKey, deviceId: deviceId, completion: completion)
             }
         } else {
             // Not a local key, just validate remotely
             Task {
-                await self.validateAndActivateRemotely(keyString: keyString, deviceId: deviceId, completion: completion)
+                await self.validateAndActivateRemotely(keyString: cleanKey, deviceId: deviceId, completion: completion)
             }
         }
     }
@@ -187,7 +191,14 @@ class KeyStore: ObservableObject {
                     }
                 } else {
                     // Determine error type
-                    if let reason = validationResult.reason {
+                    let isBanned = validationResult.isBanned == true ||
+                        (validationResult.reason?.lowercased().contains("bann") == true) ||
+                        (validationResult.reason?.lowercased().contains("banead") == true)
+                    
+                    if isBanned {
+                        let reason = validationResult.banReason ?? validationResult.reason ?? "Violación de términos"
+                        completion(.failure(.banned(reason: reason)))
+                    } else if let reason = validationResult.reason {
                         if reason.contains("expired") {
                             completion(.failure(.expired))
                         } else if reason.contains("another device") || reason.contains("activated") {
@@ -307,6 +318,16 @@ class KeyStore: ObservableObject {
             return false
         }
         return session.isValid && !session.key.isBanned
+    }
+    
+    /// Check if current active key is banned
+    var isBanned: Bool {
+        return activeSession?.key.isBanned == true
+    }
+    
+    /// Get current ban reason if banned
+    var banReason: String? {
+        return activeSession?.key.banReason
     }
     
     // MARK: - Key Management Operations
@@ -540,10 +561,10 @@ class KeyStore: ObservableObject {
                 }
             }
             
-            // Check if expired or banned
-            if key.isExpired || key.isBanned {
+            // Check if expired
+            if key.isExpired {
                 deactivateSession()
-                print("[KeyStore] Session expired or banned, deactivated")
+                print("[KeyStore] Session expired, deactivated")
             }
         }
     }
@@ -559,7 +580,36 @@ class KeyStore: ObservableObject {
                 let result = try await KeyAPIService.shared.validateKeyWithDevice(keyString, deviceId: deviceId)
                 
                 await MainActor.run {
-                    // IF KEY WAS RESET/KICKED, BANNED, OR EXPIRED ON SERVER: DEACTIVATE & KICK IMMEDIATELY!
+                    // Check if key is BANNED on server
+                    let isBanned = (result.isBanned == true) ||
+                        (result.reason?.lowercased().contains("bann") == true) ||
+                        (result.reason?.lowercased().contains("banead") == true)
+                    
+                    if isBanned {
+                        let reason = result.banReason ?? result.reason ?? "Clave bloqueada por administración"
+                        print("[KeyStore] 🚫 Key is BANNED on server: \(keyString) - Reason: \(reason)")
+                        
+                        var updatedKey = session.key
+                        updatedKey.isBanned = true
+                        updatedKey.banReason = reason
+                        
+                        if !updatedKey.notifications.contains(where: {
+                            if case .banned = $0 { return true } else { return false }
+                        }) {
+                            updatedKey.notifications.append(.banned(reason: reason))
+                        }
+                        
+                        self.activeSession = UserSession(key: updatedKey, activatedAt: session.activatedAt)
+                        self.saveSession()
+                        
+                        if let idx = self.allKeys.firstIndex(where: { $0.keyString == keyString }) {
+                            self.allKeys[idx] = updatedKey
+                            self.saveKeys()
+                        }
+                        return
+                    }
+                    
+                    // IF KEY WAS RESET/KICKED OR EXPIRED ON SERVER: DEACTIVATE & KICK IMMEDIATELY!
                     if !result.valid || result.needsActivation == true {
                         print("[KeyStore] 🚪 Server kicked device or revoked key \(keyString): \(result.reason ?? "Needs activation")")
                         self.deactivateSession()
@@ -567,10 +617,17 @@ class KeyStore: ObservableObject {
                     }
                     
                     // Update key with server data
+                    var updatedKey = session.key
+                    
+                    // If key was previously banned locally, but server says valid now, clear ban!
+                    if updatedKey.isBanned {
+                        print("[KeyStore] ✅ Key unbanned on server: \(keyString)")
+                        updatedKey.isBanned = false
+                        updatedKey.banReason = nil
+                    }
+                    
                     if let remoteInfo = result.key {
                         let serverExpiry = KeyStore.parseServerDate(remoteInfo.expiresAt)
-                        
-                        var updatedKey = session.key
                         updatedKey.expiresAt = serverExpiry
                         if let name = remoteInfo.userName, !name.isEmpty {
                             updatedKey.userName = name
@@ -582,19 +639,19 @@ class KeyStore: ObservableObject {
                             self.deactivateSession()
                             return
                         }
-                        
-                        // Save updated session
-                        self.activeSession = UserSession(key: updatedKey, activatedAt: session.activatedAt)
-                        self.saveSession()
-                        
-                        // Update allKeys
-                        if let idx = self.allKeys.firstIndex(where: { $0.keyString == keyString }) {
-                            self.allKeys[idx] = updatedKey
-                            self.saveKeys()
-                        }
-                        
-                        print("[KeyStore] 🔄 Synced with server: new expiration = \(String(describing: serverExpiry))")
                     }
+                    
+                    // Save updated session
+                    self.activeSession = UserSession(key: updatedKey, activatedAt: session.activatedAt)
+                    self.saveSession()
+                    
+                    // Update allKeys
+                    if let idx = self.allKeys.firstIndex(where: { $0.keyString == keyString }) {
+                        self.allKeys[idx] = updatedKey
+                        self.saveKeys()
+                    }
+                    
+                    print("[KeyStore] 🔄 Synced with server: expiration = \(String(describing: updatedKey.expiresAt))")
                 }
             } catch {
                 print("[KeyStore] ⚠️ Server sync check failed (will retry): \(error.localizedDescription)")
@@ -646,17 +703,20 @@ enum KeyActivationError: LocalizedError {
     case notFound
     case expired
     case alreadyActivated
+    case banned(reason: String?)
     
     var errorDescription: String? {
         switch self {
         case .invalidFormat:
-            return "Formato de Key inválido. Use: JUSTINRAGEX-XXX-XXX"
+            return "Clave inválida. Introduce tu Key asignada."
         case .notFound:
             return "Key no encontrada. Verifica tu Key."
         case .expired:
             return "Esta Key ha expirado."
         case .alreadyActivated:
             return "Esta Key ya está activada en otro dispositivo."
+        case .banned(let reason):
+            return "Esta Key ha sido BANEADA: \(reason ?? "Uso indebido")"
         }
     }
 }

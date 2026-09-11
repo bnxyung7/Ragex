@@ -30,7 +30,10 @@ struct FreeFireView: View {
     var body: some View {
         NavigationView {
             Group {
-                if keyStore.hasValidAccess() {
+                if keyStore.isBanned {
+                    // Key is banned - show Banned screen
+                    bannedView
+                } else if keyStore.hasValidAccess() {
                     // User has valid Key - show content
                     VStack(spacing: 0) {
                         // Category selector
@@ -79,6 +82,177 @@ struct FreeFireView: View {
                     .presentationDragIndicator(.hidden)
             }
         }
+    }
+    
+    // MARK: - Banned View
+    
+    private var bannedView: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                Spacer(minLength: 20)
+                
+                // Red Shield / Warning Symbol
+                ZStack {
+                    Circle()
+                        .fill(Color.red.opacity(0.15))
+                        .frame(width: 110, height: 110)
+                    
+                    Circle()
+                        .stroke(Color.red.opacity(0.4), lineWidth: 2)
+                        .frame(width: 120, height: 120)
+                    
+                    Image(systemName: "exclamationmark.octagon.fill")
+                        .font(.system(size: 60, weight: .bold))
+                        .foregroundStyle(.red)
+                }
+                .padding(.top, 10)
+                
+                // Title and warning
+                VStack(spacing: 8) {
+                    Text("ACCESO BANEADO")
+                        .font(.system(size: 24, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.red)
+                    
+                    Text("Tu clave de Free Fire ha sido inhabilitada por la administración.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                }
+                
+                // Details Card
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        Image(systemName: "shield.slash.fill")
+                            .foregroundStyle(.red)
+                        Text("ESTADO DE LA SANCIÓN")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text("SUSPENDIDO")
+                            .font(.system(size: 10, weight: .black))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.red.opacity(0.2))
+                            .foregroundStyle(.red)
+                            .clipShape(Capsule())
+                    }
+                    
+                    Divider()
+                    
+                    if let keyString = keyStore.activeSession?.key.keyString {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Clave afectada:")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text(keyString)
+                                .font(.system(.subheadline, design: .monospaced))
+                                .fontWeight(.bold)
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Motivo del bloqueo:")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text(keyStore.banReason ?? "Violación de términos del servicio o uso no autorizado.")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.red)
+                    }
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color(.secondarySystemBackground))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                        )
+                )
+                .padding(.horizontal, 24)
+                
+                // Contact / Community Links
+                VStack(spacing: 12) {
+                    Text("Comunícate con soporte para apelar tu clave:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Link(destination: URL(string: "https://wa.me/18099289722?text=Hola,%20mi%20clave%20de%20Free%20Fire%20fue%20baneada:%20\(keyStore.activeSession?.key.keyString ?? "")")!) {
+                        HStack {
+                            Image(systemName: "bubble.left.and.bubble.right.fill")
+                            Text("Soporte Oficial WhatsApp")
+                                .fontWeight(.bold)
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.green)
+                        )
+                    }
+                    
+                    Link(destination: URL(string: "https://whatsapp.com/channel/0029Vb7NRaRAojYuOAfX5S0S")!) {
+                        HStack {
+                            Image(systemName: "megaphone.fill")
+                            Text("Canal Oficial de WhatsApp")
+                                .fontWeight(.bold)
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.blue)
+                        )
+                    }
+                    
+                    Link(destination: URL(string: "https://discord.gg/AksKwSWaKq")!) {
+                        HStack {
+                            Image(systemName: "person.3.fill")
+                            Text("Servidor de Discord")
+                                .fontWeight(.bold)
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.purple)
+                        )
+                    }
+                    
+                    Button(role: .destructive) {
+                        keyStore.deactivateSession()
+                    } label: {
+                        HStack {
+                            Image(systemName: "xmark.circle")
+                            Text("Cerrar Sesión")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 4)
+                    }
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer(minLength: 30)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
     }
     
     // MARK: - Locked View

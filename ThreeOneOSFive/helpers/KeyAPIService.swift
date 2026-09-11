@@ -26,6 +26,8 @@ class KeyAPIService {
         let key: RemoteKeyInfo?
         let needsActivation: Bool?
         let message: String?
+        let isBanned: Bool?
+        let banReason: String?
     }
     
     struct RemoteKeyInfo: Codable {

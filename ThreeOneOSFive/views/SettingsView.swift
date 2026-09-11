@@ -75,19 +75,7 @@ struct SettingsView: View {
                         .font(.subheadline)
                     }
                     
-                    Link(destination: URL(string: "https://chat.whatsapp.com/LMi0ORfWlDd6iDl0CIvryM")!) {
-                        HStack {
-                            Image(systemName: "bubble.left.and.bubble.right.fill")
-                                .foregroundStyle(.green)
-                            Text("Join WhatsApp Group")
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .font(.caption)
-                        }
-                        .font(.subheadline)
-                    }
-                    
-                    Link(destination: URL(string: "https://whatsapp.com/channel/0029Vb8Pvbk0QeaiLOyydq1w")!) {
+                    Link(destination: URL(string: "https://whatsapp.com/channel/0029Vb7NRaRAojYuOAfX5S0S")!) {
                         HStack {
                             Image(systemName: "megaphone.fill")
                                 .foregroundStyle(.green)

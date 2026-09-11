@@ -166,19 +166,11 @@ struct Page3View: View {
                 )
                 
                 CommunityButton(
-                    icon: "message.fill",
-                    title: "Grupo WhatsApp",
-                    subtitle: "Chat comunitario",
-                    color: .green,
-                    url: "https://chat.whatsapp.com/LMi0ORfWlDd6iDl0CIvryM"
-                )
-                
-                CommunityButton(
                     icon: "megaphone.fill",
                     title: "Canal WhatsApp",
-                    subtitle: "Actualizaciones",
+                    subtitle: "Actualizaciones oficiales",
                     color: .green,
-                    url: "https://whatsapp.com/channel/0029Vb8Pvbk0QeaiLOyydq1w"
+                    url: "https://whatsapp.com/channel/0029Vb7NRaRAojYuOAfX5S0S"
                 )
             }
             .padding(.horizontal, 24)
