@@ -45,24 +45,42 @@ class KeyStore: ObservableObject {
     /// Create a new key (local + remote API)
     func createKey(duration: KeyDuration, userName: String? = nil) -> UserKey {
         let keyString = generateKey()
+        
+        print("[KeyStore] 🔑 Generando key: \(keyString)")
+        
+        // Create local key first
         let key = UserKey(keyString: keyString, duration: duration, userName: userName)
         
-        // Save locally
+        // Save locally immediately
         allKeys.append(key)
         saveKeys()
         
-        // Also send to API for cross-device validation
+        // Send to API in background (with retry logic)
         Task {
-            do {
-                try await KeyAPIService.shared.createKeyOnServer(
-                    keyString: keyString,
-                    duration: duration.rawValue,
-                    userName: userName
-                )
-                print("[KeyStore] Key created on server: \(keyString)")
-            } catch {
-                print("[KeyStore] Failed to create key on server: \(error.localizedDescription)")
-                // Key is still valid locally even if API fails
+            var attempts = 0
+            let maxAttempts = 3
+            
+            while attempts < maxAttempts {
+                do {
+                    let remoteKey = try await KeyAPIService.shared.createKeyFromIPA(
+                        keyString: keyString,
+                        duration: duration.rawValue,
+                        userName: userName ?? UIDevice.current.name
+                    )
+                    print("[KeyStore] ✅ Key registered on server: \(keyString)")
+                    break
+                } catch {
+                    attempts += 1
+                    print("[KeyStore] ⚠️ Attempt \(attempts)/\(maxAttempts) failed: \(error.localizedDescription)")
+                    
+                    if attempts < maxAttempts {
+                        // Wait before retry (exponential backoff: 1s, 2s, 4s)
+                        try? await Task.sleep(nanoseconds: UInt64(pow(2.0, Double(attempts))) * 1_000_000_000)
+                    } else {
+                        print("[KeyStore] ❌ Failed to register key on server after \(maxAttempts) attempts")
+                        print("[KeyStore] ℹ️ Key is still valid locally")
+                    }
+                }
             }
         }
         
@@ -87,8 +105,47 @@ class KeyStore: ObservableObject {
         
         let deviceId = getDeviceId()
         
-        // Try remote validation with device ID
-        Task {
+        // Check if key exists locally first
+        if let localKey = allKeys.first(where: { $0.keyString == keyString }) {
+            // Ensure it's registered on server
+            Task {
+                await self.ensureKeyExistsOnServer(keyString, duration: localKey.duration)
+                
+                // Now proceed with normal validation
+                await self.validateAndActivateRemotely(keyString: keyString, deviceId: deviceId, completion: completion)
+            }
+        } else {
+            // Not a local key, just validate remotely
+            Task {
+                await self.validateAndActivateRemotely(keyString: keyString, deviceId: deviceId, completion: completion)
+            }
+        }
+    }
+    
+    /// Auto-register key if it doesn't exist on server yet
+    private func ensureKeyExistsOnServer(_ keyString: String, duration: KeyDuration) async {
+        do {
+            // Try to get key info
+            _ = try await KeyAPIService.shared.getKeyInfo(keyString)
+            print("[KeyStore] ✅ Key exists on server")
+        } catch {
+            // Key doesn't exist, create it
+            print("[KeyStore] 📤 Key not found on server, registering...")
+            do {
+                _ = try await KeyAPIService.shared.createKeyFromIPA(
+                    keyString: keyString,
+                    duration: duration.rawValue,
+                    userName: UIDevice.current.name
+                )
+                print("[KeyStore] ✅ Key registered successfully")
+            } catch {
+                print("[KeyStore] ⚠️ Could not register key: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    /// Helper method for remote validation and activation
+    private func validateAndActivateRemotely(keyString: String, deviceId: String, completion: @escaping (Result<UserSession, KeyActivationError>) -> Void) async {
             do {
                 // First validate
                 let validationResult = try await KeyAPIService.shared.validateKeyWithDevice(keyString, deviceId: deviceId)

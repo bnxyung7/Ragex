@@ -43,7 +43,55 @@ class KeyAPIService {
     
     // MARK: - Create Key
     
-    /// Create a new key on the server
+    /// Create a new key directly from the IPA (for first-time installations)
+    /// This method is designed to be called when generating keys within the app
+    func createKeyFromIPA(keyString: String, duration: String = "Permanente", userName: String? = nil) async throws -> RemoteKeyInfo {
+        let url = URL(string: "\(baseURL)/keys/create")!
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+        
+        var body: [String: Any] = [
+            "keyString": keyString,
+            "duration": duration
+        ]
+        
+        if let userName = userName {
+            body["userName"] = userName
+        }
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw KeyAPIError.invalidResponse
+        }
+        
+        // Si la key ya existe (409), obtener su info en lugar de fallar
+        if httpResponse.statusCode == 409 {
+            print("⚠️ Key already exists in API, fetching info...")
+            return try await getKeyInfo(keyString)
+        }
+        
+        guard httpResponse.statusCode == 201 || httpResponse.statusCode == 200 else {
+            throw KeyAPIError.httpError(statusCode: httpResponse.statusCode)
+        }
+        
+        let decoder = JSONDecoder()
+        let createResponse = try decoder.decode(CreateKeyResponse.self, from: data)
+        
+        guard let keyInfo = createResponse.key else {
+            throw KeyAPIError.invalidResponse
+        }
+        
+        print("✅ Key created on server: \(keyInfo.keyString)")
+        return keyInfo
+    }
+    
+    /// Create a new key on the server (legacy method for backward compatibility)
     func createKeyOnServer(keyString: String, duration: String, userName: String?) async throws {
         let url = URL(string: "\(baseURL)/keys/create")!
         
