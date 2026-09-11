@@ -4,7 +4,7 @@ import Combine
 /// Admin credentials
 struct AdminCredentials {
     static let username = "ADMIN"
-    static let password = "JOSTIN2324"
+    static let password = "Cleon0208@"
 }
 
 /// Admin authentication session
