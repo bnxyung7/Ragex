@@ -293,10 +293,10 @@ workflows:
       vars:
         XCODE_PROJECT: ThreeOneOSFive.xcodeproj
         XCODE_SCHEME: X
-        BUNDLE_ID: com.apple.mobile.MobileHouseArrest
+        BUNDLE_ID: com.aranmco.xcomm
       ios_signing:
         distribution_type: ad_hoc
-        bundle_identifier: com.apple.mobile.MobileHouseArrest
+        bundle_identifier: com.aranmco.xcomm
 
     triggering:
       events:
