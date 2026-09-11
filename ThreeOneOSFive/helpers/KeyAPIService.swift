@@ -7,6 +7,9 @@ class KeyAPIService {
     // API base URL
     private let baseURL = "https://xkeyapi.onrender.com/api"
     
+    // API authorization token
+    private let apiToken = "xkey_admin_secret_token_2026"
+    
     private init() {}
     
     // MARK: - API Response Models
@@ -51,6 +54,7 @@ class KeyAPIService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiToken, forHTTPHeaderField: "X-API-Token")
         request.timeoutInterval = 30
         
         var body: [String: Any] = [
@@ -94,6 +98,7 @@ class KeyAPIService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiToken, forHTTPHeaderField: "X-API-Token")
         
         // Build request body
         var body: [String: Any] = [
