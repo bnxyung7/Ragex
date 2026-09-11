@@ -295,7 +295,7 @@ workflows:
         XCODE_SCHEME: X
         BUNDLE_ID: com.aranmco.xcomm
       ios_signing:
-        distribution_type: ad_hoc
+        distribution_type: enterprise
         bundle_identifier: com.aranmco.xcomm
 
     triggering:
