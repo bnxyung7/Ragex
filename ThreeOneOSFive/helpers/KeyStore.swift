@@ -141,25 +141,59 @@ class KeyStore: ObservableObject {
     }
     
     private func createSession(keyString: String, completion: @escaping (Result<UserSession, KeyActivationError>) -> Void) {
-        // Find or create local key
-        var key: UserKey
-        
-        if let existingKey = self.allKeys.first(where: { $0.keyString == keyString }) {
-            key = existingKey
-        } else {
-            // Create local copy
-            print("[KeyStore] Creating local copy of key")
-            key = UserKey(keyString: keyString, duration: .sevenDays, userName: nil)
-            self.allKeys.append(key)
-            self.saveKeys()
+        // Get key info from server FIRST
+        Task {
+            do {
+                let remoteKey = try await KeyAPIService.shared.getKeyInfo(keyString)
+                
+                await MainActor.run {
+                    // Parse duration from server
+                    let duration = self.parseDuration(remoteKey.duration)
+                    
+                    // Create local key with CORRECT duration from server
+                    let key = UserKey(keyString: keyString, duration: duration, userName: remoteKey.userName)
+                    
+                    // Save locally
+                    if let index = self.allKeys.firstIndex(where: { $0.keyString == keyString }) {
+                        self.allKeys[index] = key
+                    } else {
+                        self.allKeys.append(key)
+                    }
+                    self.saveKeys()
+                    
+                    // Create session
+                    let session = UserSession(key: key, activatedAt: Date())
+                    self.activeSession = session
+                    self.saveSession()
+                    
+                    print("[KeyStore] ✅ Session created with server duration: \(duration.rawValue)")
+                    completion(.success(session))
+                }
+            } catch {
+                await MainActor.run {
+                    print("[KeyStore] ❌ Failed to get key from server: \(error)")
+                    completion(.failure(.notFound))
+                }
+            }
         }
-        
-        // Create session
-        let session = UserSession(key: key, activatedAt: Date())
-        self.activeSession = session
-        self.saveSession()
-        
-        completion(.success(session))
+    }
+    
+    /// Parse duration string from API to KeyDuration enum
+    private func parseDuration(_ durationString: String) -> KeyDuration {
+        switch durationString {
+        case "1H": return .oneHour
+        case "3H": return .threeHours
+        case "1D": return .oneDay
+        case "3D": return .threeDays
+        case "7D": return .sevenDays
+        case "15D": return .fifteenDays
+        case "30D": return .thirtyDays
+        case "60D": return .sixtyDays
+        case "Permanente": return .permanent
+        default:
+            print("[KeyStore] ⚠️ Unknown duration '\(durationString)', defaulting to 7D")
+            return .sevenDays
+        }
     }
     
     /// Activate key synchronously (legacy, for local-only validation)
