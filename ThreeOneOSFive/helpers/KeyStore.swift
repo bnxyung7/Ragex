@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UIKit
 
 /// Service for managing user keys
 class KeyStore: ObservableObject {
@@ -15,6 +16,22 @@ class KeyStore: ObservableObject {
         loadKeys()
         loadSession()
         startExpirationTimer()
+    }
+    
+    /// Get unique device identifier
+    private func getDeviceId() -> String {
+        // Use identifierForVendor as device ID
+        if let uuid = UIDevice.current.identifierForVendor {
+            return uuid.uuidString
+        }
+        // Fallback: generate and store a UUID
+        let key = "com.x.deviceId"
+        if let stored = UserDefaults.standard.string(forKey: key) {
+            return stored
+        }
+        let newId = UUID().uuidString
+        UserDefaults.standard.set(newId, forKey: key)
+        return newId
     }
     
     /// Generate a new key with format JUSTINRAGEX-XXX-XXX
@@ -60,7 +77,7 @@ class KeyStore: ObservableObject {
         return regex?.firstMatch(in: keyString, options: [], range: range) != nil
     }
     
-    /// Activate a key for the user (with API validation)
+    /// Activate a key for the user (with API validation and device binding)
     func activateKey(_ keyString: String, completion: @escaping (Result<UserSession, KeyActivationError>) -> Void) {
         // Validate format
         guard isValidFormat(keyString) else {
@@ -68,44 +85,81 @@ class KeyStore: ObservableObject {
             return
         }
         
-        // Try remote validation first
+        let deviceId = getDeviceId()
+        
+        // Try remote validation with device ID
         Task {
-            let result = await KeyAPIService.shared.validateKeyHybrid(keyString)
-            
-            await MainActor.run {
-                if result.isValid {
-                    // Find or create local key
-                    var key: UserKey
-                    
-                    if let existingKey = self.allKeys.first(where: { $0.keyString == keyString }) {
-                        key = existingKey
+            do {
+                // First validate
+                let validationResult = try await KeyAPIService.shared.validateKeyWithDevice(keyString, deviceId: deviceId)
+                
+                await MainActor.run {
+                    if validationResult.valid {
+                        if validationResult.needsActivation == true {
+                            // Key needs activation - activate it now
+                            Task {
+                                do {
+                                    try await KeyAPIService.shared.activateKey(keyString, deviceId: deviceId)
+                                    
+                                    // Create local session after activation
+                                    await MainActor.run {
+                                        self.createSession(keyString: keyString, completion: completion)
+                                    }
+                                } catch {
+                                    await MainActor.run {
+                                        print("[KeyStore] Activation failed: \(error.localizedDescription)")
+                                        completion(.failure(.notFound))
+                                    }
+                                }
+                            }
+                        } else {
+                            // Key already activated on this device
+                            self.createSession(keyString: keyString, completion: completion)
+                        }
                     } else {
-                        // Create local copy from remote
-                        print("[KeyStore] Creating local copy of remote key")
-                        // Default to 7D since we don't have duration from API
-                        key = UserKey(keyString: keyString, duration: .sevenDays, userName: nil)
-                        self.allKeys.append(key)
-                        self.saveKeys()
+                        // Determine error type
+                        if let reason = validationResult.reason {
+                            if reason.contains("expired") {
+                                completion(.failure(.expired))
+                            } else if reason.contains("another device") || reason.contains("activated") {
+                                completion(.failure(.alreadyActivated))
+                            } else {
+                                completion(.failure(.notFound))
+                            }
+                        } else {
+                            completion(.failure(.notFound))
+                        }
                     }
-                    
-                    // Create session
-                    let session = UserSession(key: key, activatedAt: Date())
-                    self.activeSession = session
-                    self.saveSession()
-                    
-                    completion(.success(session))
-                } else {
-                    // Determine error type
-                    if result.message.contains("expired") {
-                        completion(.failure(.expired))
-                    } else if result.message.contains("not found") {
-                        completion(.failure(.notFound))
-                    } else {
-                        completion(.failure(.notFound))
-                    }
+                }
+            } catch {
+                await MainActor.run {
+                    print("[KeyStore] Validation error: \(error.localizedDescription)")
+                    completion(.failure(.notFound))
                 }
             }
         }
+    }
+    
+    private func createSession(keyString: String, completion: @escaping (Result<UserSession, KeyActivationError>) -> Void) {
+        // Find or create local key
+        var key: UserKey
+        
+        if let existingKey = self.allKeys.first(where: { $0.keyString == keyString }) {
+            key = existingKey
+        } else {
+            // Create local copy
+            print("[KeyStore] Creating local copy of key")
+            key = UserKey(keyString: keyString, duration: .sevenDays, userName: nil)
+            self.allKeys.append(key)
+            self.saveKeys()
+        }
+        
+        // Create session
+        let session = UserSession(key: key, activatedAt: Date())
+        self.activeSession = session
+        self.saveSession()
+        
+        completion(.success(session))
     }
     
     /// Activate key synchronously (legacy, for local-only validation)
@@ -381,6 +435,7 @@ enum KeyActivationError: LocalizedError {
     case invalidFormat
     case notFound
     case expired
+    case alreadyActivated
     
     var errorDescription: String? {
         switch self {
@@ -390,6 +445,8 @@ enum KeyActivationError: LocalizedError {
             return "Key no encontrada. Verifica tu Key."
         case .expired:
             return "Esta Key ha expirado."
+        case .alreadyActivated:
+            return "Esta Key ya está activada en otro dispositivo."
         }
     }
 }

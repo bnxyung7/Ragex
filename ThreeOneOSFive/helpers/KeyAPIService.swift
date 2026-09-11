@@ -21,6 +21,8 @@ class KeyAPIService {
         let valid: Bool
         let reason: String?
         let key: RemoteKeyInfo?
+        let needsActivation: Bool?
+        let message: String?
     }
     
     struct RemoteKeyInfo: Codable {
@@ -81,7 +83,65 @@ class KeyAPIService {
     
     // MARK: - Validate Key
     
-    /// Validate a key against the remote API
+    /// Validate a key with device ID
+    func validateKeyWithDevice(_ keyString: String, deviceId: String) async throws -> KeyValidationResponse {
+        let url = URL(string: "\(baseURL)/keys/\(keyString)/validate")!
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body = ["deviceId": deviceId]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw KeyAPIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw KeyAPIError.httpError(statusCode: httpResponse.statusCode)
+        }
+        
+        let decoder = JSONDecoder()
+        let validationResponse = try decoder.decode(KeyValidationResponse.self, from: data)
+        
+        return validationResponse
+    }
+    
+    /// Activate a key with device ID
+    func activateKey(_ keyString: String, deviceId: String) async throws {
+        let url = URL(string: "\(baseURL)/keys/\(keyString)/activate")!
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body = ["deviceId": deviceId]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw KeyAPIError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            if httpResponse.statusCode == 403 {
+                throw KeyAPIError.httpError(statusCode: 403)
+            }
+            throw KeyAPIError.httpError(statusCode: httpResponse.statusCode)
+        }
+        
+        // Verify success from JSON
+        if let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let success = jsonResponse["success"] as? Bool, !success {
+            throw KeyAPIError.invalidResponse
+        }
+    }
+    
+    /// Validate a key against the remote API (legacy, no device ID)
     func validateKey(_ keyString: String) async throws -> KeyValidationResponse {
         let url = URL(string: "\(baseURL)/keys/\(keyString)/validate")!
         
