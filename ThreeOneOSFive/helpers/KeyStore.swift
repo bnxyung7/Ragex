@@ -559,8 +559,9 @@ class KeyStore: ObservableObject {
                 let result = try await KeyAPIService.shared.validateKeyWithDevice(keyString, deviceId: deviceId)
                 
                 await MainActor.run {
-                    if !result.valid {
-                        print("[KeyStore] 🚫 Server revoked or expired key \(keyString): \(result.reason ?? "Invalid")")
+                    // IF KEY WAS RESET/KICKED, BANNED, OR EXPIRED ON SERVER: DEACTIVATE & KICK IMMEDIATELY!
+                    if !result.valid || result.needsActivation == true {
+                        print("[KeyStore] 🚪 Server kicked device or revoked key \(keyString): \(result.reason ?? "Needs activation")")
                         self.deactivateSession()
                         return
                     }
