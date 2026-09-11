@@ -146,53 +146,52 @@ class KeyStore: ObservableObject {
     
     /// Helper method for remote validation and activation
     private func validateAndActivateRemotely(keyString: String, deviceId: String, completion: @escaping (Result<UserSession, KeyActivationError>) -> Void) async {
-            do {
-                // First validate
-                let validationResult = try await KeyAPIService.shared.validateKeyWithDevice(keyString, deviceId: deviceId)
-                
-                await MainActor.run {
-                    if validationResult.valid {
-                        if validationResult.needsActivation == true {
-                            // Key needs activation - activate it now
-                            Task {
-                                do {
-                                    try await KeyAPIService.shared.activateKey(keyString, deviceId: deviceId)
-                                    
-                                    // Create local session after activation
-                                    await MainActor.run {
-                                        self.createSession(keyString: keyString, completion: completion)
-                                    }
-                                } catch {
-                                    await MainActor.run {
-                                        print("[KeyStore] Activation failed: \(error.localizedDescription)")
-                                        completion(.failure(.notFound))
-                                    }
+        do {
+            // First validate
+            let validationResult = try await KeyAPIService.shared.validateKeyWithDevice(keyString, deviceId: deviceId)
+            
+            await MainActor.run {
+                if validationResult.valid {
+                    if validationResult.needsActivation == true {
+                        // Key needs activation - activate it now
+                        Task {
+                            do {
+                                try await KeyAPIService.shared.activateKey(keyString, deviceId: deviceId)
+                                
+                                // Create local session after activation
+                                await MainActor.run {
+                                    self.createSession(keyString: keyString, completion: completion)
+                                }
+                            } catch {
+                                await MainActor.run {
+                                    print("[KeyStore] Activation failed: \(error.localizedDescription)")
+                                    completion(.failure(.notFound))
                                 }
                             }
-                        } else {
-                            // Key already activated on this device
-                            self.createSession(keyString: keyString, completion: completion)
                         }
                     } else {
-                        // Determine error type
-                        if let reason = validationResult.reason {
-                            if reason.contains("expired") {
-                                completion(.failure(.expired))
-                            } else if reason.contains("another device") || reason.contains("activated") {
-                                completion(.failure(.alreadyActivated))
-                            } else {
-                                completion(.failure(.notFound))
-                            }
+                        // Key already activated on this device
+                        self.createSession(keyString: keyString, completion: completion)
+                    }
+                } else {
+                    // Determine error type
+                    if let reason = validationResult.reason {
+                        if reason.contains("expired") {
+                            completion(.failure(.expired))
+                        } else if reason.contains("another device") || reason.contains("activated") {
+                            completion(.failure(.alreadyActivated))
                         } else {
                             completion(.failure(.notFound))
                         }
+                    } else {
+                        completion(.failure(.notFound))
                     }
                 }
-            } catch {
-                await MainActor.run {
-                    print("[KeyStore] Validation error: \(error.localizedDescription)")
-                    completion(.failure(.notFound))
-                }
+            }
+        } catch {
+            await MainActor.run {
+                print("[KeyStore] Validation error: \(error.localizedDescription)")
+                completion(.failure(.notFound))
             }
         }
     }
