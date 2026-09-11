@@ -208,29 +208,24 @@ class KeyStore: ObservableObject {
     
     // MARK: - Key Management Operations
     
-    /// Reset key expiration to original duration
+    /// Reset key - kicks user out (closes session)
     func resetKey(_ key: UserKey) {
         guard let index = allKeys.firstIndex(where: { $0.id == key.id }) else { return }
         
         var updatedKey = key
-        
-        // Reset expiration based on original duration
-        if let interval = key.duration.timeInterval {
-            updatedKey.expiresAt = Date().addingTimeInterval(interval)
-        }
         
         // Add notification
         updatedKey.notifications.append(.reset)
         
         allKeys[index] = updatedKey
         
-        // Update active session if this is the active key
+        // KICK USER: Close session if this is the active key
         if activeSession?.key.id == key.id {
-            activeSession = UserSession(key: updatedKey, activatedAt: activeSession!.activatedAt)
+            print("[KeyStore] 🚪 Reset Key: Closing user session (kick)")
+            deactivateSession()
         }
         
         saveKeys()
-        saveSession()
     }
     
     /// Add days to key
