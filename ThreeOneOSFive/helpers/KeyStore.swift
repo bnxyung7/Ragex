@@ -200,10 +200,16 @@ class KeyStore: ObservableObject {
     
     /// Check if user has valid access
     func hasValidAccess() -> Bool {
+        // TEMPORARY: Allow access without key for testing
+        // TODO: Remove this after key system is fully tested
+        return true
+        
+        /* ORIGINAL CODE - Uncomment when ready:
         guard let session = activeSession else {
             return false
         }
         return session.isValid && !session.key.isBanned
+        */
     }
     
     // MARK: - Key Management Operations
