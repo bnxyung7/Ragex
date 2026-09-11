@@ -31,8 +31,8 @@ class KeyAPIService {
         let userName: String?
         let expiresAt: String?
         let timeRemaining: String
-        let status: String
-        let isValid: Bool
+        let status: String?
+        let isValid: Bool?
     }
     
     struct CreateKeyResponse: Codable {
