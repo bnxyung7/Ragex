@@ -409,15 +409,35 @@ class KeyStore: ObservableObject {
     private var expirationTimer: Timer?
     
     private func startExpirationTimer() {
-        // Check every minute for expired sessions
-        expirationTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+        // Check every 30 seconds for expired sessions (more frequent for short keys like 1H, 3H)
+        expirationTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             self?.checkExpiration()
         }
+        
+        print("[KeyStore] ⏰ Expiration timer started (checks every 30s)")
     }
     
     private func checkExpiration() {
         if let session = activeSession {
-            if session.key.isExpired || session.key.isBanned {
+            let key = session.key
+            
+            // Log time remaining for debugging
+            if let expiresAt = key.expiresAt {
+                let timeLeft = expiresAt.timeIntervalSince(Date())
+                print("[KeyStore] ⏱ Key check: \(key.timeRemaining) remaining")
+                
+                // Warning when < 1 hour left
+                if timeLeft > 0 && timeLeft < 3600 {
+                    let hoursLeft = Int(timeLeft / 3600)
+                    if hoursLeft == 0 {
+                        let minutesLeft = Int(timeLeft / 60)
+                        print("[KeyStore] ⚠️ Key expiring soon: \(minutesLeft) minutes left")
+                    }
+                }
+            }
+            
+            // Check if expired or banned
+            if key.isExpired || key.isBanned {
                 deactivateSession()
                 print("[KeyStore] Session expired or banned, deactivated")
             }
