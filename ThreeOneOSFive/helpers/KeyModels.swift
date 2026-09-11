@@ -106,17 +106,19 @@ struct UserKey: Codable, Identifiable {
     var banReason: String?
     var notifications: [KeyNotification]
     
-    init(keyString: String, duration: KeyDuration, userName: String? = nil) {
+    init(keyString: String, duration: KeyDuration, userName: String? = nil, expiresAt: Date? = nil, isBanned: Bool = false) {
         self.id = UUID()
         self.keyString = keyString
         self.duration = duration
         self.createdAt = Date()
         self.userName = userName
-        self.isBanned = false
+        self.isBanned = isBanned
         self.banReason = nil
         self.notifications = []
         
-        if let interval = duration.timeInterval {
+        if let serverExpiry = expiresAt {
+            self.expiresAt = serverExpiry
+        } else if let interval = duration.timeInterval {
             self.expiresAt = Date().addingTimeInterval(interval)
         } else {
             self.expiresAt = nil // Permanent

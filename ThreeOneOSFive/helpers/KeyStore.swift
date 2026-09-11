@@ -16,6 +16,16 @@ class KeyStore: ObservableObject {
         loadKeys()
         loadSession()
         startExpirationTimer()
+        syncWithServer()
+        
+        // Immediately sync with server when app comes to foreground
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.syncWithServer()
+        }
     }
     
     /// Get unique device identifier
@@ -205,11 +215,12 @@ class KeyStore: ObservableObject {
                 let remoteKey = try await KeyAPIService.shared.getKeyInfo(keyString)
                 
                 await MainActor.run {
-                    // Parse duration from server
+                    // Parse duration and expiration from server
                     let duration = self.parseDuration(remoteKey.duration)
+                    let serverExpiry = KeyStore.parseServerDate(remoteKey.expiresAt)
                     
-                    // Create local key with CORRECT duration from server
-                    let key = UserKey(keyString: keyString, duration: duration, userName: remoteKey.userName)
+                    // Create local key with server expiration and duration
+                    let key = UserKey(keyString: keyString, duration: duration, userName: remoteKey.userName, expiresAt: serverExpiry)
                     
                     // Save locally
                     if let index = self.allKeys.firstIndex(where: { $0.keyString == keyString }) {
@@ -501,12 +512,13 @@ class KeyStore: ObservableObject {
     private var expirationTimer: Timer?
     
     private func startExpirationTimer() {
-        // Check every 30 seconds for expired sessions (more frequent for short keys like 1H, 3H)
+        // Check every 30 seconds for expired sessions and sync with server
         expirationTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             self?.checkExpiration()
+            self?.syncWithServer()
         }
         
-        print("[KeyStore] ⏰ Expiration timer started (checks every 30s)")
+        print("[KeyStore] ⏰ Expiration & Server Sync timer started (checks every 30s)")
     }
     
     private func checkExpiration() {
@@ -534,6 +546,96 @@ class KeyStore: ObservableObject {
                 print("[KeyStore] Session expired or banned, deactivated")
             }
         }
+    }
+    
+    /// Synchronize the active session with the remote server
+    func syncWithServer() {
+        guard let session = activeSession else { return }
+        let keyString = session.key.keyString
+        let deviceId = getDeviceId()
+        
+        Task {
+            do {
+                let result = try await KeyAPIService.shared.validateKeyWithDevice(keyString, deviceId: deviceId)
+                
+                await MainActor.run {
+                    if !result.valid {
+                        print("[KeyStore] 🚫 Server revoked or expired key \(keyString): \(result.reason ?? "Invalid")")
+                        self.deactivateSession()
+                        return
+                    }
+                    
+                    // Update key with server data
+                    if let remoteInfo = result.key {
+                        let serverExpiry = KeyStore.parseServerDate(remoteInfo.expiresAt)
+                        
+                        var updatedKey = session.key
+                        updatedKey.expiresAt = serverExpiry
+                        if let name = remoteInfo.userName, !name.isEmpty {
+                            updatedKey.userName = name
+                        }
+                        
+                        // Check if it expired on server
+                        if updatedKey.isExpired {
+                            print("[KeyStore] ⏱ Key expired on server")
+                            self.deactivateSession()
+                            return
+                        }
+                        
+                        // Save updated session
+                        self.activeSession = UserSession(key: updatedKey, activatedAt: session.activatedAt)
+                        self.saveSession()
+                        
+                        // Update allKeys
+                        if let idx = self.allKeys.firstIndex(where: { $0.keyString == keyString }) {
+                            self.allKeys[idx] = updatedKey
+                            self.saveKeys()
+                        }
+                        
+                        print("[KeyStore] 🔄 Synced with server: new expiration = \(String(describing: serverExpiry))")
+                    }
+                }
+            } catch {
+                print("[KeyStore] ⚠️ Server sync check failed (will retry): \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    /// Parse date string from server in various ISO formats
+    static func parseServerDate(_ dateString: String?) -> Date? {
+        guard let str = dateString, !str.isEmpty else { return nil }
+        
+        let isoWithFractional = ISO8601DateFormatter()
+        isoWithFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoWithFractional.date(from: str) {
+            return date
+        }
+        
+        let simpleIso = ISO8601DateFormatter()
+        if let date = simpleIso.date(from: str) {
+            return date
+        }
+        
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = TimeZone(secondsFromGMT: 0)
+        
+        let formats = [
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
+            "yyyy-MM-dd'T'HH:mm:ssZZZZZ",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss"
+        ]
+        
+        for fmt in formats {
+            df.dateFormat = fmt
+            if let date = df.date(from: str) {
+                return date
+            }
+        }
+        
+        return nil
     }
 }
 
