@@ -6,6 +6,7 @@ struct FreeFireView: View {
     @StateObject private var keyStore = KeyStore.shared
     @State private var bundlePatches: [BundlePatch] = []
     @State private var selectedCategory: PatchCategory = .aimbot
+    @State private var selectedHologramaSubcategory: HologramaSubcategory?
     @State private var isApplying = false
     @State private var actionAlert: PatchStoreAlert?
     @State private var selectedPatch: BundlePatch?
@@ -27,6 +28,27 @@ struct FreeFireView: View {
         }
     }
     
+    enum HologramaSubcategory: String, CaseIterable, Identifiable {
+        case arma = "Arma"
+        case personaje = "Personaje"
+        
+        var id: String { rawValue }
+        
+        var icon: String {
+            switch self {
+            case .arma: return "target"
+            case .personaje: return "person.fill"
+            }
+        }
+        
+        var displayName: String {
+            switch self {
+            case .arma: return "Holograma Arma"
+            case .personaje: return "Holograma Personaje"
+            }
+        }
+    }
+    
     var body: some View {
         NavigationView {
             Group {
@@ -41,7 +63,9 @@ struct FreeFireView: View {
                         
                         // Patch list
                         Group {
-                            if filteredPatches.isEmpty {
+                            if selectedCategory == .holograma {
+                                hologramaSubcategoryView
+                            } else if filteredPatches.isEmpty {
                                 emptyState
                             } else {
                                 patchList
@@ -317,6 +341,10 @@ struct FreeFireView: View {
                     Button {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             selectedCategory = category
+                            // Reset subcategory when changing main category
+                            if category != .holograma {
+                                selectedHologramaSubcategory = nil
+                            }
                         }
                     } label: {
                         HStack(spacing: 8) {
@@ -340,6 +368,115 @@ struct FreeFireView: View {
             .padding(.vertical, 12)
         }
         .background(Color(.systemBackground))
+    }
+    
+    private var hologramaSubcategoryView: some View {
+        List {
+            Section {
+                ForEach(HologramaSubcategory.allCases) { subcategory in
+                    Button {
+                        selectedHologramaSubcategory = subcategory
+                    } label: {
+                        HStack(spacing: 14) {
+                            ZStack {
+                                Circle()
+                                    .fill(AppTheme.accent.opacity(0.15))
+                                    .frame(width: 50, height: 50)
+                                
+                                Image(systemName: subcategory.icon)
+                                    .font(.system(size: 22, weight: .medium))
+                                    .foregroundStyle(AppTheme.accent)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(subcategory.displayName)
+                                    .font(.body)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
+                                
+                                Text("\(hologramaPatchCount(for: subcategory)) patches disponibles")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.plain)
+                }
+            } header: {
+                Text("CATEGORÍAS DE HOLOGRAMA")
+                    .textCase(.none)
+                    .font(.headline)
+            } footer: {
+                Text("Selecciona una categoría para ver los hologramas disponibles")
+                    .font(.caption)
+            }
+        }
+        .listStyle(.insetGrouped)
+        .sheet(item: $selectedHologramaSubcategory) { subcategory in
+            NavigationView {
+                hologramaSubcategoryDetailView(subcategory: subcategory)
+                    .navigationTitle(subcategory.displayName)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Cerrar") {
+                                selectedHologramaSubcategory = nil
+                            }
+                        }
+                    }
+            }
+        }
+    }
+    
+    private func hologramaPatchCount(for subcategory: HologramaSubcategory) -> Int {
+        bundlePatches.filter { patch in
+            patch.category == .holograma && patch.subcategory == subcategory.rawValue
+        }.count
+    }
+    
+    private func hologramaSubcategoryDetailView(subcategory: HologramaSubcategory) -> some View {
+        let patches = bundlePatches.filter { patch in
+            patch.category == .holograma && patch.subcategory == subcategory.rawValue
+        }
+        
+        return Group {
+            if patches.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "shippingbox")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.secondary)
+                    
+                    Text("No hay patches en esta categoría")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List {
+                    Section {
+                        ForEach(patches) { patch in
+                            patchRow(patch)
+                        }
+                    } header: {
+                        Text(subcategory.displayName.uppercased())
+                            .textCase(.none)
+                            .font(.headline)
+                    } footer: {
+                        Text("Patches de \(subcategory.displayName)")
+                            .font(.caption)
+                    }
+                }
+                .listStyle(.insetGrouped)
+            }
+        }
     }
     
     private var filteredPatches: [BundlePatch] {
@@ -569,16 +706,34 @@ struct BundlePatch: Identifiable {
     
     var category: FreeFireView.PatchCategory {
         let filename = url.lastPathComponent.uppercased()
+        // Use parent folder name as category hint
+        let folderName = url.deletingLastPathComponent().lastPathComponent.uppercased()
         
-        if filename.contains("AIM") || filename.contains("PECHO") {
+        if folderName == "AIMBOT" || filename.contains("AIM") || filename.contains("PECHO") {
             return .aimbot
-        } else if filename.contains("HOLOGRAMA") || filename.contains("ARMA") || filename.contains("WEAPON") || 
-                  filename.contains("PERSONAJE") || filename.contains("CHARACTER") || filename.contains("SKIN") {
+        } else if folderName == "HOLOGRAMA" || folderName == "ARMA" || folderName == "PERSONAJE" ||
+                  filename.contains("HOLOGRAMA") || filename.contains("ARMA") ||
+                  filename.contains("WEAPON") || filename.contains("PERSONAJE") ||
+                  filename.contains("CHARACTER") || filename.contains("SKIN") {
             return .holograma
         }
         
-        // Default to others for unrecognized patches
+        // Default to others for FPS, BALA, WALLHACK, and unrecognized patches
         return .others
+    }
+    
+    var subcategory: String? {
+        // For holograma category, determine subcategory from folder name
+        if category == .holograma {
+            let folderName = url.deletingLastPathComponent().lastPathComponent
+            
+            if folderName.lowercased() == "arma" {
+                return "Arma"
+            } else if folderName.lowercased() == "personaje" {
+                return "Personaje"
+            }
+        }
+        return nil
     }
     
     var info: String? {

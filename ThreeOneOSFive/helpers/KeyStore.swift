@@ -167,6 +167,21 @@ class KeyStore: ObservableObject {
             let validationResult = try await KeyAPIService.shared.validateKeyWithDevice(keyString, deviceId: deviceId)
             
             await MainActor.run {
+                // ⚠️ CHECK VERSION FIRST - Verificar si requiere actualización
+                if let updateRequired = validationResult.updateRequired, updateRequired == true,
+                   let minVersion = validationResult.minAppVersion {
+                    // La key requiere una versión más nueva de la app
+                    print("[KeyStore] ⚠️ Update required: Key requires version \(minVersion)")
+                    
+                    // Cerrar sesión activa si existe
+                    if self.activeSession != nil {
+                        self.deactivateSession()
+                    }
+                    
+                    completion(.failure(.updateRequired(minVersion: minVersion)))
+                    return
+                }
+                
                 if validationResult.valid {
                     if validationResult.needsActivation == true {
                         // Key needs activation - activate it now
@@ -580,6 +595,20 @@ class KeyStore: ObservableObject {
                 let result = try await KeyAPIService.shared.validateKeyWithDevice(keyString, deviceId: deviceId)
                 
                 await MainActor.run {
+                    // ⚠️ VERIFICAR VERSIÓN PRIMERO
+                    if let updateRequired = result.updateRequired, updateRequired == true,
+                       let minVersion = result.minAppVersion {
+                        print("[KeyStore] ⚠️ Update required: Key \(keyString) requires version \(minVersion)")
+                        print("[KeyStore] 🚪 Closing session due to version requirement")
+                        
+                        // Mostrar notificación de actualización
+                        self.showUpdateRequiredAlert(minVersion: minVersion)
+                        
+                        // Cerrar sesión inmediatamente
+                        self.deactivateSession()
+                        return
+                    }
+                    
                     // Check if key is BANNED on server
                     let isBanned = (result.isBanned == true) ||
                         (result.reason?.lowercased().contains("bann") == true) ||
@@ -659,6 +688,26 @@ class KeyStore: ObservableObject {
         }
     }
     
+    /// Show alert when app update is required
+    private func showUpdateRequiredAlert(minVersion: String) {
+        DispatchQueue.main.async {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootViewController = windowScene.windows.first?.rootViewController else {
+                return
+            }
+            
+            let alert = UIAlertController(
+                title: "⚠️ ACTUALIZACIÓN REQUERIDA",
+                message: "Esta Key requiere la versión \(minVersion) o superior de la app.\n\nTu sesión ha sido cerrada.\n\nDescarga la última versión para continuar usando esta Key.",
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: "Entendido", style: .default))
+            
+            rootViewController.present(alert, animated: true)
+        }
+    }
+    
     /// Parse date string from server in various ISO formats
     static func parseServerDate(_ dateString: String?) -> Date? {
         guard let str = dateString, !str.isEmpty else { return nil }
@@ -704,6 +753,7 @@ enum KeyActivationError: LocalizedError {
     case expired
     case alreadyActivated
     case banned(reason: String?)
+    case updateRequired(minVersion: String)  // Nueva versión requerida
     
     var errorDescription: String? {
         switch self {
@@ -717,6 +767,8 @@ enum KeyActivationError: LocalizedError {
             return "Esta Key ya está activada en otro dispositivo."
         case .banned(let reason):
             return "Esta Key ha sido BANEADA: \(reason ?? "Uso indebido")"
+        case .updateRequired(let minVersion):
+            return "⚠️ ACTUALIZACIÓN REQUERIDA\n\nEsta Key requiere la versión \(minVersion) o superior.\n\nDescarga la última versión de la app para usar esta Key."
         }
     }
 }

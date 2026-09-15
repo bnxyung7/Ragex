@@ -28,6 +28,8 @@ class KeyAPIService {
         let message: String?
         let isBanned: Bool?
         let banReason: String?
+        let minAppVersion: String?  // Minimum app version required for this key
+        let updateRequired: Bool?    // If true, user must update to use this key
     }
     
     struct RemoteKeyInfo: Codable {
