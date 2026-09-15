@@ -6,11 +6,10 @@ struct FreeFireView: View {
     @StateObject private var keyStore = KeyStore.shared
     @State private var bundlePatches: [BundlePatch] = []
     @State private var selectedCategory: PatchCategory = .aimbot
-    @State private var selectedHologramaSubcategory: HologramaSubcategory?
-    @State private var isApplying = false
-    @State private var actionAlert: PatchStoreAlert?
-    @State private var selectedPatch: BundlePatch?
-    @State private var showPatchControl = false
+    @State private var selectedHologramaSubcategory: HologramaSubcategory = .arma
+    @State private var processingPatchIDs: Set<UUID> = []
+    @State private var errorMessage: String?
+    @State private var showErrorAlert = false
     
     enum PatchCategory: String, CaseIterable, Identifiable {
         case aimbot = "AIMBOT"
@@ -36,7 +35,7 @@ struct FreeFireView: View {
         
         var icon: String {
             switch self {
-            case .arma: return "target"
+            case .arma: return "scope"
             case .personaje: return "person.fill"
             }
         }
@@ -51,34 +50,23 @@ struct FreeFireView: View {
     
     var body: some View {
         NavigationView {
-            Group {
-                if keyStore.isBanned {
-                    // Key is banned - show Banned screen
-                    bannedView
-                } else if keyStore.hasValidAccess() {
-                    // User has valid Key - show content
-                    VStack(spacing: 0) {
-                        // Category selector
-                        categoryPicker
-                        
-                        // Patch list
-                        Group {
-                            if selectedCategory == .holograma {
-                                hologramaSubcategoryView
-                            } else if filteredPatches.isEmpty {
-                                emptyState
-                            } else {
-                                patchList
-                            }
-                        }
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                Group {
+                    if keyStore.isBanned {
+                        bannedView
+                    } else if keyStore.hasValidAccess() {
+                        mainContentView
+                    } else {
+                        lockedView
                     }
-                } else {
-                    // No valid Key - show locked state
-                    lockedView
                 }
             }
             .navigationTitle("Free Fire")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color.black, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 AppUtilityToolbar(
                     language: language,
@@ -91,21 +79,263 @@ struct FreeFireView: View {
         .onAppear {
             loadBundlePatches()
         }
-        .alert(item: $actionAlert) { (alert: PatchStoreAlert) in
-            Alert(
-                title: Text(language.text(alert.titleKey)),
-                message: Text(alert.message(language: language)),
-                dismissButton: .default(Text(language.text("common.ok")))
-            )
+        .alert("Error", isPresented: $showErrorAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage ?? "Ocurrió un error inesperado.")
         }
-        .sheet(isPresented: $showPatchControl) {
-            if let patch = selectedPatch {
-                PatchControlBottomSheet(patch: patch)
-                    .environmentObject(patchStore)
-                    .presentationDetents([.height(320)])
-                    .presentationDragIndicator(.hidden)
+    }
+    
+    // MARK: - Main Content View
+    
+    private var mainContentView: some View {
+        VStack(spacing: 0) {
+            categoryPicker
+            
+            ScrollView {
+                VStack(spacing: 12) {
+                    if selectedCategory == .holograma {
+                        hologramaSubcategoryPicker
+                        hologramaPatchList
+                    } else if filteredPatches.isEmpty {
+                        emptyState
+                    } else {
+                        ForEach(filteredPatches) { patch in
+                            PatchToggleRow(
+                                patch: patch,
+                                isProcessing: processingPatchIDs.contains(patch.id),
+                                onToggle: { activate in
+                                    togglePatch(patch, activate: activate)
+                                }
+                            )
+                            .environmentObject(patchStore)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
             }
         }
+    }
+    
+    // MARK: - Category Picker
+    
+    private var categoryPicker: some View {
+        HStack(spacing: 10) {
+            ForEach(PatchCategory.allCases) { category in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedCategory = category
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: category.icon)
+                            .font(.system(size: 13, weight: .semibold))
+                        Text(category.rawValue)
+                            .font(.system(size: 13, weight: .bold))
+                    }
+                    .foregroundStyle(selectedCategory == category ? .black : .white.opacity(0.7))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(selectedCategory == category ? Color.white : Color(red: 0.14, green: 0.14, blue: 0.16))
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Color.black)
+    }
+    
+    // MARK: - Holograma Subcategory Picker
+    
+    private var hologramaSubcategoryPicker: some View {
+        HStack(spacing: 10) {
+            ForEach(HologramaSubcategory.allCases) { subcategory in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedHologramaSubcategory = subcategory
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: subcategory.icon)
+                            .font(.system(size: 12, weight: .medium))
+                        Text(subcategory.displayName)
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundStyle(selectedHologramaSubcategory == subcategory ? .white : .white.opacity(0.5))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(selectedHologramaSubcategory == subcategory ? Color(red: 0.22, green: 0.22, blue: 0.25) : Color(red: 0.11, green: 0.11, blue: 0.13))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(selectedHologramaSubcategory == subcategory ? Color.white.opacity(0.2) : Color.clear, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.bottom, 6)
+    }
+    
+    // MARK: - Holograma Patch List
+    
+    private var hologramaPatches: [BundlePatch] {
+        bundlePatches.filter { patch in
+            patch.category == .holograma && patch.subcategory == selectedHologramaSubcategory.rawValue
+        }
+    }
+    
+    @ViewBuilder
+    private var hologramaPatchList: some View {
+        if hologramaPatches.isEmpty {
+            emptyState
+        } else {
+            ForEach(hologramaPatches) { patch in
+                PatchToggleRow(
+                    patch: patch,
+                    isProcessing: processingPatchIDs.contains(patch.id),
+                    onToggle: { activate in
+                        togglePatch(patch, activate: activate)
+                    }
+                )
+                .environmentObject(patchStore)
+            }
+        }
+    }
+    
+    private var filteredPatches: [BundlePatch] {
+        bundlePatches.filter { $0.category == selectedCategory }
+    }
+    
+    // MARK: - Empty State
+    
+    private var emptyState: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "shippingbox")
+                .font(.system(size: 48))
+                .foregroundStyle(.gray.opacity(0.5))
+                .padding(.top, 40)
+            
+            Text("No hay parches disponibles")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.8))
+            
+            Text("No se encontraron archivos .3105 en esta categoría")
+                .font(.system(size: 13))
+                .foregroundStyle(.gray)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+    }
+    
+    // MARK: - Toggle Patch Action
+    
+    private func togglePatch(_ patch: BundlePatch, activate: Bool) {
+        guard !processingPatchIDs.contains(patch.id) else { return }
+        processingPatchIDs.insert(patch.id)
+        
+        Task.detached(priority: .userInitiated) {
+            do {
+                let fileManager = FileManager.default
+                guard let destinationRoot = try? PatchProjectLibrary.packageRootURL(
+                    fileManager: fileManager
+                ) else {
+                    throw NSError(domain: "FreeFire", code: 1, userInfo: [
+                        NSLocalizedDescriptionKey: "No se pudo acceder a la librería de parches"
+                    ])
+                }
+                
+                let destinationURL = destinationRoot.appendingPathComponent(patch.url.lastPathComponent)
+                
+                // Copy if doesn't exist
+                if !fileManager.fileExists(atPath: destinationURL.path) {
+                    try fileManager.copyItem(at: patch.url, to: destinationURL)
+                }
+                
+                // Reload store to recognize file
+                await MainActor.run {
+                    patchStore.reload()
+                }
+                
+                // Find item & project
+                let items = await MainActor.run { patchStore.items }
+                guard let item = items.first(where: {
+                    $0.packageURL.lastPathComponent == patch.url.lastPathComponent
+                }), let project = item.project else {
+                    throw NSError(domain: "FreeFire", code: 2, userInfo: [
+                        NSLocalizedDescriptionKey: "No se encontró el proyecto para \(patch.displayName)"
+                    ])
+                }
+                
+                if activate {
+                    // Apply patch
+                    _ = try DevicePatchService.apply(project: project)
+                    await MainActor.run {
+                        patchStore.reload()
+                        SoundPlayer.shared.playActivate()
+                        processingPatchIDs.remove(patch.id)
+                    }
+                } else {
+                    // Deactivate patch
+                    if let receipt = DevicePatchService.latestReceipt(projectID: project.id) {
+                        _ = try DevicePatchService.restore(
+                            receipt: receipt,
+                            store: patchStore,
+                            project: project
+                        )
+                    }
+                    await MainActor.run {
+                        patchStore.reload()
+                        SoundPlayer.shared.playDeactivate()
+                        processingPatchIDs.remove(patch.id)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    processingPatchIDs.remove(patch.id)
+                    errorMessage = error.localizedDescription
+                    showErrorAlert = true
+                }
+                print("[FreeFire] Toggle error: \(error)")
+            }
+        }
+    }
+    
+    // MARK: - Load Bundle Patches
+    
+    private func loadBundlePatches() {
+        let fileManager = FileManager.default
+        
+        guard let bundleURL = Bundle.main.resourceURL else { return }
+        
+        var patches: [BundlePatch] = []
+        var seenFilenames = Set<String>()
+        
+        let preinstalledFolder = bundleURL.appendingPathComponent("PreinstalledPatches", isDirectory: true)
+        if fileManager.fileExists(atPath: preinstalledFolder.path) {
+            if let enumerator = fileManager.enumerator(at: preinstalledFolder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
+                for case let fileURL as URL in enumerator {
+                    if fileURL.pathExtension.lowercased() == "3105" {
+                        let filename = fileURL.lastPathComponent
+                        if !seenFilenames.contains(filename) {
+                            seenFilenames.insert(filename)
+                            patches.append(BundlePatch(url: fileURL))
+                        }
+                    }
+                }
+            }
+        }
+        
+        bundlePatches = patches
     }
     
     // MARK: - Banned View
@@ -115,7 +345,6 @@ struct FreeFireView: View {
             VStack(spacing: 24) {
                 Spacer(minLength: 20)
                 
-                // Red Shield / Warning Symbol
                 ZStack {
                     Circle()
                         .fill(Color.red.opacity(0.15))
@@ -131,7 +360,6 @@ struct FreeFireView: View {
                 }
                 .padding(.top, 10)
                 
-                // Title and warning
                 VStack(spacing: 8) {
                     Text("ACCESO BANEADO")
                         .font(.system(size: 24, weight: .heavy, design: .rounded))
@@ -144,7 +372,6 @@ struct FreeFireView: View {
                         .padding(.horizontal, 24)
                 }
                 
-                // Details Card
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
                         Image(systemName: "shield.slash.fill")
@@ -190,7 +417,7 @@ struct FreeFireView: View {
                 .padding(16)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(.secondarySystemBackground))
+                        .fill(Color(red: 0.12, green: 0.12, blue: 0.14))
                         .overlay(
                             RoundedRectangle(cornerRadius: 16)
                                 .stroke(Color.red.opacity(0.3), lineWidth: 1)
@@ -198,13 +425,12 @@ struct FreeFireView: View {
                 )
                 .padding(.horizontal, 24)
                 
-                // Contact / Community Links
                 VStack(spacing: 12) {
                     Text("Comunícate con soporte para apelar tu clave:")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     
-                    Link(destination: URL(string: "https://wa.me/18099289722?text=Hola,%20mi%20clave%20de%20Free%20Fire%20fue%20baneada:%20\(keyStore.activeSession?.key.keyString ?? "")")!) {
+                    Link(destination: URL(string: "https://wa.me/18099289722?text=Hola,%20mi%20clave%20de%20Free%20Fire%20fue%20baneada:\(keyStore.activeSession?.key.keyString ?? "")")!) {
                         HStack {
                             Image(systemName: "bubble.left.and.bubble.right.fill")
                             Text("Soporte Oficial WhatsApp")
@@ -219,42 +445,6 @@ struct FreeFireView: View {
                         .background(
                             RoundedRectangle(cornerRadius: 12)
                                 .fill(Color.green)
-                        )
-                    }
-                    
-                    Link(destination: URL(string: "https://whatsapp.com/channel/0029Vb7NRaRAojYuOAfX5S0S")!) {
-                        HStack {
-                            Image(systemName: "megaphone.fill")
-                            Text("Canal Oficial de WhatsApp")
-                                .fontWeight(.bold)
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                        }
-                        .font(.subheadline)
-                        .foregroundStyle(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.blue)
-                        )
-                    }
-                    
-                    Link(destination: URL(string: "https://discord.gg/AksKwSWaKq")!) {
-                        HStack {
-                            Image(systemName: "person.3.fill")
-                            Text("Servidor de Discord")
-                                .fontWeight(.bold)
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                        }
-                        .font(.subheadline)
-                        .foregroundStyle(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.purple)
                         )
                     }
                     
@@ -276,7 +466,7 @@ struct FreeFireView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+        .background(Color.black)
     }
     
     // MARK: - Locked View
@@ -285,24 +475,21 @@ struct FreeFireView: View {
         VStack(spacing: 24) {
             Spacer()
             
-            // Lock icon
             Image(systemName: "lock.fill")
                 .font(.system(size: 80))
                 .foregroundStyle(.orange)
             
-            // Title
             Text("Free Fire Bloqueado")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundStyle(.white)
             
-            // Message
             Text("Free Fire está bloqueado. Activa tu Key desde Perfil.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             
-            // Info box
             VStack(spacing: 12) {
                 HStack(spacing: 12) {
                     Image(systemName: "info.circle.fill")
@@ -312,6 +499,7 @@ struct FreeFireView: View {
                         Text("¿Cómo activar?")
                             .font(.subheadline)
                             .fontWeight(.semibold)
+                            .foregroundStyle(.white)
                         Text("Ve a la pestaña Perfil e introduce tu Key")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -322,7 +510,7 @@ struct FreeFireView: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.secondarySystemBackground))
+                        .fill(Color(red: 0.12, green: 0.12, blue: 0.14))
                 )
             }
             .padding(.horizontal, 32)
@@ -331,363 +519,80 @@ struct FreeFireView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+        .background(Color.black)
+    }
+}
+
+// MARK: - Patch Toggle Row (New Design matching screenshot)
+
+struct PatchToggleRow: View {
+    let patch: BundlePatch
+    let isProcessing: Bool
+    let onToggle: (Bool) -> Void
+    @EnvironmentObject private var patchStore: PatchProjectStore
+    
+    private var patchProject: PatchProject? {
+        let items = patchStore.items
+        guard let item = items.first(where: {
+            $0.packageURL.lastPathComponent == patch.url.lastPathComponent
+        }) else { return nil }
+        return item.project
     }
     
-    private var categoryPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(PatchCategory.allCases) { category in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedCategory = category
-                            // Reset subcategory when changing main category
-                            if category != .holograma {
-                                selectedHologramaSubcategory = nil
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: category.icon)
-                                .font(.system(size: 14, weight: .semibold))
-                            Text(category.rawValue)
-                                .font(.system(size: 13, weight: .semibold))
-                        }
-                        .foregroundStyle(selectedCategory == category ? .white : .primary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(
-                            Capsule()
-                                .fill(selectedCategory == category ? AppTheme.accent : Color(.systemGray5))
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 12)
-        }
-        .background(Color(.systemBackground))
+    private var isActive: Bool {
+        guard let project = patchProject else { return false }
+        return DevicePatchService.latestReceipt(projectID: project.id) != nil
     }
     
-    private var hologramaSubcategoryView: some View {
-        List {
-            Section {
-                ForEach(HologramaSubcategory.allCases) { subcategory in
-                    Button {
-                        selectedHologramaSubcategory = subcategory
-                    } label: {
-                        HStack(spacing: 14) {
-                            ZStack {
-                                Circle()
-                                    .fill(AppTheme.accent.opacity(0.15))
-                                    .frame(width: 50, height: 50)
-                                
-                                Image(systemName: subcategory.icon)
-                                    .font(.system(size: 22, weight: .medium))
-                                    .foregroundStyle(AppTheme.accent)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(subcategory.displayName)
-                                    .font(.body)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.primary)
-                                
-                                Text("\(hologramaPatchCount(for: subcategory)) patches disponibles")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding(.vertical, 8)
-                    }
-                    .buttonStyle(.plain)
-                }
-            } header: {
-                Text("CATEGORÍAS DE HOLOGRAMA")
-                    .textCase(.none)
-                    .font(.headline)
-            } footer: {
-                Text("Selecciona una categoría para ver los hologramas disponibles")
-                    .font(.caption)
-            }
-        }
-        .listStyle(.insetGrouped)
-        .sheet(item: $selectedHologramaSubcategory) { subcategory in
-            NavigationView {
-                hologramaSubcategoryDetailView(subcategory: subcategory)
-                    .navigationTitle(subcategory.displayName)
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("Cerrar") {
-                                selectedHologramaSubcategory = nil
-                            }
-                        }
-                    }
-            }
-        }
-    }
-    
-    private func hologramaPatchCount(for subcategory: HologramaSubcategory) -> Int {
-        bundlePatches.filter { patch in
-            patch.category == .holograma && patch.subcategory == subcategory.rawValue
-        }.count
-    }
-    
-    private func hologramaSubcategoryDetailView(subcategory: HologramaSubcategory) -> some View {
-        let patches = bundlePatches.filter { patch in
-            patch.category == .holograma && patch.subcategory == subcategory.rawValue
-        }
-        
-        return Group {
-            if patches.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "shippingbox")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.secondary)
-                    
-                    Text("No hay patches en esta categoría")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+    var body: some View {
+        HStack(spacing: 12) {
+            // Crosshair / Scope Icon
+            Image(systemName: patch.icon)
+                .font(.system(size: 17, weight: .regular))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22, alignment: .center)
+            
+            // Patch name
+            Text(patch.displayName)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+            
+            Spacer()
+            
+            // Toggle Switch / Spinner
+            if isProcessing {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    .scaleEffect(0.85)
+                    .frame(width: 51, height: 31)
             } else {
-                List {
-                    Section {
-                        ForEach(patches) { patch in
-                            patchRow(patch)
-                        }
-                    } header: {
-                        Text(subcategory.displayName.uppercased())
-                            .textCase(.none)
-                            .font(.headline)
-                    } footer: {
-                        Text("Patches de \(subcategory.displayName)")
-                            .font(.caption)
+                Toggle("", isOn: Binding(
+                    get: { isActive },
+                    set: { newValue in
+                        onToggle(newValue)
                     }
-                }
-                .listStyle(.insetGrouped)
+                ))
+                .labelsHidden()
+                .tint(Color.green)
             }
         }
-    }
-    
-    private var filteredPatches: [BundlePatch] {
-        bundlePatches.filter { $0.category == selectedCategory }
-    }
-    
-    private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "shippingbox")
-                .font(.system(size: 60))
-                .foregroundStyle(.secondary)
-            
-            Text("No patches in bundle")
-                .font(.headline)
-                .foregroundStyle(.secondary)
-            
-            Text("Add .3105 files to PreinstalledPatches folder")
-                .font(.subheadline)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-    
-    private var patchList: some View {
-        List {
-            Section {
-                ForEach(filteredPatches) { patch in
-                    patchRow(patch)
-                }
-            } header: {
-                Text(selectedCategory.rawValue)
-                    .textCase(.none)
-                    .font(.headline)
-            } footer: {
-                Text("These patches are included in the app bundle")
-                    .font(.caption)
-            }
-        }
-        .listStyle(.insetGrouped)
-    }
-    
-    private func patchRow(_ patch: BundlePatch) -> some View {
-        Button {
-            openPatchControl(patch)
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "shippingbox.fill")
-                    .font(.title2)
-                    .foregroundStyle(AppTheme.accent)
-                    .frame(width: 32)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(patch.displayName)
-                        .font(.body)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.primary)
-                    
-                    if let info = patch.info {
-                        Text(info)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                Spacer()
-                
-                if isApplying {
-                    ProgressView()
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.tertiary)
-                }
-            }
-            .padding(.vertical, 4)
-        }
-        .buttonStyle(.plain)
-        .disabled(isApplying)
-    }
-    
-    private func loadBundlePatches() {
-        let fileManager = FileManager.default
-        
-        guard let bundleURL = Bundle.main.resourceURL else {
-            print("[FreeFire] ERROR: Could not get bundle resource URL")
-            return
-        }
-        
-        var patches: [BundlePatch] = []
-        var seenFilenames = Set<String>()
-        
-        // Check PreinstalledPatches folder recursively (including subfolders)
-        let preinstalledFolder = bundleURL.appendingPathComponent("PreinstalledPatches", isDirectory: true)
-        if fileManager.fileExists(atPath: preinstalledFolder.path) {
-            // Scan all subdirectories for .3105 files
-            if let enumerator = fileManager.enumerator(at: preinstalledFolder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
-                for case let fileURL as URL in enumerator {
-                    if fileURL.pathExtension.lowercased() == "3105" {
-                        let filename = fileURL.lastPathComponent
-                        if !seenFilenames.contains(filename) {
-                            seenFilenames.insert(filename)
-                            patches.append(BundlePatch(url: fileURL))
-                        }
-                    }
-                }
-            }
-        }
-        
-        bundlePatches = patches
-        print("[FreeFire] Found \(patches.count) unique patches in bundle")
-    }
-    
-    private func openPatchControl(_ patch: BundlePatch) {
-        // First ensure patch is in library
-        Task {
-            do {
-                let fileManager = FileManager.default
-                guard let destinationRoot = try? PatchProjectLibrary.packageRootURL(
-                    fileManager: fileManager
-                ) else {
-                    return
-                }
-                
-                let destinationURL = destinationRoot.appendingPathComponent(patch.url.lastPathComponent)
-                
-                // Copy if doesn't exist
-                if !fileManager.fileExists(atPath: destinationURL.path) {
-                    try fileManager.copyItem(at: patch.url, to: destinationURL)
-                    print("[FreeFire] Copied patch to library: \(patch.displayName)")
-                    
-                    // Reload patch store
-                    await MainActor.run {
-                        patchStore.reload()
-                    }
-                }
-                
-                await MainActor.run {
-                    selectedPatch = patch
-                    showPatchControl = true
-                }
-            } catch {
-                print("[FreeFire] Error preparing patch: \(error)")
-            }
-        }
-    }
-    
-    private func applyPatch(_ patch: BundlePatch) {
-        isApplying = true
-        
-        Task.detached(priority: .userInitiated) {
-            do {
-                // First, install the patch to library if not already there
-                let fileManager = FileManager.default
-                guard let destinationRoot = try? PatchProjectLibrary.packageRootURL(
-                    fileManager: fileManager
-                ) else {
-                    throw NSError(domain: "FreeFire", code: 1, userInfo: [
-                        NSLocalizedDescriptionKey: "Could not access patch library"
-                    ])
-                }
-                
-                let destinationURL = destinationRoot.appendingPathComponent(patch.url.lastPathComponent)
-                
-                // Copy if doesn't exist
-                if !fileManager.fileExists(atPath: destinationURL.path) {
-                    try fileManager.copyItem(at: patch.url, to: destinationURL)
-                    print("[FreeFire] Copied patch to library: \(patch.displayName)")
-                }
-                
-                // Reload patch store to pick up the new patch
-                await MainActor.run {
-                    patchStore.reload()
-                }
-                
-                // Find the patch item
-                let items = await MainActor.run { patchStore.items }
-                guard let item = items.first(where: {
-                    $0.packageURL.lastPathComponent == patch.url.lastPathComponent
-                }), let project = item.project else {
-                    throw NSError(domain: "FreeFire", code: 2, userInfo: [
-                        NSLocalizedDescriptionKey: "Patch not found after installation"
-                    ])
-                }
-                
-                // Apply the patch
-                _ = try DevicePatchService.apply(project: project)
-                
-                await MainActor.run {
-                    patchStore.reload()
-                    isApplying = false
-                    actionAlert = PatchStoreAlert(
-                        titleKey: "common.done",
-                        messageKey: "patch.applied_message"
-                    )
-                }
-            } catch {
-                await MainActor.run {
-                    isApplying = false
-                    actionAlert = PatchStoreAlert(
-                        titleKey: "common.failed",
-                        messageKey: "patch.error.apply"
-                    )
-                }
-                print("[FreeFire] Apply failed: \(error)")
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(red: 0.12, green: 0.12, blue: 0.14))
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if !isProcessing {
+                onToggle(!isActive)
             }
         }
     }
 }
+
+// MARK: - Bundle Patch Model
 
 struct BundlePatch: Identifiable {
     let id = UUID()
@@ -695,18 +600,46 @@ struct BundlePatch: Identifiable {
     
     var displayName: String {
         let filename = url.deletingPathExtension().lastPathComponent
-        // Replace underscores with spaces
         var name = filename.replacingOccurrences(of: "_", with: " ")
-        
-        // Replace PERCENT with %
         name = name.replacingOccurrences(of: " PERCENT", with: "%")
         
-        return name
+        let components = name.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        let cleanWords = components.map { word -> String in
+            let upper = word.uppercased()
+            if upper == "AIM" || upper == "ESP" || upper == "FPS" || upper.contains("%") {
+                return upper
+            } else if upper == "PJ" {
+                return "Personaje"
+            }
+            return word.capitalized
+        }
+        return cleanWords.joined(separator: " ")
+    }
+    
+    var icon: String {
+        let name = url.lastPathComponent.uppercased()
+        if name.contains("AIM") || name.contains("PECHO") || name.contains("CABEZA") || name.contains("CUELLO") || name.contains("NECK") {
+            return "scope"
+        } else if name.contains("HOLOGRAMA") {
+            return "cube.transparent"
+        } else if name.contains("PARED") || name.contains("WALL") || name.contains("GLOO") {
+            return "shield.fill"
+        } else if name.contains("BALA") {
+            return "bolt.fill"
+        } else if name.contains("ESP") || name.contains("LINEA") {
+            return "eye.fill"
+        } else if name.contains("PJ") || name.contains("PERSONAJE") {
+            return "person.fill"
+        } else if name.contains("ARMA") {
+            return "scope"
+        } else if name.contains("FPS") {
+            return "speedometer"
+        }
+        return "scope"
     }
     
     var category: FreeFireView.PatchCategory {
         let filename = url.lastPathComponent.uppercased()
-        // Use parent folder name as category hint
         let folderName = url.deletingLastPathComponent().lastPathComponent.uppercased()
         
         if folderName == "AIMBOT" || filename.contains("AIM") || filename.contains("PECHO") {
@@ -718,15 +651,12 @@ struct BundlePatch: Identifiable {
             return .holograma
         }
         
-        // Default to others for FPS, BALA, WALLHACK, and unrecognized patches
         return .others
     }
     
     var subcategory: String? {
-        // For holograma category, determine subcategory from folder name
         if category == .holograma {
             let folderName = url.deletingLastPathComponent().lastPathComponent
-            
             if folderName.lowercased() == "arma" {
                 return "Arma"
             } else if folderName.lowercased() == "personaje" {
