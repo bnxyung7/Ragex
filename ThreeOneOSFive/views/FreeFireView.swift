@@ -476,8 +476,7 @@ struct FreeFireView: View {
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                 
-                Text("No hay parches precargados en esta sección para \(mode.rawValue).
-Puedes importar tus proyectos .3105 o solicitarlos al soporte oficial.")
+                Text("No hay parches precargados en esta sección para \(mode.rawValue).\nPuedes importar tus proyectos .3105 o solicitarlos al soporte oficial.")
                     .font(.system(size: 13))
                     .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)
