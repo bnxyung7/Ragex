@@ -287,11 +287,7 @@ struct FreeFireView: View {
                 } else {
                     // Deactivate patch
                     if let receipt = DevicePatchService.latestReceipt(projectID: project.id) {
-                        _ = try DevicePatchService.restore(
-                            receipt: receipt,
-                            store: patchStore,
-                            project: project
-                        )
+                        try DevicePatchService.restore(receipt: receipt)
                     }
                     await MainActor.run {
                         patchStore.reload()
