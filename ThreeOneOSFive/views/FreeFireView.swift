@@ -113,32 +113,7 @@ struct FreeFireView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAnnouncementsSheet = true
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "megaphone.fill")
-                                .font(.system(size: 13, weight: .bold))
-                            Text("Anuncios")
-                                .font(.system(size: 12, weight: .bold))
-                            if announcementService.hasUnreadAnnouncements {
-                                Circle()
-                                    .fill(Color(hex: "EF4444"))
-                                    .frame(width: 6, height: 6)
-                            }
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(
-                            Capsule()
-                                .fill(AppTheme.accent.opacity(0.25))
-                        )
-                        .overlay(
-                            Capsule()
-                                .stroke(AppTheme.accent.opacity(0.5), lineWidth: 1)
-                        )
-                    }
+                    announcementsToolbarButton
                 }
             }
         }
@@ -155,13 +130,40 @@ struct FreeFireView: View {
         }
     }
     
+    // MARK: - Announcements Toolbar Button
+    
+    private var announcementsToolbarButton: some View {
+        Button {
+            showAnnouncementsSheet = true
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "megaphone.fill")
+                    .font(.system(size: 12, weight: .bold))
+                Text("Anuncios")
+                    .font(.system(size: 12, weight: .bold))
+                if announcementService.hasUnreadAnnouncements {
+                    Circle()
+                        .fill(Color(hex: "EF4444"))
+                        .frame(width: 6, height: 6)
+                }
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(AppTheme.accent.opacity(0.22))
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(AppTheme.accent.opacity(0.5), lineWidth: 1)
+            )
+        }
+    }
+    
     // MARK: - Main Content View
     
     private var mainContentView: some View {
         VStack(spacing: 0) {
-            // Real-time Announcement / Game Header Banner
             headerHeroBanner
-            
             categoryPicker
             
             ScrollView {
@@ -196,25 +198,7 @@ struct FreeFireView: View {
     private var headerHeroBanner: some View {
         VStack(spacing: 10) {
             HStack(spacing: 12) {
-                // Game logo
-                Group {
-                    if let uiImg = UIImage(named: mode.assetImageName) {
-                        Image(uiImage: uiImg)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } else {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 22))
-                            .foregroundStyle(.white)
-                    }
-                }
-                .frame(width: 44, height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(AppTheme.accent.opacity(0.4), lineWidth: 1.5)
-                )
-                .shadow(color: AppTheme.accent.opacity(0.3), radius: 6)
+                gameLogoView
                 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
@@ -261,71 +245,11 @@ struct FreeFireView: View {
                 
                 Spacer()
                 
-                // Real-time "Ver Anuncio" Button
-                Button {
-                    showAnnouncementsSheet = true
-                } label: {
-                    VStack(spacing: 3) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "bell.badge.fill")
-                                .font(.system(size: 11, weight: .bold))
-                            Text("Ver Anuncio")
-                                .font(.system(size: 11, weight: .bold))
-                        }
-                        .foregroundStyle(.white)
-                        
-                        Text("Tiempo Real")
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(AppTheme.accent)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color(hex: "171827"))
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(AppTheme.accent.opacity(0.35), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
+                viewAnnouncementButton
             }
             
-            // Latest Announcement Marquee / Sub-banner
             if let latest = announcementService.latestAnnouncement {
-                Button {
-                    showAnnouncementsSheet = true
-                } label: {
-                    HStack(spacing: 8) {
-                        Text(latest.tag)
-                            .font(.system(size: 9, weight: .black))
-                            .foregroundStyle(AppTheme.accent)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(AppTheme.accent.opacity(0.18))
-                            .clipShape(Capsule())
-                        
-                        Text(latest.title)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(Color(hex: "E2E8F0"))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(Color(hex: "64748B"))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color(hex: "11121B"))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.04), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
+                marqueeBanner(latest)
             }
         }
         .padding(.horizontal, 16)
@@ -337,6 +261,95 @@ struct FreeFireView: View {
                 .frame(height: 1),
             alignment: .bottom
         )
+    }
+    
+    @ViewBuilder
+    private var gameLogoView: some View {
+        if let uiImg = UIImage(named: mode.assetImageName) {
+            Image(uiImage: uiImg)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(AppTheme.accent.opacity(0.4), lineWidth: 1.5)
+                )
+                .shadow(color: AppTheme.accent.opacity(0.3), radius: 6)
+        } else {
+            Image(systemName: "flame.fill")
+                .font(.system(size: 22))
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .background(AppTheme.accent.opacity(0.2))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+    }
+    
+    private var viewAnnouncementButton: some View {
+        Button {
+            showAnnouncementsSheet = true
+        } label: {
+            VStack(spacing: 3) {
+                HStack(spacing: 4) {
+                    Image(systemName: "bell.badge.fill")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("Ver Anuncio")
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .foregroundStyle(.white)
+                
+                Text("Tiempo Real")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(AppTheme.accent)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color(hex: "171827"))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(AppTheme.accent.opacity(0.35), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private func marqueeBanner(_ latest: LiveAnnouncement) -> some View {
+        Button {
+            showAnnouncementsSheet = true
+        } label: {
+            HStack(spacing: 8) {
+                Text(latest.tag)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(AppTheme.accent)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(AppTheme.accent.opacity(0.18))
+                    .clipShape(Capsule())
+                
+                Text(latest.title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color(hex: "E2E8F0"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Color(hex: "64748B"))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color(hex: "11121B"))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.white.opacity(0.04), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
     
     // MARK: - Category Picker
@@ -463,7 +476,8 @@ struct FreeFireView: View {
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                 
-                Text("No hay parches precargados en esta sección para \(mode.rawValue).\nPuedes importar tus proyectos .3105 o solicitarlos al soporte oficial.")
+                Text("No hay parches precargados en esta sección para \(mode.rawValue).
+Puedes importar tus proyectos .3105 o solicitarlos al soporte oficial.")
                     .font(.system(size: 13))
                     .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)
