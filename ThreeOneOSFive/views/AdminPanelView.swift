@@ -82,6 +82,18 @@ struct AdminPanelView: View {
                     adminSettings.saveTabSettings()
                 }
                 
+                Toggle(isOn: $adminSettings.tabSettings.freeFireMaxEnabled) {
+                    HStack {
+                        Image(systemName: "flame.circle.fill")
+                            .foregroundStyle(adminSettings.tabSettings.freeFireMaxEnabled ? .green : .gray)
+                        Text("Free Fire MAX")
+                            .fontWeight(.medium)
+                    }
+                }
+                .onChange(of: adminSettings.tabSettings.freeFireMaxEnabled) { _ in
+                    adminSettings.saveTabSettings()
+                }
+                
                 Toggle(isOn: $adminSettings.tabSettings.bundleExplorerEnabled) {
                     HStack {
                         Image(systemName: "folder.badge.gearshape")
@@ -103,36 +115,6 @@ struct AdminPanelView: View {
             Section {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Patches")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text(adminSettings.tabSettings.patchesEnabled ? "Visible" : "Oculto")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(adminSettings.tabSettings.patchesEnabled ? .green : .red)
-                    }
-                    Spacer()
-                    Image(systemName: adminSettings.tabSettings.patchesEnabled ? "eye.fill" : "eye.slash.fill")
-                        .foregroundStyle(adminSettings.tabSettings.patchesEnabled ? .green : .red)
-                }
-                
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Files")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text(adminSettings.tabSettings.filesEnabled ? "Visible" : "Oculto")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(adminSettings.tabSettings.filesEnabled ? .green : .red)
-                    }
-                    Spacer()
-                    Image(systemName: adminSettings.tabSettings.filesEnabled ? "eye.fill" : "eye.slash.fill")
-                        .foregroundStyle(adminSettings.tabSettings.filesEnabled ? .green : .red)
-                }
-                
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
                         Text("Free Fire")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -145,6 +127,21 @@ struct AdminPanelView: View {
                     Image(systemName: adminSettings.tabSettings.freeFireEnabled ? "eye.fill" : "eye.slash.fill")
                         .foregroundStyle(adminSettings.tabSettings.freeFireEnabled ? .green : .red)
                 }
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Free Fire MAX")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(adminSettings.tabSettings.freeFireMaxEnabled ? "Visible" : "Oculto")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(adminSettings.tabSettings.freeFireMaxEnabled ? .green : .red)
+                    }
+                    Spacer()
+                    Image(systemName: adminSettings.tabSettings.freeFireMaxEnabled ? "eye.fill" : "eye.slash.fill")
+                        .foregroundStyle(adminSettings.tabSettings.freeFireMaxEnabled ? .green : .red)
+                }
             } header: {
                 Text("Estado Actual")
             }
@@ -156,7 +153,6 @@ struct AdminPanelView: View {
     
     private var keyManagementView: some View {
         List {
-            // Create Key Button
             Section {
                 Button {
                     showCreateKey = true
@@ -171,7 +167,6 @@ struct AdminPanelView: View {
                 }
             }
             
-            // Active Keys
             if !keyStore.activeKeys.isEmpty {
                 Section {
                     ForEach(keyStore.activeKeys) { key in
@@ -189,7 +184,6 @@ struct AdminPanelView: View {
                 }
             }
             
-            // Expired Keys
             if !keyStore.expiredKeys.isEmpty {
                 Section {
                     ForEach(keyStore.expiredKeys) { key in
@@ -207,7 +201,6 @@ struct AdminPanelView: View {
                 }
             }
             
-            // Empty state
             if keyStore.allKeys.isEmpty {
                 Section {
                     VStack(spacing: 12) {
@@ -244,7 +237,6 @@ struct KeyRowView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Key string
             HStack {
                 Text(key.keyString)
                     .font(.system(.body, design: .monospaced))
@@ -252,7 +244,6 @@ struct KeyRowView: View {
                 
                 Spacer()
                 
-                // Status badge
                 Text(key.status.displayName)
                     .font(.caption)
                     .fontWeight(.medium)
@@ -265,7 +256,6 @@ struct KeyRowView: View {
                     .foregroundStyle(statusColor)
             }
             
-            // Details
             VStack(alignment: .leading, spacing: 4) {
                 keyDetail(icon: "clock.fill", text: "Duración: \(key.duration.displayName)")
                 keyDetail(icon: "calendar", text: "Expira: \(key.expirationDateString)")
@@ -279,16 +269,10 @@ struct KeyRowView: View {
                     keyDetail(icon: "xmark.shield.fill", text: "Razón ban: \(reason)")
                         .foregroundStyle(.red)
                 }
-                
-                if !key.notifications.isEmpty {
-                    keyDetail(icon: "bell.badge.fill", text: "\(key.notifications.count) notificación(es)")
-                        .foregroundStyle(.orange)
-                }
             }
             .font(.caption)
             .foregroundStyle(.secondary)
             
-            // Action buttons
             HStack(spacing: 8) {
                 Button {
                     showManageSheet = true
@@ -363,10 +347,8 @@ struct CreateKeyView: View {
         NavigationView {
             VStack(spacing: 0) {
                 if let key = createdKey {
-                    // Key created - show result
                     keyCreatedView(key: key)
                 } else {
-                    // Create form
                     createFormView
                 }
             }
@@ -426,7 +408,6 @@ struct CreateKeyView: View {
     
     private func keyCreatedView(key: UserKey) -> some View {
         VStack(spacing: 24) {
-            // Success icon
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 60))
                 .foregroundStyle(.green)
@@ -436,7 +417,6 @@ struct CreateKeyView: View {
                 .font(.title2)
                 .fontWeight(.bold)
             
-            // Key display
             VStack(alignment: .leading, spacing: 12) {
                 Text("Key generada:")
                     .font(.caption)
@@ -453,10 +433,8 @@ struct CreateKeyView: View {
                             .fill(Color(.secondarySystemBackground))
                     )
                 
-                // Copy button
                 Button {
                     UIPasteboard.general.string = key.keyString
-                    
                     let generator = UINotificationFeedbackGenerator()
                     generator.notificationOccurred(.success)
                 } label: {
@@ -471,7 +449,6 @@ struct CreateKeyView: View {
             }
             .padding(.horizontal, 24)
             
-            // Details
             VStack(spacing: 8) {
                 keyDetailRow(label: "Duración", value: key.duration.displayName)
                 keyDetailRow(label: "Expira", value: key.expirationDateString)
@@ -484,7 +461,6 @@ struct CreateKeyView: View {
             
             Spacer()
             
-            // Done button
             Button {
                 isPresented = false
             } label: {
@@ -523,12 +499,10 @@ struct CreateKeyView: View {
             createdKey = key
         }
         
-        // Haptic feedback
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
     }
 }
-
 
 // MARK: - Key Management Sheet
 
@@ -548,7 +522,6 @@ struct KeyManagementSheet: View {
     var body: some View {
         NavigationView {
             List {
-                // Key Info Section
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
@@ -582,7 +555,6 @@ struct KeyManagementSheet: View {
                     Text("Información")
                 }
                 
-                // Time Management
                 Section {
                     Button {
                         showResetConfirm = true
@@ -629,11 +601,11 @@ struct KeyManagementSheet: View {
                     Text("Gestión de Tiempo")
                 }
                 
-                // Ban Management
                 Section {
                     if key.isBanned {
                         Button {
-                            unbanKey()
+                            keyStore.unbanKey(key)
+                            dismiss()
                         } label: {
                             HStack {
                                 Image(systemName: "checkmark.shield.fill")
@@ -670,35 +642,6 @@ struct KeyManagementSheet: View {
                 } header: {
                     Text("Control de Acceso")
                 }
-                
-                // Notifications
-                if !key.notifications.isEmpty {
-                    Section {
-                        ForEach(Array(key.notifications.enumerated()), id: \.offset) { index, notification in
-                            HStack(spacing: 12) {
-                                Image(systemName: notification.icon)
-                                    .foregroundStyle(colorForNotification(notification))
-                                
-                                Text(notification.message)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, 4)
-                        }
-                        
-                        Button(role: .destructive) {
-                            keyStore.clearNotifications(for: key)
-                            dismiss()
-                        } label: {
-                            HStack {
-                                Image(systemName: "trash.fill")
-                                Text("Limpiar Notificaciones")
-                            }
-                        }
-                    } header: {
-                        Text("Notificaciones (\(key.notifications.count))")
-                    }
-                }
             }
             .navigationTitle("Gestionar Key")
             .navigationBarTitleDisplayMode(.inline)
@@ -713,62 +656,30 @@ struct KeyManagementSheet: View {
         .alert("Reset Key", isPresented: $showResetConfirm) {
             Button("Cancelar", role: .cancel) { }
             Button("Reset") {
-                resetKey()
+                keyStore.resetKey(key)
+                dismiss()
             }
         } message: {
             Text("Esto reiniciará el tiempo de expiración de la Key a su duración original.")
         }
         .sheet(isPresented: $showAddTimeSheet) {
             AddTimeSheet(days: $daysToAdd, onConfirm: {
-                addTime()
+                keyStore.addTime(to: key, days: daysToAdd)
+                dismiss()
             })
         }
         .sheet(isPresented: $showReduceTimeSheet) {
             ReduceTimeSheet(days: $daysToReduce, onConfirm: {
-                reduceTime()
+                keyStore.reduceTime(from: key, days: daysToReduce)
+                dismiss()
             })
         }
         .sheet(isPresented: $showBanSheet) {
             BanKeySheet(reason: $banReason, onConfirm: {
-                banKey()
+                keyStore.banKey(key, reason: banReason.isEmpty ? nil : banReason)
+                dismiss()
             })
         }
-    }
-    
-    private func colorForNotification(_ notification: KeyNotification) -> Color {
-        switch notification.color {
-        case "blue": return .blue
-        case "green": return .green
-        case "orange": return .orange
-        case "red": return .red
-        case "yellow": return .yellow
-        default: return .gray
-        }
-    }
-    
-    private func resetKey() {
-        keyStore.resetKey(key)
-        dismiss()
-    }
-    
-    private func addTime() {
-        keyStore.addTime(to: key, days: daysToAdd)
-        dismiss()
-    }
-    
-    private func reduceTime() {
-        keyStore.reduceTime(from: key, days: daysToReduce)
-        dismiss()
-    }
-    
-    private func banKey() {
-        keyStore.banKey(key, reason: banReason.isEmpty ? nil : banReason)
-        dismiss()
-    }
-    
-    private func unbanKey() {
-        keyStore.unbanKey(key)
-        dismiss()
     }
 }
 
@@ -798,31 +709,32 @@ struct AddTimeSheet: View {
                     
                     Picker("Días", selection: $days) {
                         ForEach(1...365, id: \.self) { day in
-                            Text("\(day) día(s)").tag(day)
+                            Text("\(day) \(day == 1 ? "día" : "días")").tag(day)
                         }
                     }
                     .pickerStyle(.wheel)
-                    .frame(height: 150)
                 }
+                .padding(.horizontal, 24)
+                
+                Spacer()
                 
                 Button {
                     onConfirm()
-                    dismiss()
                 } label: {
-                    Text("Añadir")
+                    Text("Confirmar")
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.green)
+                                .fill(AppTheme.accent)
                         )
                         .foregroundStyle(.white)
                 }
                 .padding(.horizontal, 24)
-                
-                Spacer()
+                .padding(.bottom, 32)
             }
+            .navigationTitle("Añadir Tiempo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -861,18 +773,19 @@ struct ReduceTimeSheet: View {
                     
                     Picker("Días", selection: $days) {
                         ForEach(1...365, id: \.self) { day in
-                            Text("\(day) día(s)").tag(day)
+                            Text("\(day) \(day == 1 ? "día" : "días")").tag(day)
                         }
                     }
                     .pickerStyle(.wheel)
-                    .frame(height: 150)
                 }
+                .padding(.horizontal, 24)
+                
+                Spacer()
                 
                 Button {
                     onConfirm()
-                    dismiss()
                 } label: {
-                    Text("Reducir")
+                    Text("Confirmar")
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -883,9 +796,9 @@ struct ReduceTimeSheet: View {
                         .foregroundStyle(.white)
                 }
                 .padding(.horizontal, 24)
-                
-                Spacer()
+                .padding(.bottom, 32)
             }
+            .navigationTitle("Reducir Tiempo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -917,28 +830,26 @@ struct BanKeySheet: View {
                     .font(.title2)
                     .fontWeight(.bold)
                 
-                Text("Esta Key será bloqueada y el usuario no podrá acceder a Free Fire")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Razón (opcional):")
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Razón del baneo (opcional):")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     
-                    TextField("Violación de términos, comportamiento sospechoso...", text: $reason, axis: .vertical)
-                        .textFieldStyle(.roundedBorder)
-                        .lineLimit(3...5)
+                    TextField("Ej: Violación de términos", text: $reason)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(.secondarySystemBackground))
+                        )
                 }
                 .padding(.horizontal, 24)
                 
+                Spacer()
+                
                 Button(role: .destructive) {
                     onConfirm()
-                    dismiss()
                 } label: {
-                    Text("Banear")
+                    Text("Banear Key")
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -949,9 +860,9 @@ struct BanKeySheet: View {
                         .foregroundStyle(.white)
                 }
                 .padding(.horizontal, 24)
-                
-                Spacer()
+                .padding(.bottom, 32)
             }
+            .navigationTitle("Banear Key")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

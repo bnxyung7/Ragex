@@ -76,10 +76,10 @@ struct ProfileView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(session.key.isBanned ? "ACCESO BANEADO" : "MEMBRESÃA ACTIVA")
+                        Text(session.key.isBanned ? "ACCESO BANEADO" : "MEMBRESÍA ACTIVA")
                             .font(.system(size: 15, weight: .heavy, design: .rounded))
                             .foregroundStyle(session.key.isBanned ? Color(hex: "EF4444") : .white)
-                        Text(session.key.isBanned ? "Clave suspendida por administraciÃ³n" : "Acceso verificado a Project X")
+                        Text(session.key.isBanned ? "Clave suspendida por administración" : "Acceso verificado a Project X")
                             .font(.caption)
                             .foregroundStyle(Color(hex: "94A3B8"))
                     }
@@ -99,7 +99,7 @@ struct ProfileView: View {
                 VStack(spacing: 10) {
                     keyDetailRow(icon: "key.fill", label: "Clave", value: session.key.keyString, copyable: true)
                     keyDetailRow(icon: "clock.fill", label: "Tiempo restante", value: session.key.timeRemaining)
-                    keyDetailRow(icon: "calendar", label: "Fecha expiraciÃ³n", value: session.key.expirationDateString)
+                    keyDetailRow(icon: "calendar", label: "Fecha expiración", value: session.key.expirationDateString)
                     keyDetailRow(icon: "checkmark.shield.fill", label: "Estado", value: session.key.status.displayName)
                     
                     if let userName = session.key.userName {
@@ -109,7 +109,7 @@ struct ProfileView: View {
                 
                 if session.key.isBanned, let reason = session.key.banReason {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Motivo de suspensiÃ³n:")
+                        Text("Motivo de suspensión:")
                             .font(.caption)
                             .foregroundStyle(Color(hex: "94A3B8"))
                         Text(reason)
@@ -160,7 +160,7 @@ struct ProfileView: View {
                     }
                     
                     VStack(spacing: 4) {
-                        Text("Sin MembresÃ­a Activa")
+                        Text("Sin Membresía Activa")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
                         Text("Activa tu clave de acceso para desbloquear todas las funciones de Project X")
@@ -197,7 +197,7 @@ struct ProfileView: View {
                     Text("Activar Nueva Clave")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("Introduce tu cÃ³digo de acceso")
+                    Text("Introduce tu código de acceso")
                         .font(.caption)
                         .foregroundStyle(Color(hex: "94A3B8"))
                 }
@@ -233,10 +233,10 @@ struct ProfileView: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Panel de AdministraciÃ³n")
+                            Text("Panel de Administración")
                                 .font(.system(size: 15, weight: .bold))
                                 .foregroundStyle(.white)
-                            Text("Gestor de claves y configuraciÃ³n")
+                            Text("Gestor de claves y configuración")
                                 .font(.caption)
                                 .foregroundStyle(Color(hex: "94A3B8"))
                         }
@@ -257,7 +257,7 @@ struct ProfileView: View {
                 } label: {
                     HStack {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
-                        Text("Cerrar SesiÃ³n Administrador")
+                        Text("Cerrar Sesión Administrador")
                             .font(.caption.weight(.semibold))
                     }
                     .foregroundStyle(Color(hex: "EF4444"))
@@ -281,7 +281,7 @@ struct ProfileView: View {
                             Text("Acceso Administrador")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(.white)
-                            Text("GestiÃ³n de seguridad")
+                            Text("Gestión de seguridad")
                                 .font(.caption2)
                                 .foregroundStyle(Color(hex: "94A3B8"))
                         }
@@ -400,7 +400,7 @@ struct KeyActivationSheet: View {
                     .padding(.top, 24)
                     
                     VStack(spacing: 6) {
-                        Text("Activar MembresÃ­a")
+                        Text("Activar Membresía")
                             .font(.system(size: 22, weight: .heavy, design: .rounded))
                             .foregroundStyle(.white)
                         
@@ -527,11 +527,11 @@ struct AdminLoginView: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("CONTRASEÃ‘A")
+                            Text("CONTRASEÑA")
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(Color(hex: "94A3B8"))
                             
-                            SecureField("ContraseÃ±a", text: $password)
+                            SecureField("Contraseña", text: $password)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 12)

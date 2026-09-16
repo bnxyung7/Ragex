@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct WelcomeSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -94,7 +94,7 @@ struct Page1View: View {
                     CyberBadge(text: "iOS", color: AppTheme.accent)
                 }
                 
-                Text("La plataforma mÃ¡s potente y avanzada para optimizaciÃ³n, parches y personalizaciÃ³n en iOS.")
+                Text("La plataforma más potente y avanzada para optimización, parches y personalización en iOS.")
                     .font(.subheadline)
                     .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)
@@ -129,7 +129,7 @@ struct Page2View: View {
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.white)
                 
-                Text("Project X estÃ¡ optimizado para funcionar directamente en tu dispositivo con la mÃ¡xima estabilidad y rendimiento.")
+                Text("Project X está optimizado para funcionar directamente en tu dispositivo con la máxima estabilidad y rendimiento.")
                     .font(.subheadline)
                     .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)
@@ -154,7 +154,7 @@ struct Page3View: View {
                     .font(.system(size: 24, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 
-                Text("Mantente informado de las Ãºltimas actualizaciones")
+                Text("Mantente informado de las últimas actualizaciones")
                     .font(.subheadline)
                     .foregroundStyle(Color(hex: "94A3B8"))
             }
@@ -163,7 +163,7 @@ struct Page3View: View {
                 CommunityButton(
                     icon: "bubble.left.and.bubble.right.fill",
                     title: "WhatsApp Soporte",
-                    subtitle: "AtenciÃ³n personalizada",
+                    subtitle: "Atención personalizada",
                     color: Color(hex: "10B981"),
                     url: "https://wa.me/18099289722"
                 )

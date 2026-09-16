@@ -24,13 +24,42 @@ struct TabVisibilitySettings: Codable, Equatable {
     var patchesEnabled: Bool
     var filesEnabled: Bool
     var freeFireEnabled: Bool
+    var freeFireMaxEnabled: Bool
     var bundleExplorerEnabled: Bool
     
+    init(
+        patchesEnabled: Bool = false,
+        filesEnabled: Bool = false,
+        freeFireEnabled: Bool = true,
+        freeFireMaxEnabled: Bool = true,
+        bundleExplorerEnabled: Bool = false
+    ) {
+        self.patchesEnabled = patchesEnabled
+        self.filesEnabled = filesEnabled
+        self.freeFireEnabled = freeFireEnabled
+        self.freeFireMaxEnabled = freeFireMaxEnabled
+        self.bundleExplorerEnabled = bundleExplorerEnabled
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case patchesEnabled, filesEnabled, freeFireEnabled, freeFireMaxEnabled, bundleExplorerEnabled
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        patchesEnabled = try container.decodeIfPresent(Bool.self, forKey: .patchesEnabled) ?? false
+        filesEnabled = try container.decodeIfPresent(Bool.self, forKey: .filesEnabled) ?? false
+        freeFireEnabled = try container.decodeIfPresent(Bool.self, forKey: .freeFireEnabled) ?? true
+        freeFireMaxEnabled = try container.decodeIfPresent(Bool.self, forKey: .freeFireMaxEnabled) ?? true
+        bundleExplorerEnabled = try container.decodeIfPresent(Bool.self, forKey: .bundleExplorerEnabled) ?? false
+    }
+    
     static let `default` = TabVisibilitySettings(
-        patchesEnabled: false,         // Hidden by default
-        filesEnabled: false,            // Hidden by default
-        freeFireEnabled: true,          // Always visible
-        bundleExplorerEnabled: false    // Hidden by default (admin-only)
+        patchesEnabled: false,
+        filesEnabled: false,
+        freeFireEnabled: true,
+        freeFireMaxEnabled: true,
+        bundleExplorerEnabled: false
     )
 }
 
@@ -96,6 +125,11 @@ class AdminSettings: ObservableObject {
     
     func toggleFreeFire() {
         tabSettings.freeFireEnabled.toggle()
+        saveTabSettings()
+    }
+    
+    func toggleFreeFireMax() {
+        tabSettings.freeFireMaxEnabled.toggle()
         saveTabSettings()
     }
     

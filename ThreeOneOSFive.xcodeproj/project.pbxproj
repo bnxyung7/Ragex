@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ANN00011 /* AnnouncementModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANN00001; };
+		ANN00012 /* AnnouncementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANN00002; };
 		3105A200 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105A020; };
 		3105A201 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105A021; };
 		3105A203 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105A023; };
@@ -292,6 +294,7 @@
 				3105L103 /* RepositoryHomeView.swift */,
 				3105L104 /* RepositorySourcesView.swift */,
 				A2DE34D5 /* ProfileView.swift */,
+				ANN00001 /* AnnouncementModalView.swift */,
 				F25A548D /* AdminPanelView.swift */,
 				SUP10002 /* SupportView.swift */,
 				BUNDLE01 /* BundleExplorerView.swift */,
@@ -349,6 +352,7 @@
 				DCE3C114 /* KeyStore.swift */,
 				KEYAPI14 /* KeyAPIService.swift */,
 				90DFBCB7 /* AdminSettings.swift */,
+				ANN00002 /* AnnouncementService.swift */,
 				PREKEY01 /* PreloadedKeys.swift */,
 				THEME001 /* ThemeManager.swift */,
 				SUP10001 /* SupportSystem.swift */,

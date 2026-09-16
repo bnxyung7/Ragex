@@ -5,9 +5,10 @@ enum AppSection: Int, CaseIterable, Identifiable {
     case files = 1
     case patches = 2
     case freeFire = 3
-    case profile = 4
-    case support = 5
-    case bundleExplorer = 6
+    case freeFireMax = 4
+    case profile = 5
+    case support = 6
+    case bundleExplorer = 7
 
     var id: Int { rawValue }
 }
@@ -59,6 +60,8 @@ struct FeatureVisibility: Equatable {
             return tabSettings.patchesEnabled
         case .freeFire:
             return tabSettings.freeFireEnabled
+        case .freeFireMax:
+            return tabSettings.freeFireMaxEnabled
         case .profile:
             return true // Always visible
         case .support:

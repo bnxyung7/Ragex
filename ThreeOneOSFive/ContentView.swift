@@ -82,8 +82,8 @@ struct ContentView: View {
                 sectionContent(section)
                     .tabItem {
                         CompactTabLabel(
-                            title: language.text(section.titleKey),
-                            systemImage: section.systemImage
+                            section: section,
+                            title: sectionTitle(section)
                         )
                     }
                     .tag(section.rawValue)
@@ -102,10 +102,15 @@ struct ContentView: View {
                             tabNavigation.select(section.rawValue)
                         }
                     } label: {
-                        Label(language.text(section.titleKey), systemImage: section.systemImage)
-                            .fontWeight(section.rawValue == tabNavigation.selectedTab ? .semibold : .regular)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
+                        HStack(spacing: 12) {
+                            sidebarIcon(for: section)
+                            Text(sectionTitle(section))
+                                .fontWeight(section.rawValue == tabNavigation.selectedTab ? .semibold : .regular)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+                            Spacer()
+                        }
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .listRowBackground(
@@ -118,13 +123,34 @@ struct ContentView: View {
                     )
                 }
             }
-            .navigationTitle("X")
+            .navigationTitle("Project X")
             .navigationSplitViewColumnWidth(min: 210, ideal: 240, max: 300)
         } detail: {
             sectionContent(selectedVisibleSection)
                 .id(selectedVisibleSection.rawValue)
         }
         .navigationSplitViewStyle(.balanced)
+    }
+
+    @ViewBuilder
+    private func sidebarIcon(for section: AppSection) -> some View {
+        if section == .freeFire, let img = UIImage(named: "freefire-icon") {
+            Image(uiImage: img)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+        } else if section == .freeFireMax, let img = UIImage(named: "freefire-max-icon") {
+            Image(uiImage: img)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+        } else {
+            Image(systemName: section.systemImage)
+                .font(.system(size: 16))
+                .foregroundStyle(section.rawValue == tabNavigation.selectedTab ? AppTheme.accent : .secondary)
+        }
     }
 
     @ViewBuilder
@@ -147,7 +173,9 @@ struct ContentView: View {
                 onOpenLogs: openLogs
             )
         case .freeFire:
-            FreeFireView()
+            FreeFireView(mode: .normal)
+        case .freeFireMax:
+            FreeFireView(mode: .max)
         case .profile:
             ProfileView()
         case .support:
@@ -192,6 +220,19 @@ struct ContentView: View {
         } ?? .home
     }
 
+    private func sectionTitle(_ section: AppSection) -> String {
+        switch section {
+        case .home: return language.text("tab.home")
+        case .files: return language.text("tab.files")
+        case .patches: return language.text("tab.patches")
+        case .freeFire: return "Free Fire"
+        case .freeFireMax: return "FF MAX"
+        case .profile: return "Perfil"
+        case .support: return "Soporte"
+        case .bundleExplorer: return "Bundle"
+        }
+    }
+
     private func openSettings() {
         showSettings = true
     }
@@ -202,43 +243,40 @@ struct ContentView: View {
 }
 
 private struct CompactTabLabel: View {
+    let section: AppSection
     let title: String
-    let systemImage: String
 
     @ViewBuilder
     var body: some View {
-        if let image = UIImage(
-            systemName: systemImage,
+        if section == .freeFire, let img = UIImage(named: "freefire-icon") {
+            Image(uiImage: img)
+                .renderingMode(.original)
+        } else if section == .freeFireMax, let img = UIImage(named: "freefire-max-icon") {
+            Image(uiImage: img)
+                .renderingMode(.original)
+        } else if let image = UIImage(
+            systemName: section.systemImage,
             withConfiguration: UIImage.SymbolConfiguration(pointSize: 17, weight: .medium)
         )?.withRenderingMode(.alwaysTemplate) {
             Image(uiImage: image)
         } else {
-            Image(systemName: systemImage)
+            Image(systemName: section.systemImage)
                 .font(.system(size: 17, weight: .medium))
         }
         Text(title)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
     }
 }
 
 private extension AppSection {
-    var titleKey: String {
-        switch self {
-        case .home: return "tab.home"
-        case .files: return "tab.files"
-        case .patches: return "tab.patches"
-        case .freeFire: return "Free Fire"
-        case .profile: return "Perfil"
-        case .support: return "Soporte"
-        case .bundleExplorer: return "Bundle"
-        }
-    }
-
     var systemImage: String {
         switch self {
         case .home: return "house.fill"
         case .files: return "folder.fill"
         case .patches: return "shippingbox.fill"
         case .freeFire: return "flame.fill"
+        case .freeFireMax: return "flame.circle.fill"
         case .profile: return "person.fill"
         case .support: return "headphones.circle.fill"
         case .bundleExplorer: return "folder.badge.gearshape"

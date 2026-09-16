@@ -35,7 +35,7 @@ struct SupportView: View {
                                     .font(.system(size: 26, weight: .heavy, design: .rounded))
                                     .foregroundStyle(.white)
                                 
-                                Text(isSpanish ? "AtenciÃ³n directa y soporte para Project X iOS" : "Direct help & support for Project X iOS")
+                                Text(isSpanish ? "Atención directa y soporte para Project X iOS" : "Direct help & support for Project X iOS")
                                     .font(.subheadline)
                                     .foregroundStyle(Color(hex: "94A3B8"))
                                     .multilineTextAlignment(.center)
@@ -47,7 +47,7 @@ struct SupportView: View {
                             icon: "bubble.left.and.bubble.right.fill",
                             badge: "OFICIAL",
                             title: "WhatsApp Oficial",
-                            subtitle: isSpanish ? "AtenciÃ³n rÃ¡pida personalizada" : "Fast personal assistance",
+                            subtitle: isSpanish ? "Atención rápida personalizada" : "Fast personal assistance",
                             color: Color(hex: "10B981"),
                             detail: SupportContact.whatsappNumber
                         ) {
@@ -151,7 +151,7 @@ struct SupportView: View {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(Color(hex: "10B981"))
                             
-                            Text(isSpanish ? "Â¡NÃºmero copiado al portapapeles!" : "Number copied to clipboard!")
+                            Text(isSpanish ? "¡Número copiado al portapapeles!" : "Number copied to clipboard!")
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(.white)
                         }

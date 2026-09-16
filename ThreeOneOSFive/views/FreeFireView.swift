@@ -1,15 +1,59 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct FreeFireView: View {
+    enum GameMode: String, CaseIterable, Identifiable {
+        case normal = "Free Fire"
+        case max = "Free Fire MAX"
+        
+        var id: String { rawValue }
+        
+        var targetBundleID: String {
+            switch self {
+            case .normal: return "com.dts.freefireth"
+            case .max: return "com.dts.freefiremax"
+            }
+        }
+        
+        var assetImageName: String {
+            switch self {
+            case .normal: return "freefire-icon"
+            case .max: return "freefire-max-icon"
+            }
+        }
+        
+        var badgeText: String {
+            switch self {
+            case .normal: return "NORMAL"
+            case .max: return "MAX"
+            }
+        }
+        
+        var badgeGradient: [Color] {
+            switch self {
+            case .normal: return [Color(hex: "8B5CF6"), Color(hex: "6366F1")]
+            case .max: return [Color(hex: "EC4899"), Color(hex: "8B5CF6")]
+            }
+        }
+    }
+    
+    let mode: GameMode
+    
+    init(mode: GameMode = .normal) {
+        self.mode = mode
+    }
+    
     @Environment(\.appLanguage) private var language
     @EnvironmentObject private var patchStore: PatchProjectStore
     @StateObject private var keyStore = KeyStore.shared
+    @StateObject private var announcementService = AnnouncementService.shared
+    
     @State private var bundlePatches: [BundlePatch] = []
     @State private var selectedCategory: PatchCategory = .aimbot
     @State private var selectedHologramaSubcategory: HologramaSubcategory = .arma
     @State private var processingPatchIDs: Set<UUID> = []
     @State private var errorMessage: String?
     @State private var showErrorAlert = false
+    @State private var showAnnouncementsSheet = false
     
     enum PatchCategory: String, CaseIterable, Identifiable {
         case aimbot = "AIMBOT"
@@ -63,10 +107,43 @@ struct FreeFireView: View {
                     }
                 }
             }
-            .navigationTitle("Free Fire")
+            .navigationTitle(mode.rawValue)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color(hex: "08080C"), for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showAnnouncementsSheet = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "megaphone.fill")
+                                .font(.system(size: 13, weight: .bold))
+                            Text("Anuncios")
+                                .font(.system(size: 12, weight: .bold))
+                            if announcementService.hasUnreadAnnouncements {
+                                Circle()
+                                    .fill(Color(hex: "EF4444"))
+                                    .frame(width: 6, height: 6)
+                            }
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(
+                            Capsule()
+                                .fill(AppTheme.accent.opacity(0.25))
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(AppTheme.accent.opacity(0.5), lineWidth: 1)
+                        )
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showAnnouncementsSheet) {
+            AnnouncementModalView()
         }
         .onAppear {
             loadBundlePatches()
@@ -74,7 +151,7 @@ struct FreeFireView: View {
         .alert("Error", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text(errorMessage ?? "OcurriÃ³ un error inesperado.")
+            Text(errorMessage ?? "Ocurrió un error inesperado.")
         }
     }
     
@@ -82,6 +159,9 @@ struct FreeFireView: View {
     
     private var mainContentView: some View {
         VStack(spacing: 0) {
+            // Real-time Announcement / Game Header Banner
+            headerHeroBanner
+            
             categoryPicker
             
             ScrollView {
@@ -111,10 +191,158 @@ struct FreeFireView: View {
         }
     }
     
+    // MARK: - Header Hero Banner
+    
+    private var headerHeroBanner: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 12) {
+                // Game logo
+                Group {
+                    if let uiImg = UIImage(named: mode.assetImageName) {
+                        Image(uiImage: uiImg)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } else {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 22))
+                            .foregroundStyle(.white)
+                    }
+                }
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(AppTheme.accent.opacity(0.4), lineWidth: 1.5)
+                )
+                .shadow(color: AppTheme.accent.opacity(0.3), radius: 6)
+                
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(mode.rawValue)
+                            .font(.system(size: 16, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        
+                        Text(mode.badgeText)
+                            .font(.system(size: 9, weight: .black))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                LinearGradient(
+                                    colors: mode.badgeGradient,
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .clipShape(Capsule())
+                    }
+                    
+                    HStack(spacing: 6) {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(Color(hex: "10B981"))
+                                .frame(width: 6, height: 6)
+                            Text("Bypass Activo")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Color(hex: "10B981"))
+                        }
+                        
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundStyle(Color(hex: "64748B"))
+                        
+                        Text("120 FPS")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(AppTheme.accent)
+                    }
+                }
+                
+                Spacer()
+                
+                // Real-time "Ver Anuncio" Button
+                Button {
+                    showAnnouncementsSheet = true
+                } label: {
+                    VStack(spacing: 3) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "bell.badge.fill")
+                                .font(.system(size: 11, weight: .bold))
+                            Text("Ver Anuncio")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .foregroundStyle(.white)
+                        
+                        Text("Tiempo Real")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(AppTheme.accent)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color(hex: "171827"))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(AppTheme.accent.opacity(0.35), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Latest Announcement Marquee / Sub-banner
+            if let latest = announcementService.latestAnnouncement {
+                Button {
+                    showAnnouncementsSheet = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(latest.tag)
+                            .font(.system(size: 9, weight: .black))
+                            .foregroundStyle(AppTheme.accent)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(AppTheme.accent.opacity(0.18))
+                            .clipShape(Capsule())
+                        
+                        Text(latest.title)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color(hex: "E2E8F0"))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color(hex: "64748B"))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color(hex: "11121B"))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(Color.white.opacity(0.04), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color(hex: "0C0D14"))
+        .overlay(
+            Rectangle()
+                .fill(Color.white.opacity(0.05))
+                .frame(height: 1),
+            alignment: .bottom
+        )
+    }
+    
     // MARK: - Category Picker
     
     private var categoryPicker: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             ForEach(PatchCategory.allCases) { category in
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -123,13 +351,15 @@ struct FreeFireView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: category.icon)
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                         Text(category.rawValue)
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 12, weight: .bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                     .foregroundStyle(selectedCategory == category ? .white : Color(hex: "94A3B8"))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 9)
                     .background(
                         Capsule()
                             .fill(selectedCategory == category ? AppTheme.accent : Color(hex: "131420"))
@@ -163,6 +393,7 @@ struct FreeFireView: View {
                             .font(.system(size: 12, weight: .medium))
                         Text(subcategory.displayName)
                             .font(.system(size: 13, weight: .medium))
+                            .lineLimit(1)
                     }
                     .foregroundStyle(selectedHologramaSubcategory == subcategory ? .white : Color(hex: "94A3B8"))
                     .frame(maxWidth: .infinity)
@@ -219,29 +450,49 @@ struct FreeFireView: View {
             ZStack {
                 Circle()
                     .fill(AppTheme.accent.opacity(0.1))
-                    .frame(width: 80, height: 80)
+                    .frame(width: 76, height: 76)
                 
                 Image(systemName: "shippingbox.fill")
-                    .font(.system(size: 38))
+                    .font(.system(size: 34))
                     .foregroundStyle(AppTheme.accent.opacity(0.8))
             }
-            .padding(.top, 40)
+            .padding(.top, 36)
             
             VStack(spacing: 6) {
-                Text("CategorÃ­a VacÃ­a")
+                Text("Categoría Vacía")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                 
-                Text("No hay parches precargados en esta secciÃ³n.\nPuedes importar tus propios proyectos .3105 o solicitarlos a soporte.")
-                    .font(.caption)
+                Text("No hay parches precargados en esta sección para \(mode.rawValue).\nPuedes importar tus proyectos .3105 o solicitarlos al soporte oficial.")
+                    .font(.system(size: 13))
                     .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)
                     .lineSpacing(3)
                     .padding(.horizontal, 24)
             }
+            
+            Button {
+                showAnnouncementsSheet = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "megaphone.fill")
+                        .font(.system(size: 12))
+                    Text("Ver Anuncios y Novedades")
+                        .font(.system(size: 13, weight: .bold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 9)
+                .background(
+                    Capsule()
+                        .fill(AppTheme.accent)
+                )
+                .shadow(color: AppTheme.accent.opacity(0.4), radius: 6)
+            }
+            .padding(.top, 6)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
+        .padding(.vertical, 30)
         .padding(.horizontal, 16)
         .obsidianCard(cornerRadius: 18, borderColor: Color.white.opacity(0.06))
     }
@@ -259,7 +510,7 @@ struct FreeFireView: View {
                     fileManager: fileManager
                 ) else {
                     throw NSError(domain: "FreeFire", code: 1, userInfo: [
-                        NSLocalizedDescriptionKey: "No se pudo acceder a la librerÃ­a de parches"
+                        NSLocalizedDescriptionKey: "No se pudo acceder a la librería de parches"
                     ])
                 }
                 
@@ -278,7 +529,7 @@ struct FreeFireView: View {
                     $0.packageURL.lastPathComponent == patch.url.lastPathComponent
                 }), let project = item.project else {
                     throw NSError(domain: "FreeFire", code: 2, userInfo: [
-                        NSLocalizedDescriptionKey: "No se encontrÃ³ el proyecto para \(patch.displayName)"
+                        NSLocalizedDescriptionKey: "No se encontró el proyecto para \(patch.displayName)"
                     ])
                 }
                 
@@ -314,7 +565,6 @@ struct FreeFireView: View {
     
     private func loadBundlePatches() {
         let fileManager = FileManager.default
-        
         guard let bundleURL = Bundle.main.resourceURL else { return }
         
         var patches: [BundlePatch] = []
@@ -348,24 +598,24 @@ struct FreeFireView: View {
                 ZStack {
                     Circle()
                         .fill(Color(hex: "EF4444").opacity(0.15))
-                        .frame(width: 110, height: 110)
+                        .frame(width: 100, height: 100)
                     
                     Circle()
                         .stroke(Color(hex: "EF4444").opacity(0.4), lineWidth: 2)
-                        .frame(width: 120, height: 120)
+                        .frame(width: 110, height: 110)
                     
                     Image(systemName: "exclamationmark.octagon.fill")
-                        .font(.system(size: 60, weight: .bold))
+                        .font(.system(size: 54, weight: .bold))
                         .foregroundStyle(Color(hex: "EF4444"))
                 }
                 .padding(.top, 10)
                 
                 VStack(spacing: 8) {
                     Text("ACCESO BANEADO")
-                        .font(.system(size: 24, weight: .heavy, design: .rounded))
+                        .font(.system(size: 22, weight: .heavy, design: .rounded))
                         .foregroundStyle(Color(hex: "EF4444"))
                     
-                    Text("Tu clave de Free Fire ha sido inhabilitada por la administraciÃ³n.")
+                    Text("Tu clave de acceso ha sido inhabilitada por la administración.")
                         .font(.subheadline)
                         .foregroundStyle(Color(hex: "94A3B8"))
                         .multilineTextAlignment(.center)
@@ -376,7 +626,7 @@ struct FreeFireView: View {
                     HStack {
                         Image(systemName: "shield.slash.fill")
                             .foregroundStyle(Color(hex: "EF4444"))
-                        Text("ESTADO DE LA SANCIÃ“N")
+                        Text("ESTADO DE LA SANCIÓN")
                             .font(.caption)
                             .fontWeight(.bold)
                             .foregroundStyle(Color(hex: "94A3B8"))
@@ -409,7 +659,7 @@ struct FreeFireView: View {
                         Text("Motivo del bloqueo:")
                             .font(.caption2)
                             .foregroundStyle(Color(hex: "94A3B8"))
-                        Text(keyStore.banReason ?? "ViolaciÃ³n de tÃ©rminos del servicio o uso no autorizado.")
+                        Text(keyStore.banReason ?? "Violación de términos del servicio o uso no autorizado.")
                             .font(.subheadline)
                             .fontWeight(.semibold)
                             .foregroundStyle(Color(hex: "EF4444"))
@@ -420,11 +670,11 @@ struct FreeFireView: View {
                 .padding(.horizontal, 24)
                 
                 VStack(spacing: 12) {
-                    Text("ComunÃ­cate con soporte para apelar tu clave:")
+                    Text("Comunícate con soporte para apelar tu clave:")
                         .font(.caption)
                         .foregroundStyle(Color(hex: "94A3B8"))
                     
-                    Link(destination: URL(string: "https://wa.me/18099289722?text=Hola,%20mi%20clave%20de%20Free%20Fire%20fue%20baneada:\(keyStore.activeSession?.key.keyString ?? "")")!) {
+                    Link(destination: URL(string: "https://wa.me/18099289722?text=Hola,%20mi%20clave%20de%20Project%20X%20fue%20baneada:\(keyStore.activeSession?.key.keyString ?? "")")!) {
                         HStack {
                             Image(systemName: "bubble.left.and.bubble.right.fill")
                             Text("Soporte Oficial WhatsApp")
@@ -447,7 +697,7 @@ struct FreeFireView: View {
                     } label: {
                         HStack {
                             Image(systemName: "xmark.circle")
-                            Text("Cerrar SesiÃ³n")
+                            Text("Cerrar Sesión")
                         }
                         .font(.caption)
                         .foregroundStyle(Color(hex: "94A3B8"))
@@ -472,19 +722,19 @@ struct FreeFireView: View {
             ZStack {
                 Circle()
                     .fill(AppTheme.accent.opacity(0.15))
-                    .frame(width: 90, height: 90)
+                    .frame(width: 84, height: 84)
                 
                 Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 46))
+                    .font(.system(size: 42))
                     .foregroundStyle(AppTheme.accent)
             }
             
             VStack(spacing: 6) {
-                Text("Free Fire Bloqueado")
+                Text("\(mode.rawValue) Bloqueado")
                     .font(.system(size: 22, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 
-                Text("Activa tu clave de acceso desde la pestaÃ±a Perfil para habilitar el motor de parches.")
+                Text("Activa tu clave de acceso desde la pestaña Perfil para habilitar el motor de inyección.")
                     .font(.subheadline)
                     .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)
@@ -498,10 +748,10 @@ struct FreeFireView: View {
                         .foregroundStyle(AppTheme.accent)
                     
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Â¿CÃ³mo activar?")
+                        Text("¿Cómo activar?")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.white)
-                        Text("DirÃ­gete a Perfil e ingresa tu clave asignada")
+                        Text("Dirígete a Perfil e ingresa tu clave asignada")
                             .font(.caption)
                             .foregroundStyle(Color(hex: "94A3B8"))
                     }
@@ -557,6 +807,7 @@ struct PatchToggleRow: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
             
             Spacer()
             
