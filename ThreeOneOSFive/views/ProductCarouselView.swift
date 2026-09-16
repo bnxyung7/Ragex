@@ -79,8 +79,8 @@ struct ProductCarouselView: View {
     private func startAutoScroll() {
         guard !products.isEmpty else { return }
         timer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { _ in
-            guard !products.isEmpty else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                guard !products.isEmpty else { return }
                 currentIndex = (currentIndex + 1) % products.count
             }
         }
