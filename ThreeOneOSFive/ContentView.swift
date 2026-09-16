@@ -89,6 +89,8 @@ struct ContentView: View {
                     .tag(section.rawValue)
             }
         }
+        .toolbarBackground(Color(hex: "08080C"), for: .tabBar)
+        .toolbarColorScheme(.dark, for: .tabBar)
     }
 
     private var regularLayout: some View {

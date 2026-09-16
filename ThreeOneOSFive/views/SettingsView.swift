@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -17,178 +17,240 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    HStack(spacing: 14) {
-                        AppLogo()
+            ZStack {
+                Color(hex: "08080C").ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // App Brand Card
+                        HStack(spacing: 16) {
+                            AppLogo(size: 52)
 
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("X").font(.headline)
-                            Text(language.text("common.version", appVersion))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-
-                Section {
-                    Button {
-                        showChangelog = true
-                    } label: {
-                        HStack(spacing: 14) {
-                            Image(systemName: "arrow.down.circle.fill")
-                                .foregroundStyle(.blue)
-                                .font(.title2)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Updates")
-                                    .font(.headline)
-                                    .foregroundStyle(.primary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 8) {
+                                    Text("PROJECT X")
+                                        .font(.system(size: 18, weight: .heavy, design: .rounded))
+                                        .foregroundStyle(.white)
+                                    
+                                    CyberBadge(text: "v\(appVersion)", color: AppTheme.accent)
+                                }
                                 
-                                Text("Version \(appVersion)")
+                                Text("Motor de Rendimiento y Parches iOS")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color(hex: "94A3B8"))
                             }
                             
                             Spacer()
+                        }
+                        .padding(16)
+                        .obsidianCard(cornerRadius: 18, borderColor: AppTheme.accent.opacity(0.3), glowing: true)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+
+                        // Theme Selector
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("COLOR DEL TEMA")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color(hex: "94A3B8"))
+                                .padding(.horizontal, 4)
                             
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.plain)
-                }
-                
-                Section {
-                    Link(destination: URL(string: "https://discord.gg/AksKwSWaKq")!) {
-                        HStack {
-                            Image(systemName: "message.fill")
-                                .foregroundStyle(.blue)
-                            Text("Join Discord for Updates")
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .font(.caption)
-                        }
-                        .font(.subheadline)
-                    }
-                    
-                    Link(destination: URL(string: "https://whatsapp.com/channel/0029Vb7NRaRAojYuOAfX5S0S")!) {
-                        HStack {
-                            Image(systemName: "megaphone.fill")
-                                .foregroundStyle(.green)
-                            Text("Follow WhatsApp Channel")
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .font(.caption)
-                        }
-                        .font(.subheadline)
-                    }
-                } header: {
-                    Text("Community")
-                }
-
-                Section {
-                    Toggle(isOn: $cleanerEnabled) {
-                        Label(language.text("tab.cleaner"), systemImage: "sparkles")
-                    }
-                    Toggle(isOn: $developerModeEnabled) {
-                        Label(
-                            language.text("settings.developer_mode"),
-                            systemImage: "hammer.fill"
-                        )
-                    }
-                } header: {
-                    Text(language.text("dashboard.features"))
-                } footer: {
-                    Text(language.text("settings.developer_mode_footer"))
-                }
-
-                // Theme Selector
-                Section {
-                    ForEach(AppThemeColor.allCases) { theme in
-                        Button {
-                            themeManager.setTheme(theme)
-                        } label: {
-                            HStack(spacing: 14) {
-                                Image(systemName: theme.icon)
-                                    .font(.title2)
-                                    .foregroundStyle(theme.color)
-                                
-                                Text(theme.displayName)
-                                    .font(.body)
-                                    .foregroundStyle(.primary)
-                                
-                                Spacer()
-                                
-                                if themeManager.currentTheme == theme {
-                                    Image(systemName: "checkmark")
-                                        .font(.body.weight(.semibold))
-                                        .foregroundStyle(theme.color)
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                                ForEach(AppThemeColor.allCases) { theme in
+                                    Button {
+                                        themeManager.setTheme(theme)
+                                    } label: {
+                                        HStack(spacing: 10) {
+                                            Circle()
+                                                .fill(theme.gradient)
+                                                .frame(width: 22, height: 22)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(Color.white.opacity(0.4), lineWidth: themeManager.currentTheme == theme ? 2 : 0)
+                                                )
+                                                .shadow(color: theme.color.opacity(themeManager.currentTheme == theme ? 0.6 : 0), radius: 6)
+                                            
+                                            Text(theme.displayName)
+                                                .font(.system(size: 13, weight: .bold))
+                                                .foregroundStyle(themeManager.currentTheme == theme ? .white : Color(hex: "94A3B8"))
+                                            
+                                            Spacer()
+                                            
+                                            if themeManager.currentTheme == theme {
+                                                Image(systemName: "checkmark")
+                                                    .font(.system(size: 11, weight: .bold))
+                                                    .foregroundStyle(theme.color)
+                                            }
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 12)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(themeManager.currentTheme == theme ? Color(hex: "18192A") : Color(hex: "11121A"))
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(themeManager.currentTheme == theme ? theme.color.opacity(0.6) : Color.white.opacity(0.06), lineWidth: 1)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
-                            .padding(.vertical, 4)
                         }
-                        .buttonStyle(.plain)
-                    }
-                } header: {
-                    Text("Tema")
-                } footer: {
-                    Text("Selecciona el color del tema de la aplicación")
-                }
+                        .padding(16)
+                        .obsidianCard(cornerRadius: 18, borderColor: Color.white.opacity(0.06))
+                        .padding(.horizontal, 16)
 
-                Section(language.text("common.device")) {
-                    LabeledContent(language.text("dashboard.hardware_model"), value: AppInfo.displayMachineName)
-                    LabeledContent(language.text("settings.ios_version"), value: "\(AppInfo.osVersion) (\(AppInfo.osBuild))")
-                }
-
-                Section {
-                    HStack {
-                        Text(language.text("settings.current_version"))
-                        Spacer()
-                        Text(language.text(appState.isSupported ? "settings.supported" : "settings.unsupported"))
-                        .foregroundStyle(appState.isSupported ? Color.green : Color.red)
-                    }
-                    LabeledContent("iOS 17", value: ExploitSupportPolicy.verifiedIOS17Range)
-                    LabeledContent("iOS 18", value: ExploitSupportPolicy.verifiedIOS18Range)
-                    LabeledContent("iOS 26", value: ExploitSupportPolicy.verifiedIOS26Range)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("iOS 27.0")
-                            .font(.body)
-                        ForEach(ExploitSupportPolicy.verifiedIOS27Builds, id: \.build) { version in
-                            Text(versionLabel(version))
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
+                        // Updates & Community
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("NOVEDADES Y COMUNIDAD")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color(hex: "94A3B8"))
+                                .padding(.horizontal, 4)
+                            
+                            VStack(spacing: 0) {
+                                Button {
+                                    showChangelog = true
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Color(hex: "3B82F6").opacity(0.15))
+                                                .frame(width: 34, height: 34)
+                                            Image(systemName: "sparkles")
+                                                .font(.system(size: 15))
+                                                .foregroundStyle(Color(hex: "3B82F6"))
+                                        }
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Historial de Versiones")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundStyle(.white)
+                                            Text("Ver cambios en la v\(appVersion)")
+                                                .font(.caption2)
+                                                .foregroundStyle(Color(hex: "94A3B8"))
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption.weight(.bold))
+                                            .foregroundStyle(Color(hex: "94A3B8"))
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
+                                }
+                                .buttonStyle(.plain)
+                                
+                                Divider()
+                                    .background(Color.white.opacity(0.06))
+                                    .padding(.leading, 58)
+                                
+                                Link(destination: URL(string: "https://whatsapp.com/channel/0029Vb7NRaRAojYuOAfX5S0S")!) {
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Color(hex: "10B981").opacity(0.15))
+                                                .frame(width: 34, height: 34)
+                                            Image(systemName: "megaphone.fill")
+                                                .font(.system(size: 15))
+                                                .foregroundStyle(Color(hex: "10B981"))
+                                        }
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Canal Oficial de WhatsApp")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundStyle(.white)
+                                            Text("Anuncios y descargas")
+                                                .font(.caption2)
+                                                .foregroundStyle(Color(hex: "94A3B8"))
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: "arrow.up.right")
+                                            .font(.caption.weight(.bold))
+                                            .foregroundStyle(Color(hex: "94A3B8"))
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
+                                }
+                            }
+                            .obsidianCard(cornerRadius: 18, borderColor: Color.white.opacity(0.06))
                         }
+                        .padding(.horizontal, 16)
+
+                        // Preferences & Flags
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("HERRAMIENTAS DEL SISTEMA")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color(hex: "94A3B8"))
+                                .padding(.horizontal, 4)
+                            
+                            VStack(spacing: 0) {
+                                Toggle(isOn: $cleanerEnabled) {
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(AppTheme.accent.opacity(0.15))
+                                                .frame(width: 34, height: 34)
+                                            Image(systemName: "sparkles")
+                                                .font(.system(size: 15))
+                                                .foregroundStyle(AppTheme.accent)
+                                        }
+                                        Text(language.text("tab.cleaner"))
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(.white)
+                                    }
+                                }
+                                .tint(AppTheme.accent)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                
+                                Divider()
+                                    .background(Color.white.opacity(0.06))
+                                    .padding(.leading, 58)
+                                
+                                Toggle(isOn: $developerModeEnabled) {
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Color(hex: "F59E0B").opacity(0.15))
+                                                .frame(width: 34, height: 34)
+                                            Image(systemName: "hammer.fill")
+                                                .font(.system(size: 15))
+                                                .foregroundStyle(Color(hex: "F59E0B"))
+                                        }
+                                        Text(language.text("settings.developer_mode"))
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(.white)
+                                    }
+                                }
+                                .tint(AppTheme.accent)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                            }
+                            .obsidianCard(cornerRadius: 18, borderColor: Color.white.opacity(0.06))
+                        }
+                        .padding(.horizontal, 16)
+
+                        Spacer(minLength: 40)
                     }
-                    .padding(.vertical, 2)
-                } header: {
-                    Text(language.text("settings.verified_versions"))
-                } footer: {
-                    Text(language.text("settings.supported_versions_footer"))
                 }
             }
-            .tint(AppTheme.accent)
             .navigationTitle(language.text("settings.title"))
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color(hex: "08080C"), for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(language.text("common.done")) { dismiss() }
-                        .fontWeight(.semibold)
+                        .fontWeight(.bold)
+                        .foregroundStyle(AppTheme.accent)
                 }
             }
             .sheet(isPresented: $showChangelog) {
                 NavigationStack {
                     ChangelogView()
-                }
-            }
-            .overlay(alignment: .top) {
-                if showToast {
-                    ToastView(message: toastMessage, icon: toastIcon)
-                        .padding(.top, 50)
-                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
         }
@@ -197,63 +259,6 @@ struct SettingsView: View {
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "AppReleaseDisplayVersion") as? String
             ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-            ?? "1.0"
-    }
-
-    private func versionLabel(
-        _ version: (beta: Int, publicBeta: Int?, build: String)
-    ) -> String {
-        if let publicBeta = version.publicBeta {
-            return language.text(
-                "settings.developer_public_beta_build",
-                Int64(version.beta),
-                Int64(publicBeta),
-                version.build
-            )
-        }
-        return language.text(
-            "settings.developer_beta_build",
-            Int64(version.beta),
-            version.build
-        )
-    }
-    
-    private func checkBundlePatches() -> String {
-        guard let url = Bundle.main.url(forResource: "PreinstalledPatches", withExtension: nil) else {
-            return "NOT FOUND"
-        }
-        
-        let fileManager = FileManager.default
-        guard let files = try? fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
-            .filter({ $0.pathExtension.lowercased() == "3105" }) else {
-            return "ERROR"
-        }
-        
-        return files.map { $0.lastPathComponent }.joined(separator: ", ")
-    }
-}
-
-struct ToastView: View {
-    let message: String
-    let icon: String
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(.white)
-            
-            Text(message)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.white)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(
-            Capsule()
-                .fill(Color.green)
-                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
-        )
+            ?? "2.0"
     }
 }

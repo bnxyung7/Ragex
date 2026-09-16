@@ -9,120 +9,164 @@ struct RepositoryHomeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    // Device Section
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(language.text("dashboard.device"))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
-                            .padding(.horizontal, 20)
-                            .padding(.top, 24)
-                            .padding(.bottom, 12)
+            ZStack {
+                Color(hex: "08080C").ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Hero Header
+                        VStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(AppTheme.accent.opacity(0.18))
+                                    .frame(width: 80, height: 80)
+                                    .blur(radius: 12)
+                                
+                                AppLogo(size: 64)
+                            }
+                            .padding(.top, 10)
+                            
+                            VStack(spacing: 4) {
+                                HStack(spacing: 8) {
+                                    Text("PROJECT X")
+                                        .font(.system(size: 24, weight: .heavy, design: .rounded))
+                                        .foregroundStyle(.white)
+                                    
+                                    CyberBadge(text: "iOS PRO", color: AppTheme.accent)
+                                }
+                                
+                                Text("Motor de Rendimiento y Parches para iOS")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color(hex: "94A3B8"))
+                            }
+                        }
+                        .padding(.vertical, 8)
                         
-                        VStack(spacing: 0) {
-                            DeviceInfoRow(
-                                label: language.text("dashboard.hardware_model"),
-                                value: AppInfo.displayMachineName
-                            )
+                        // Device Status Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Text("ESTADO DEL DISPOSITIVO")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Color(hex: "94A3B8"))
+                                Spacer()
+                                HStack(spacing: 6) {
+                                    PulseStatusDot(color: appState.isSupported ? Color(hex: "10B981") : Color(hex: "EF4444"))
+                                    Text(appState.isSupported ? "ONLINE" : "NO COMPATIBLE")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundStyle(appState.isSupported ? Color(hex: "10B981") : Color(hex: "EF4444"))
+                                }
+                            }
+                            .padding(.horizontal, 4)
                             
-                            Divider()
-                                .padding(.leading, 20)
-                            
-                            DeviceInfoRow(
-                                label: language.text("dashboard.ios_version"),
-                                value: "\(AppInfo.osVersion) (\(AppInfo.osBuild))"
-                            )
-                            
-                            Divider()
-                                .padding(.leading, 20)
-                            
-                            CompatibilityRow(
-                                isSupported: appState.isSupported,
-                                language: language
-                            )
+                            VStack(spacing: 0) {
+                                DeviceInfoRow(
+                                    icon: "iphone",
+                                    label: language.text("dashboard.hardware_model"),
+                                    value: AppInfo.displayMachineName
+                                )
+                                
+                                Divider()
+                                    .background(Color.white.opacity(0.06))
+                                    .padding(.leading, 48)
+                                
+                                DeviceInfoRow(
+                                    icon: "gearshape.2",
+                                    label: language.text("dashboard.ios_version"),
+                                    value: "\(AppInfo.osVersion) (\(AppInfo.osBuild))"
+                                )
+                                
+                                Divider()
+                                    .background(Color.white.opacity(0.06))
+                                    .padding(.leading, 48)
+                                
+                                CompatibilityRow(
+                                    isSupported: appState.isSupported,
+                                    language: language
+                                )
+                            }
+                            .obsidianCard(cornerRadius: 18, borderColor: AppTheme.accent.opacity(0.25), glowing: true)
                         }
-                        .background(Color(uiColor: .systemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .strokeBorder(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
-                        }
-                        .padding(.horizontal, 20)
-                    }
-                    
-                    // Verified versions footer
-                    Text(language.text("dashboard.verified_footer"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                        .padding(.bottom, 24)
-                    
-                    // Installation Section
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(language.text("dashboard.installation"))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 12)
+                        .padding(.horizontal, 16)
                         
-                        HStack(alignment: .top, spacing: 14) {
-                            Image(systemName: "exclamationmark.shield.fill")
-                                .font(.system(size: 24))
-                                .foregroundStyle(.orange)
-                                .frame(width: 32)
+                        // Installation Section
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("SISTEMA Y SEGURIDAD")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color(hex: "94A3B8"))
+                                .padding(.horizontal, 4)
                             
-                            Text(language.text("dashboard.installation_warning"))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                            HStack(alignment: .top, spacing: 14) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color(hex: "F59E0B").opacity(0.15))
+                                        .frame(width: 40, height: 40)
+                                    Image(systemName: "shield.lefthalf.filled")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(Color(hex: "F59E0B"))
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Información de Parcheo")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundStyle(.white)
+                                    
+                                    Text(language.text("dashboard.installation_warning"))
+                                        .font(.caption)
+                                        .foregroundStyle(Color(hex: "94A3B8"))
+                                        .lineSpacing(2)
+                                }
+                            }
+                            .padding(16)
+                            .obsidianCard(cornerRadius: 16, borderColor: Color(hex: "F59E0B").opacity(0.2))
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(uiColor: .systemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .strokeBorder(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
-                        }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 16)
+                        
+                        // Product Carousel (safe empty check)
+                        ProductCarouselView()
                     }
-                    
-                    Spacer()
-                        .frame(height: 40)
-                    
-                    // Product Carousel
-                    ProductCarouselView()
-                    
-                    Spacer()
-                        .frame(height: 40)
+                    .padding(.bottom, 40)
                 }
-                .padding(.bottom, 32)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("X")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color(hex: "08080C"), for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    HStack(spacing: 8) {
+                        AppLogo(size: 26)
+                        Text("PROJECT X")
+                            .font(.system(size: 16, weight: .black, design: .rounded))
+                            .foregroundStyle(.white)
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
+                    HStack(spacing: 14) {
                         Button {
                             onOpenLogs()
                         } label: {
-                            Image(systemName: "terminal.fill")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(AppTheme.accent)
+                            ZStack {
+                                Circle()
+                                    .fill(Color(hex: "181926"))
+                                    .frame(width: 34, height: 34)
+                                Image(systemName: "terminal.fill")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(AppTheme.accent)
+                            }
                         }
                         
                         Button {
                             onOpenSettings()
                         } label: {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(AppTheme.accent)
+                            ZStack {
+                                Circle()
+                                    .fill(Color(hex: "181926"))
+                                    .frame(width: 34, height: 34)
+                                Image(systemName: "gearshape.fill")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(AppTheme.accent)
+                            }
                         }
                     }
                 }
@@ -132,24 +176,34 @@ struct RepositoryHomeView: View {
 }
 
 private struct DeviceInfoRow: View {
+    var icon: String = "iphone"
     let label: String
     let value: String
     
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(AppTheme.accent.opacity(0.12))
+                    .frame(width: 32, height: 32)
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(AppTheme.accent)
+            }
+            
             Text(label)
-                .font(.body)
-                .foregroundStyle(.primary)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white)
             
             Spacer()
             
             Text(value)
-                .font(.body.monospaced())
-                .foregroundStyle(.secondary)
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .foregroundStyle(Color(hex: "94A3B8"))
                 .multilineTextAlignment(.trailing)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 }
 
@@ -158,25 +212,30 @@ private struct CompatibilityRow: View {
     let language: AppLanguage
     
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill((isSupported ? Color(hex: "10B981") : Color(hex: "EF4444")).opacity(0.12))
+                    .frame(width: 32, height: 32)
+                Image(systemName: isSupported ? "checkmark.shield.fill" : "xmark.shield.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(isSupported ? Color(hex: "10B981") : Color(hex: "EF4444"))
+            }
+            
             Text(language.text("dashboard.compatibility"))
-                .font(.body)
-                .foregroundStyle(.primary)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white)
             
             Spacer()
             
-            HStack(spacing: 6) {
-                Image(systemName: isSupported ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(isSupported ? .green : .red)
-                
-                Text(language.text(isSupported ? "dashboard.supported" : "dashboard.unsupported"))
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(isSupported ? .green : .red)
-            }
+            CyberBadge(
+                text: language.text(isSupported ? "dashboard.supported" : "dashboard.unsupported"),
+                icon: isSupported ? "checkmark" : "xmark",
+                color: isSupported ? Color(hex: "10B981") : Color(hex: "EF4444")
+            )
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 }
 

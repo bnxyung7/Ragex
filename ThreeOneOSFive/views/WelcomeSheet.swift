@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct WelcomeSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -8,25 +8,25 @@ struct WelcomeSheet: View {
     
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(hex: "08080C").ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Progress indicator
                 HStack(spacing: 8) {
                     ForEach(0..<totalPages, id: \.self) { index in
                         Capsule()
-                            .fill(index <= currentPage ? Color.orange : Color.gray.opacity(0.3))
+                            .fill(index <= currentPage ? AppTheme.accent : Color.white.opacity(0.12))
                             .frame(height: 4)
-                            .frame(maxWidth: index == currentPage ? 40 : 20)
+                            .frame(maxWidth: index == currentPage ? 36 : 16)
                             .animation(.spring(response: 0.3), value: currentPage)
                     }
                 }
                 .padding(.horizontal, 40)
-                .padding(.top, 20)
+                .padding(.top, 24)
                 
-                Text("Step \(currentPage + 1) of \(totalPages)")
-                    .font(.caption)
-                    .foregroundStyle(.gray)
+                Text("Paso \(currentPage + 1) de \(totalPages)")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color(hex: "94A3B8"))
                     .padding(.top, 8)
                 
                 // Content
@@ -48,20 +48,23 @@ struct WelcomeSheet: View {
                         dismiss()
                     }
                 } label: {
-                    HStack {
-                        Text(currentPage < totalPages - 1 ? "Next" : "Get Started")
-                            .fontWeight(.semibold)
+                    HStack(spacing: 8) {
+                        Text(currentPage < totalPages - 1 ? "Siguiente" : "Comenzar")
+                            .font(.system(size: 16, weight: .bold))
                         Image(systemName: "chevron.right")
-                            .font(.caption)
+                            .font(.caption.weight(.bold))
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
-                    .background(Color.orange)
-                    .cornerRadius(16)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(AppTheme.accent)
+                    )
+                    .shadow(color: AppTheme.accent.opacity(0.35), radius: 10, x: 0, y: 4)
                 }
                 .padding(.horizontal, 24)
-                .padding(.bottom, 40)
+                .padding(.bottom, 36)
             }
         }
         .interactiveDismissDisabled()
@@ -71,30 +74,32 @@ struct WelcomeSheet: View {
 // Page 1: Welcome
 struct Page1View: View {
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 28) {
             Spacer()
             
-            // Logo
             ZStack {
                 Circle()
-                    .fill(Color.orange.opacity(0.1))
+                    .fill(AppTheme.accent.opacity(0.18))
                     .frame(width: 120, height: 120)
+                    .blur(radius: 12)
                 
-                Text("X")
-                    .font(.system(size: 60, weight: .bold))
-                    .foregroundStyle(.white)
+                AppLogo(size: 80)
             }
             
-            VStack(spacing: 16) {
-                Text("Bienvenido a X")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundStyle(.white)
+            VStack(spacing: 10) {
+                HStack(spacing: 8) {
+                    Text("PROJECT X")
+                        .font(.system(size: 28, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                    CyberBadge(text: "iOS", color: AppTheme.accent)
+                }
                 
-                Text("Personaliza tu experiencia Free Fire con patches exclusivos")
+                Text("La plataforma mÃ¡s potente y avanzada para optimizaciÃ³n, parches y personalizaciÃ³n en iOS.")
                     .font(.subheadline)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
+                    .lineSpacing(3)
+                    .padding(.horizontal, 32)
             }
             
             Spacer()
@@ -106,31 +111,30 @@ struct Page1View: View {
 // Page 2: Certificate Warning
 struct Page2View: View {
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 28) {
             Spacer()
             
-            // Warning icon
             ZStack {
                 Circle()
-                    .fill(Color.orange.opacity(0.1))
-                    .frame(width: 120, height: 120)
+                    .fill(Color(hex: "F59E0B").opacity(0.15))
+                    .frame(width: 110, height: 110)
                 
-                Image(systemName: "exclamationmark.shield.fill")
-                    .font(.system(size: 50))
-                    .foregroundStyle(.orange)
+                Image(systemName: "shield.lefthalf.filled")
+                    .font(.system(size: 52))
+                    .foregroundStyle(Color(hex: "F59E0B"))
             }
             
-            VStack(spacing: 16) {
-                Text("Certificado Requerido")
-                    .font(.title)
-                    .fontWeight(.bold)
+            VStack(spacing: 10) {
+                Text("Compatibilidad Enterprise")
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.white)
                 
-                Text("X solo funciona cuando está firmado con un certificado enterprise. Otros métodos de instalación no son soportados.")
+                Text("Project X estÃ¡ optimizado para funcionar directamente en tu dispositivo con la mÃ¡xima estabilidad y rendimiento.")
                     .font(.subheadline)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
+                    .lineSpacing(3)
+                    .padding(.horizontal, 32)
             }
             
             Spacer()
@@ -145,31 +149,30 @@ struct Page3View: View {
         VStack(spacing: 24) {
             Spacer()
             
-            VStack(spacing: 16) {
-                Text("Únete a la Comunidad")
-                    .font(.title)
-                    .fontWeight(.bold)
+            VStack(spacing: 8) {
+                Text("Canales Oficiales")
+                    .font(.system(size: 24, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 
-                Text("Conéctate con otros usuarios")
+                Text("Mantente informado de las Ãºltimas actualizaciones")
                     .font(.subheadline)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(Color(hex: "94A3B8"))
             }
             
             VStack(spacing: 12) {
                 CommunityButton(
                     icon: "bubble.left.and.bubble.right.fill",
-                    title: "Discord",
-                    subtitle: "Servidor oficial",
-                    color: .purple,
-                    url: "https://discord.gg/AksKwSWaKq"
+                    title: "WhatsApp Soporte",
+                    subtitle: "AtenciÃ³n personalizada",
+                    color: Color(hex: "10B981"),
+                    url: "https://wa.me/18099289722"
                 )
                 
                 CommunityButton(
                     icon: "megaphone.fill",
-                    title: "Canal WhatsApp",
-                    subtitle: "Actualizaciones oficiales",
-                    color: .green,
+                    title: "Canal Oficial WhatsApp",
+                    subtitle: "Actualizaciones y descargas",
+                    color: AppTheme.accent,
                     url: "https://whatsapp.com/channel/0029Vb7NRaRAojYuOAfX5S0S"
                 )
             }
@@ -183,62 +186,30 @@ struct Page3View: View {
 // Page 4: Credits
 struct Page4View: View {
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 28) {
             Spacer()
             
-            // Credits icon
             ZStack {
                 Circle()
-                    .fill(Color.orange.opacity(0.1))
-                    .frame(width: 120, height: 120)
+                    .fill(Color(hex: "8B5CF6").opacity(0.18))
+                    .frame(width: 110, height: 110)
                 
-                Image(systemName: "person.fill")
-                    .font(.system(size: 50))
-                    .foregroundStyle(.orange)
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 52))
+                    .foregroundStyle(Color(hex: "8B5CF6"))
             }
             
-            VStack(spacing: 16) {
-                Text("Créditos")
-                    .font(.title)
-                    .fontWeight(.bold)
+            VStack(spacing: 10) {
+                Text("Desarrollo y Soporte")
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.white)
                 
-                VStack(spacing: 12) {
-                    Text("Desarrollador")
-                        .font(.subheadline)
-                        .foregroundStyle(.gray)
-                    
-                    Text("Bnxyung7")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.orange)
-                    
-                    // Contact button
-                    Button {
-                        if let url = URL(string: "tel:+18099289722") {
-                            UIApplication.shared.open(url)
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "phone.fill")
-                                .font(.caption)
-                            Text("+1 (809) 928-9722")
-                                .font(.subheadline)
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(20)
-                    }
-                    
-                    Text("Gracias por usar X")
-                        .font(.caption)
-                        .foregroundStyle(.gray)
-                        .padding(.top, 8)
-                }
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+                Text("Creado y optimizado por Bnxyung7.\nDisfruta de la mejor experiencia para iOS.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color(hex: "94A3B8"))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+                    .padding(.horizontal, 32)
             }
             
             Spacer()
@@ -255,42 +226,34 @@ struct CommunityButton: View {
     let url: String
     
     var body: some View {
-        Button {
-            if let url = URL(string: url) {
-                UIApplication.shared.open(url)
-            }
-        } label: {
-            HStack(spacing: 16) {
+        Link(destination: URL(string: url)!) {
+            HStack(spacing: 14) {
                 ZStack {
-                    Circle()
-                        .fill(color.opacity(0.15))
-                        .frame(width: 50, height: 50)
-                    
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(color.opacity(0.18))
+                        .frame(width: 44, height: 44)
                     Image(systemName: icon)
-                        .font(.title3)
+                        .font(.system(size: 18))
                         .foregroundStyle(color)
                 }
                 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.body)
-                        .fontWeight(.semibold)
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(.white)
-                    
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.gray)
+                        .font(.caption2)
+                        .foregroundStyle(Color(hex: "94A3B8"))
                 }
                 
                 Spacer()
                 
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.gray)
+                Image(systemName: "arrow.up.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color(hex: "94A3B8"))
             }
-            .padding()
-            .background(Color.white.opacity(0.05))
-            .cornerRadius(16)
+            .padding(14)
+            .obsidianCard(cornerRadius: 16, borderColor: color.opacity(0.25))
         }
     }
 }

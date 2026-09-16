@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct FreeFireView: View {
     @Environment(\.appLanguage) private var language
@@ -14,7 +14,7 @@ struct FreeFireView: View {
     enum PatchCategory: String, CaseIterable, Identifiable {
         case aimbot = "AIMBOT"
         case holograma = "HOLOGRAMA"
-        case others = "OTHERS"
+        case others = "OTROS"
         
         var id: String { rawValue }
         
@@ -49,9 +49,9 @@ struct FreeFireView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                Color(hex: "08080C").ignoresSafeArea()
                 
                 Group {
                     if keyStore.isBanned {
@@ -65,24 +65,16 @@ struct FreeFireView: View {
             }
             .navigationTitle("Free Fire")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color.black, for: .navigationBar)
+            .toolbarBackground(Color(hex: "08080C"), for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                AppUtilityToolbar(
-                    language: language,
-                    onOpenSettings: {},
-                    onOpenLogs: {}
-                )
-            }
         }
-        .navigationViewStyle(.stack)
         .onAppear {
             loadBundlePatches()
         }
         .alert("Error", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text(errorMessage ?? "Ocurrió un error inesperado.")
+            Text(errorMessage ?? "OcurriÃ³ un error inesperado.")
         }
     }
     
@@ -114,7 +106,7 @@ struct FreeFireView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
-                .padding(.bottom, 24)
+                .padding(.bottom, 32)
             }
         }
     }
@@ -135,20 +127,25 @@ struct FreeFireView: View {
                         Text(category.rawValue)
                             .font(.system(size: 13, weight: .bold))
                     }
-                    .foregroundStyle(selectedCategory == category ? .black : .white.opacity(0.7))
+                    .foregroundStyle(selectedCategory == category ? .white : Color(hex: "94A3B8"))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(
                         Capsule()
-                            .fill(selectedCategory == category ? Color.white : Color(red: 0.14, green: 0.14, blue: 0.16))
+                            .fill(selectedCategory == category ? AppTheme.accent : Color(hex: "131420"))
                     )
+                    .overlay(
+                        Capsule()
+                            .stroke(selectedCategory == category ? AppTheme.accent.opacity(0.6) : Color.white.opacity(0.06), lineWidth: 1)
+                    )
+                    .shadow(color: selectedCategory == category ? AppTheme.accent.opacity(0.3) : Color.clear, radius: 6)
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color.black)
+        .background(Color(hex: "08080C"))
     }
     
     // MARK: - Holograma Subcategory Picker
@@ -167,16 +164,16 @@ struct FreeFireView: View {
                         Text(subcategory.displayName)
                             .font(.system(size: 13, weight: .medium))
                     }
-                    .foregroundStyle(selectedHologramaSubcategory == subcategory ? .white : .white.opacity(0.5))
+                    .foregroundStyle(selectedHologramaSubcategory == subcategory ? .white : Color(hex: "94A3B8"))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(selectedHologramaSubcategory == subcategory ? Color(red: 0.22, green: 0.22, blue: 0.25) : Color(red: 0.11, green: 0.11, blue: 0.13))
+                            .fill(selectedHologramaSubcategory == subcategory ? Color(hex: "1E2033") : Color(hex: "11121A"))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(selectedHologramaSubcategory == subcategory ? Color.white.opacity(0.2) : Color.clear, lineWidth: 1)
+                            .stroke(selectedHologramaSubcategory == subcategory ? AppTheme.accent.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)
@@ -218,23 +215,35 @@ struct FreeFireView: View {
     // MARK: - Empty State
     
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "shippingbox")
-                .font(.system(size: 48))
-                .foregroundStyle(.gray.opacity(0.5))
-                .padding(.top, 40)
+        VStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(AppTheme.accent.opacity(0.1))
+                    .frame(width: 80, height: 80)
+                
+                Image(systemName: "shippingbox.fill")
+                    .font(.system(size: 38))
+                    .foregroundStyle(AppTheme.accent.opacity(0.8))
+            }
+            .padding(.top, 40)
             
-            Text("No hay parches disponibles")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.8))
-            
-            Text("No se encontraron archivos .3105 en esta categoría")
-                .font(.system(size: 13))
-                .foregroundStyle(.gray)
-                .multilineTextAlignment(.center)
+            VStack(spacing: 6) {
+                Text("CategorÃ­a VacÃ­a")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                
+                Text("No hay parches precargados en esta secciÃ³n.\nPuedes importar tus propios proyectos .3105 o solicitarlos a soporte.")
+                    .font(.caption)
+                    .foregroundStyle(Color(hex: "94A3B8"))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+                    .padding(.horizontal, 24)
+            }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 32)
+        .padding(.horizontal, 16)
+        .obsidianCard(cornerRadius: 18, borderColor: Color.white.opacity(0.06))
     }
     
     // MARK: - Toggle Patch Action
@@ -250,34 +259,30 @@ struct FreeFireView: View {
                     fileManager: fileManager
                 ) else {
                     throw NSError(domain: "FreeFire", code: 1, userInfo: [
-                        NSLocalizedDescriptionKey: "No se pudo acceder a la librería de parches"
+                        NSLocalizedDescriptionKey: "No se pudo acceder a la librerÃ­a de parches"
                     ])
                 }
                 
                 let destinationURL = destinationRoot.appendingPathComponent(patch.url.lastPathComponent)
                 
-                // Copy if doesn't exist
                 if !fileManager.fileExists(atPath: destinationURL.path) {
                     try fileManager.copyItem(at: patch.url, to: destinationURL)
                 }
                 
-                // Reload store to recognize file
                 await MainActor.run {
                     patchStore.reload()
                 }
                 
-                // Find item & project
                 let items = await MainActor.run { patchStore.items }
                 guard let item = items.first(where: {
                     $0.packageURL.lastPathComponent == patch.url.lastPathComponent
                 }), let project = item.project else {
                     throw NSError(domain: "FreeFire", code: 2, userInfo: [
-                        NSLocalizedDescriptionKey: "No se encontró el proyecto para \(patch.displayName)"
+                        NSLocalizedDescriptionKey: "No se encontrÃ³ el proyecto para \(patch.displayName)"
                     ])
                 }
                 
                 if activate {
-                    // Apply patch
                     _ = try DevicePatchService.apply(project: project)
                     await MainActor.run {
                         patchStore.reload()
@@ -285,7 +290,6 @@ struct FreeFireView: View {
                         processingPatchIDs.remove(patch.id)
                     }
                 } else {
-                    // Deactivate patch
                     if let receipt = DevicePatchService.latestReceipt(projectID: project.id) {
                         try DevicePatchService.restore(receipt: receipt)
                     }
@@ -343,27 +347,27 @@ struct FreeFireView: View {
                 
                 ZStack {
                     Circle()
-                        .fill(Color.red.opacity(0.15))
+                        .fill(Color(hex: "EF4444").opacity(0.15))
                         .frame(width: 110, height: 110)
                     
                     Circle()
-                        .stroke(Color.red.opacity(0.4), lineWidth: 2)
+                        .stroke(Color(hex: "EF4444").opacity(0.4), lineWidth: 2)
                         .frame(width: 120, height: 120)
                     
                     Image(systemName: "exclamationmark.octagon.fill")
                         .font(.system(size: 60, weight: .bold))
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color(hex: "EF4444"))
                 }
                 .padding(.top, 10)
                 
                 VStack(spacing: 8) {
                     Text("ACCESO BANEADO")
                         .font(.system(size: 24, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color(hex: "EF4444"))
                     
-                    Text("Tu clave de Free Fire ha sido inhabilitada por la administración.")
+                    Text("Tu clave de Free Fire ha sido inhabilitada por la administraciÃ³n.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color(hex: "94A3B8"))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
                 }
@@ -371,60 +375,54 @@ struct FreeFireView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
                         Image(systemName: "shield.slash.fill")
-                            .foregroundStyle(.red)
-                        Text("ESTADO DE LA SANCIÓN")
+                            .foregroundStyle(Color(hex: "EF4444"))
+                        Text("ESTADO DE LA SANCIÃ“N")
                             .font(.caption)
                             .fontWeight(.bold)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color(hex: "94A3B8"))
                         Spacer()
                         Text("SUSPENDIDO")
                             .font(.system(size: 10, weight: .black))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
-                            .background(Color.red.opacity(0.2))
-                            .foregroundStyle(.red)
+                            .background(Color(hex: "EF4444").opacity(0.2))
+                            .foregroundStyle(Color(hex: "EF4444"))
                             .clipShape(Capsule())
                     }
                     
                     Divider()
+                        .background(Color.white.opacity(0.08))
                     
                     if let keyString = keyStore.activeSession?.key.keyString {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Clave afectada:")
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color(hex: "94A3B8"))
                             Text(keyString)
                                 .font(.system(.subheadline, design: .monospaced))
                                 .fontWeight(.bold)
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(.white)
                         }
                     }
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Motivo del bloqueo:")
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Text(keyStore.banReason ?? "Violación de términos del servicio o uso no autorizado.")
+                            .foregroundStyle(Color(hex: "94A3B8"))
+                        Text(keyStore.banReason ?? "ViolaciÃ³n de tÃ©rminos del servicio o uso no autorizado.")
                             .font(.subheadline)
                             .fontWeight(.semibold)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Color(hex: "EF4444"))
                     }
                 }
                 .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(red: 0.12, green: 0.12, blue: 0.14))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.red.opacity(0.3), lineWidth: 1)
-                        )
-                )
+                .obsidianCard(cornerRadius: 18, borderColor: Color(hex: "EF4444").opacity(0.3))
                 .padding(.horizontal, 24)
                 
                 VStack(spacing: 12) {
-                    Text("Comunícate con soporte para apelar tu clave:")
+                    Text("ComunÃ­cate con soporte para apelar tu clave:")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color(hex: "94A3B8"))
                     
                     Link(destination: URL(string: "https://wa.me/18099289722?text=Hola,%20mi%20clave%20de%20Free%20Fire%20fue%20baneada:\(keyStore.activeSession?.key.keyString ?? "")")!) {
                         HStack {
@@ -439,8 +437,8 @@ struct FreeFireView: View {
                         .padding()
                         .frame(maxWidth: .infinity)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.green)
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color(hex: "10B981"))
                         )
                     }
                     
@@ -449,10 +447,10 @@ struct FreeFireView: View {
                     } label: {
                         HStack {
                             Image(systemName: "xmark.circle")
-                            Text("Cerrar Sesión")
+                            Text("Cerrar SesiÃ³n")
                         }
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color(hex: "94A3B8"))
                         .padding(.top, 4)
                     }
                 }
@@ -462,7 +460,7 @@ struct FreeFireView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black)
+        .background(Color(hex: "08080C"))
     }
     
     // MARK: - Locked View
@@ -471,55 +469,59 @@ struct FreeFireView: View {
         VStack(spacing: 24) {
             Spacer()
             
-            Image(systemName: "lock.fill")
-                .font(.system(size: 80))
-                .foregroundStyle(.orange)
+            ZStack {
+                Circle()
+                    .fill(AppTheme.accent.opacity(0.15))
+                    .frame(width: 90, height: 90)
+                
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 46))
+                    .foregroundStyle(AppTheme.accent)
+            }
             
-            Text("Free Fire Bloqueado")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
-            
-            Text("Free Fire está bloqueado. Activa tu Key desde Perfil.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+            VStack(spacing: 6) {
+                Text("Free Fire Bloqueado")
+                    .font(.system(size: 22, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+                
+                Text("Activa tu clave de acceso desde la pestaÃ±a Perfil para habilitar el motor de parches.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color(hex: "94A3B8"))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
             
             VStack(spacing: 12) {
                 HStack(spacing: 12) {
-                    Image(systemName: "info.circle.fill")
-                        .foregroundStyle(.blue)
+                    Image(systemName: "key.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(AppTheme.accent)
                     
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("¿Cómo activar?")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Â¿CÃ³mo activar?")
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.white)
-                        Text("Ve a la pestaña Perfil e introduce tu Key")
+                        Text("DirÃ­gete a Perfil e ingresa tu clave asignada")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color(hex: "94A3B8"))
                     }
                     
                     Spacer()
                 }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(red: 0.12, green: 0.12, blue: 0.14))
-                )
+                .padding(16)
+                .obsidianCard(cornerRadius: 14, borderColor: AppTheme.accent.opacity(0.25))
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, 24)
             
             Spacer()
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black)
+        .background(Color(hex: "08080C"))
     }
 }
 
-// MARK: - Patch Toggle Row (New Design matching screenshot)
+// MARK: - Patch Toggle Row
 
 struct PatchToggleRow: View {
     let patch: BundlePatch
@@ -541,22 +543,23 @@ struct PatchToggleRow: View {
     }
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Crosshair / Scope Icon
-            Image(systemName: patch.icon)
-                .font(.system(size: 17, weight: .regular))
-                .foregroundStyle(.white)
-                .frame(width: 22, height: 22, alignment: .center)
+        HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(AppTheme.accent.opacity(isActive ? 0.2 : 0.08))
+                    .frame(width: 36, height: 36)
+                Image(systemName: patch.icon)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(isActive ? AppTheme.accent : .white)
+            }
             
-            // Patch name
             Text(patch.displayName)
-                .font(.system(size: 16, weight: .medium))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
                 .lineLimit(1)
             
             Spacer()
             
-            // Toggle Switch / Spinner
             if isProcessing {
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
@@ -570,15 +573,12 @@ struct PatchToggleRow: View {
                     }
                 ))
                 .labelsHidden()
-                .tint(Color.green)
+                .tint(AppTheme.accent)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(red: 0.12, green: 0.12, blue: 0.14))
-        )
+        .obsidianCard(cornerRadius: 16, borderColor: isActive ? AppTheme.accent.opacity(0.4) : AppTheme.cardBorder, glowing: isActive)
         .contentShape(Rectangle())
         .onTapGesture {
             if !isProcessing {

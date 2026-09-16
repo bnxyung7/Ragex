@@ -1,89 +1,145 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct SupportView: View {
     @Environment(\.appLanguage) private var language
     @StateObject private var themeManager = ThemeManager.shared
     @State private var showCopiedAlert = false
     
-    // Detectar idioma del sistema
     private var isSpanish: Bool {
         Locale.current.language.languageCode?.identifier == "es"
     }
     
     var body: some View {
-        ZStack {
-            Color(.systemBackground)
-                .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Header
-                    VStack(spacing: 8) {
-                        Image(systemName: "headphones.circle.fill")
-                            .font(.system(size: 60))
-                            .foregroundStyle(themeManager.currentTheme.color)
-                            .padding(.top, 20)
-                        
-                        Text(isSpanish ? "Soporte" : "Support")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        
-                        Text(isSpanish ? "Estamos aquí para ayudarte" : "We're here to help you")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.bottom, 8)
-                    
-                    // WhatsApp Support
-                    SupportCard(
-                        icon: "message.fill",
-                        title: "WhatsApp",
-                        subtitle: isSpanish ? "Chatea con nosotros directamente" : "Chat with us directly",
-                        color: themeManager.currentTheme.color,
-                        detail: SupportContact.whatsappNumber
-                    ) {
-                        openWhatsApp()
-                    }
-                    
-                    // Developer Info
-                    VStack(spacing: 12) {
-                        Divider()
-                            .padding(.vertical, 8)
-                        
-                        VStack(spacing: 8) {
-                            Image(systemName: "person.circle.fill")
-                                .font(.system(size: 40))
-                                .foregroundStyle(.secondary)
+        NavigationStack {
+            ZStack {
+                Color(hex: "08080C").ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Header
+                        VStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(AppTheme.accent.opacity(0.18))
+                                    .frame(width: 80, height: 80)
+                                    .blur(radius: 10)
+                                
+                                Image(systemName: "headphones.circle.fill")
+                                    .font(.system(size: 64))
+                                    .foregroundStyle(AppTheme.accent)
+                            }
+                            .padding(.top, 16)
                             
-                            Text(isSpanish ? "Desarrollador" : "Developer")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-                            
-                            Text(SupportContact.developerName)
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(themeManager.currentTheme.color)
-                            
-                            Text(SupportContact.whatsappNumber)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 6)
-                                .background(
-                                    Capsule()
-                                        .fill(Color(.secondarySystemBackground))
-                                )
-                                .onTapGesture {
-                                    copyToClipboard(SupportContact.whatsappNumber)
-                                }
+                            VStack(spacing: 4) {
+                                Text(isSpanish ? "Centro de Soporte" : "Support Center")
+                                    .font(.system(size: 26, weight: .heavy, design: .rounded))
+                                    .foregroundStyle(.white)
+                                
+                                Text(isSpanish ? "AtenciÃ³n directa y soporte para Project X iOS" : "Direct help & support for Project X iOS")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color(hex: "94A3B8"))
+                                    .multilineTextAlignment(.center)
+                            }
                         }
-                        .padding(.vertical, 12)
+                        
+                        // WhatsApp Official Card
+                        SupportCard(
+                            icon: "bubble.left.and.bubble.right.fill",
+                            badge: "OFICIAL",
+                            title: "WhatsApp Oficial",
+                            subtitle: isSpanish ? "AtenciÃ³n rÃ¡pida personalizada" : "Fast personal assistance",
+                            color: Color(hex: "10B981"),
+                            detail: SupportContact.whatsappNumber
+                        ) {
+                            openWhatsApp()
+                        }
+                        
+                        // WhatsApp Channel Card
+                        SupportCard(
+                            icon: "megaphone.fill",
+                            badge: "CANAL",
+                            title: "Canal de Novedades",
+                            subtitle: isSpanish ? "Actualizaciones, avisos y nuevas versiones" : "News, updates & releases",
+                            color: AppTheme.accent,
+                            detail: "Seguir en WhatsApp"
+                        ) {
+                            openChannel()
+                        }
+                        
+                        // Developer Verification Card
+                        VStack(spacing: 14) {
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(hex: "8B5CF6").opacity(0.15))
+                                        .frame(width: 44, height: 44)
+                                    Image(systemName: "checkmark.seal.fill")
+                                        .font(.system(size: 22))
+                                        .foregroundStyle(Color(hex: "8B5CF6"))
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 6) {
+                                        Text(SupportContact.developerName)
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundStyle(.white)
+                                        CyberBadge(text: "DEV", color: Color(hex: "8B5CF6"))
+                                    }
+                                    
+                                    Text("Desarrollador Oficial de Project X")
+                                        .font(.caption)
+                                        .foregroundStyle(Color(hex: "94A3B8"))
+                                }
+                                
+                                Spacer()
+                            }
+                            
+                            Divider()
+                                .background(Color.white.opacity(0.08))
+                            
+                            HStack {
+                                Text("Contacto:")
+                                    .font(.caption)
+                                    .foregroundStyle(Color(hex: "94A3B8"))
+                                
+                                Spacer()
+                                
+                                Button {
+                                    copyToClipboard(SupportContact.whatsappNumber)
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "doc.on.doc")
+                                            .font(.caption2)
+                                        Text(SupportContact.whatsappNumber)
+                                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                    }
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color(hex: "181926"))
+                                            .overlay(
+                                                Capsule()
+                                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                            )
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(16)
+                        .obsidianCard(cornerRadius: 18, borderColor: Color.white.opacity(0.08))
+                        
+                        Spacer(minLength: 32)
                     }
-                    
-                    Spacer(minLength: 32)
+                    .padding(.horizontal, 16)
                 }
-                .padding(.horizontal, 20)
             }
+            .navigationTitle("Soporte")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color(hex: "08080C"), for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .overlay(
             Group {
@@ -91,22 +147,26 @@ struct SupportView: View {
                     VStack {
                         Spacer()
                         
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(themeManager.currentTheme.color)
+                                .foregroundStyle(Color(hex: "10B981"))
                             
-                            Text(isSpanish ? "¡Copiado al portapapeles!" : "Copied to clipboard!")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
+                            Text(isSpanish ? "Â¡NÃºmero copiado al portapapeles!" : "Number copied to clipboard!")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(.white)
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
                         .background(
                             Capsule()
-                                .fill(Color(.systemBackground))
-                                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                                .fill(Color(hex: "181926"))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color(hex: "10B981").opacity(0.4), lineWidth: 1)
+                                )
+                                .shadow(color: Color.black.opacity(0.5), radius: 12)
                         )
-                        .padding(.bottom, 50)
+                        .padding(.bottom, 40)
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .animation(.spring(response: 0.3), value: showCopiedAlert)
@@ -118,7 +178,7 @@ struct SupportView: View {
     // MARK: - Actions
     private func openWhatsApp() {
         let number = SupportContact.whatsappNumber.replacingOccurrences(of: "+", with: "")
-        let message = isSpanish ? "Hola, necesito ayuda con X" : "Hello, I need help with X"
+        let message = isSpanish ? "Hola, necesito soporte con Project X iOS" : "Hello, I need help with Project X iOS"
         let urlString = "https://wa.me/\(number)?text=\(message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
         
         if let url = URL(string: urlString) {
@@ -126,8 +186,17 @@ struct SupportView: View {
         }
     }
     
+    private func openChannel() {
+        if let url = URL(string: "https://whatsapp.com/channel/0029Vb7NRaRAojYuOAfX5S0S") {
+            UIApplication.shared.open(url)
+        }
+    }
+    
     private func copyToClipboard(_ text: String) {
         UIPasteboard.general.string = text
+        
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
         
         withAnimation {
             showCopiedAlert = true
@@ -144,6 +213,7 @@ struct SupportView: View {
 // MARK: - Support Card Component
 struct SupportCard: View {
     let icon: String
+    var badge: String? = nil
     let title: String
     let subtitle: String
     let color: Color
@@ -152,52 +222,46 @@ struct SupportCard: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
-                // Icon
+            HStack(spacing: 14) {
                 ZStack {
-                    Circle()
-                        .fill(color.opacity(0.15))
-                        .frame(width: 56, height: 56)
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(color.opacity(0.16))
+                        .frame(width: 50, height: 50)
                     
                     Image(systemName: icon)
-                        .font(.title2)
+                        .font(.system(size: 22))
                         .foregroundStyle(color)
                 }
                 
-                // Text content
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(title)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(.white)
+                        
+                        if let badge = badge {
+                            CyberBadge(text: badge, color: color)
+                        }
+                    }
                     
                     Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                        .foregroundStyle(Color(hex: "94A3B8"))
                     
                     Text(detail)
-                        .font(.caption)
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(color)
-                        .padding(.top, 2)
+                        .padding(.top, 1)
                 }
                 
                 Spacer()
                 
-                // Chevron
                 Image(systemName: "chevron.right")
-                    .font(.body)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(color)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color(hex: "94A3B8"))
             }
             .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(.secondarySystemBackground))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(color.opacity(0.2), lineWidth: 1)
-                    )
-            )
+            .obsidianCard(cornerRadius: 18, borderColor: color.opacity(0.25), glowing: false)
         }
         .buttonStyle(SupportCardButtonStyle())
     }
@@ -207,11 +271,7 @@ struct SupportCard: View {
 struct SupportCardButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
-}
-
-#Preview {
-    SupportView()
 }

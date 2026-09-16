@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct ProfileView: View {
     @Environment(\.appLanguage) private var language
@@ -13,23 +13,33 @@ struct ProfileView: View {
     @State private var isLoading = false
     
     var body: some View {
-        NavigationView {
-            List {
-                // Key Status Section
-                keyStatusSection
+        NavigationStack {
+            ZStack {
+                Color(hex: "08080C").ignoresSafeArea()
                 
-                // Key Activation Section
-                if keyStore.activeSession == nil {
-                    keyActivationSection
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Key Status Section
+                        keyStatusCard
+                        
+                        // Key Activation Section
+                        if keyStore.activeSession == nil {
+                            keyActivationCard
+                        }
+                        
+                        // Admin Access Section
+                        adminCard
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 40)
                 }
-                
-                // Admin Access Section
-                adminSection
             }
             .navigationTitle("Perfil")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color(hex: "08080C"), for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
-        .navigationViewStyle(.stack)
         .sheet(isPresented: $showAdminLogin) {
             AdminLoginView(isPresented: $showAdminLogin, onSuccess: {
                 showAdminPanel = true
@@ -49,255 +59,280 @@ struct ProfileView: View {
         }
     }
     
-    // MARK: - Key Status Section
+    // MARK: - Key Status Card
     
-    private var keyStatusSection: some View {
-        Section {
+    private var keyStatusCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
             if let session = keyStore.activeSession {
-                // Active key info
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Image(systemName: session.key.isBanned ? "xmark.octagon.fill" : "checkmark.circle.fill")
-                            .foregroundStyle(session.key.isBanned ? .red : .green)
-                            .font(.title2)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(session.key.isBanned ? "⛔ ACCESO BANEADO" : "Free Fire Activo")
-                                .font(.headline)
-                                .foregroundStyle(session.key.isBanned ? .red : .primary)
-                            Text(session.key.isBanned ? "Tu Key ha sido inhabilitada por la administración" : "Tu Key está activa")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        // Notifications badge
-                        if !session.key.notifications.isEmpty {
-                            ZStack {
-                                Circle()
-                                    .fill(.red)
-                                    .frame(width: 24, height: 24)
-                                
-                                Text("\(session.key.notifications.count)")
-                                    .font(.caption2)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.white)
-                            }
-                        }
+                // Active key VIP card
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill((session.key.isBanned ? Color(hex: "EF4444") : Color(hex: "10B981")).opacity(0.18))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: session.key.isBanned ? "xmark.octagon.fill" : "checkmark.seal.fill")
+                            .foregroundStyle(session.key.isBanned ? Color(hex: "EF4444") : Color(hex: "10B981"))
+                            .font(.system(size: 22))
                     }
                     
-                    Divider()
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(session.key.isBanned ? "ACCESO BANEADO" : "MEMBRESÃA ACTIVA")
+                            .font(.system(size: 15, weight: .heavy, design: .rounded))
+                            .foregroundStyle(session.key.isBanned ? Color(hex: "EF4444") : .white)
+                        Text(session.key.isBanned ? "Clave suspendida por administraciÃ³n" : "Acceso verificado a Project X")
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "94A3B8"))
+                    }
                     
-                    // Key details
-                    keyDetailRow(icon: "key.fill", label: "Key", value: session.key.keyString)
+                    Spacer()
+                    
+                    CyberBadge(
+                        text: session.key.isBanned ? "BANEADO" : "PRO",
+                        color: session.key.isBanned ? Color(hex: "EF4444") : AppTheme.accent
+                    )
+                }
+                
+                Divider()
+                    .background(Color.white.opacity(0.08))
+                
+                // Key details
+                VStack(spacing: 10) {
+                    keyDetailRow(icon: "key.fill", label: "Clave", value: session.key.keyString, copyable: true)
                     keyDetailRow(icon: "clock.fill", label: "Tiempo restante", value: session.key.timeRemaining)
-                    keyDetailRow(icon: "calendar", label: "Expira", value: session.key.expirationDateString)
-                    keyDetailRow(icon: "checkmark.seal.fill", label: "Estado", value: session.key.status.displayName)
+                    keyDetailRow(icon: "calendar", label: "Fecha expiraciÃ³n", value: session.key.expirationDateString)
+                    keyDetailRow(icon: "checkmark.shield.fill", label: "Estado", value: session.key.status.displayName)
                     
                     if let userName = session.key.userName {
-                        keyDetailRow(icon: "person.fill", label: "Usuario", value: userName)
+                        keyDetailRow(icon: "person.fill", label: "Usuario asignado", value: userName)
                     }
-                    
-                    if session.key.isBanned, let reason = session.key.banReason {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Razón del ban:")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(reason)
-                                .font(.subheadline)
-                                .foregroundStyle(.red)
-                        }
-                        .padding(.top, 4)
-                    }
-                    
-                    // Notifications section
-                    if !session.key.notifications.isEmpty {
-                        Divider()
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Image(systemName: "bell.badge.fill")
-                                    .foregroundStyle(.orange)
-                                Text("Notificaciones")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                Spacer()
-                                Button("Limpiar") {
-                                    keyStore.clearNotifications(for: session.key)
-                                }
-                                .font(.caption)
-                            }
-                            
-                            ForEach(Array(session.key.notifications.enumerated()), id: \.offset) { index, notification in
-                                HStack(spacing: 8) {
-                                    Image(systemName: notification.icon)
-                                        .foregroundStyle(colorForNotification(notification))
-                                        .frame(width: 20)
-                                    
-                                    Text(notification.message)
-                                        .font(.caption)
-                                        .foregroundStyle(.primary)
-                                }
-                                .padding(.vertical, 4)
-                                .padding(.horizontal, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color(.secondarySystemBackground))
-                                )
-                            }
-                        }
-                    }
-                    
-                    // Deactivate button
-                    Button(role: .destructive) {
-                        withAnimation {
-                            keyStore.deactivateSession()
-                        }
-                    } label: {
-                        HStack {
-                            Image(systemName: "xmark.circle.fill")
-                            Text("Desactivar Key")
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
                 }
-                .padding(.vertical, 8)
                 
-            } else {
-                // No active key
-                VStack(alignment: .leading, spacing: 12) {
+                if session.key.isBanned, let reason = session.key.banReason {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Motivo de suspensiÃ³n:")
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "94A3B8"))
+                        Text(reason)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color(hex: "EF4444"))
+                    }
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(hex: "EF4444").opacity(0.1))
+                    )
+                }
+                
+                // Deactivate button
+                Button(role: .destructive) {
+                    withAnimation {
+                        keyStore.deactivateSession()
+                    }
+                } label: {
                     HStack {
-                        Image(systemName: "lock.fill")
-                            .foregroundStyle(.orange)
-                            .font(.title2)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Free Fire Bloqueado")
-                                .font(.headline)
-                            Text("Necesitas activar una Key")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                        Spacer()
+                        Image(systemName: "xmark.circle.fill")
+                        Text("Desactivar Key")
+                            .font(.system(size: 14, weight: .bold))
+                    }
+                    .foregroundStyle(Color(hex: "EF4444"))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(hex: "EF4444").opacity(0.12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color(hex: "EF4444").opacity(0.25), lineWidth: 1)
+                            )
+                    )
+                }
+                .padding(.top, 4)
+            } else {
+                // Inactive state
+                VStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(AppTheme.accent.opacity(0.15))
+                            .frame(width: 56, height: 56)
+                        Image(systemName: "lock.shield.fill")
+                            .foregroundStyle(AppTheme.accent)
+                            .font(.system(size: 26))
                     }
                     
-                    Text("Tienes que activar una Key en Perfil para usar Free Fire.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, 8)
+                    VStack(spacing: 4) {
+                        Text("Sin MembresÃ­a Activa")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                        Text("Activa tu clave de acceso para desbloquear todas las funciones de Project X")
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "94A3B8"))
+                            .multilineTextAlignment(.center)
+                    }
                 }
-                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
             }
-        } header: {
-            Text("Estado de Free Fire")
         }
+        .padding(16)
+        .obsidianCard(cornerRadius: 18, borderColor: keyStore.activeSession != nil ? AppTheme.accent.opacity(0.3) : AppTheme.cardBorder, glowing: keyStore.activeSession != nil)
     }
     
-    // MARK: - Key Activation Section
+    // MARK: - Key Activation Card
     
-    private var keyActivationSection: some View {
-        Section {
-            Button {
-                showKeyActivation = true
-            } label: {
-                HStack {
+    private var keyActivationCard: some View {
+        Button {
+            showKeyActivation = true
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(AppTheme.accent.opacity(0.15))
+                        .frame(width: 44, height: 44)
                     Image(systemName: "key.fill")
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(AppTheme.accent)
-                    Text("Activar Key")
-                        .fontWeight(.medium)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
                 }
+                
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Activar Nueva Clave")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("Introduce tu cÃ³digo de acceso")
+                        .font(.caption)
+                        .foregroundStyle(Color(hex: "94A3B8"))
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color(hex: "94A3B8"))
             }
-            
-            if let error = activationError {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-        } header: {
-            Text("Activación")
-        } footer: {
-            Text("Introduce tu Key estándar o personalizada asignada")
+            .padding(16)
+            .obsidianCard(cornerRadius: 16, borderColor: AppTheme.accent.opacity(0.2))
         }
+        .buttonStyle(.plain)
     }
     
-    // MARK: - Admin Section
+    // MARK: - Admin Card
     
-    private var adminSection: some View {
-        Section {
+    private var adminCard: some View {
+        VStack(spacing: 10) {
             if adminSettings.isAdminAuthenticated {
-                // Admin is logged in
                 Button {
                     showAdminPanel = true
                 } label: {
-                    HStack {
-                        Image(systemName: "gearshape.2.fill")
-                            .foregroundStyle(.purple)
-                        Text("Panel de Administración")
-                            .fontWeight(.medium)
+                    HStack(spacing: 14) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(hex: "8B5CF6").opacity(0.15))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: "gearshape.2.fill")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(Color(hex: "8B5CF6"))
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Panel de AdministraciÃ³n")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(.white)
+                            Text("Gestor de claves y configuraciÃ³n")
+                                .font(.caption)
+                                .foregroundStyle(Color(hex: "94A3B8"))
+                        }
+                        
                         Spacer()
+                        
                         Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Color(hex: "94A3B8"))
                     }
+                    .padding(16)
+                    .obsidianCard(cornerRadius: 16, borderColor: Color(hex: "8B5CF6").opacity(0.3))
                 }
+                .buttonStyle(.plain)
                 
                 Button(role: .destructive) {
                     adminSettings.logout()
                 } label: {
                     HStack {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
-                        Text("Cerrar sesión Admin")
+                        Text("Cerrar SesiÃ³n Administrador")
+                            .font(.caption.weight(.semibold))
                     }
+                    .foregroundStyle(Color(hex: "EF4444"))
+                    .padding(.vertical, 8)
                 }
             } else {
-                // Admin login button
                 Button {
                     showAdminLogin = true
                 } label: {
-                    HStack {
-                        Image(systemName: "person.badge.key.fill")
-                            .foregroundStyle(.blue)
-                        Text("Acceso Administrador")
-                            .fontWeight(.medium)
+                    HStack(spacing: 14) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.06))
+                                .frame(width: 40, height: 40)
+                            Image(systemName: "person.badge.key.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(Color(hex: "94A3B8"))
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Acceso Administrador")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.white)
+                            Text("GestiÃ³n de seguridad")
+                                .font(.caption2)
+                                .foregroundStyle(Color(hex: "94A3B8"))
+                        }
+                        
                         Spacer()
+                        
                         Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(Color(hex: "94A3B8"))
                     }
+                    .padding(14)
+                    .obsidianCard(cornerRadius: 14, borderColor: Color.white.opacity(0.06))
                 }
+                .buttonStyle(.plain)
             }
-        } header: {
-            Text("Administración")
         }
     }
     
     // MARK: - Helper Views
     
-    private func keyDetailRow(icon: String, label: String, value: String) -> some View {
-        HStack {
+    private func keyDetailRow(icon: String, label: String, value: String, copyable: Bool = false) -> some View {
+        HStack(spacing: 10) {
             Image(systemName: icon)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(AppTheme.accent)
                 .frame(width: 20)
             
             Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 13))
+                .foregroundStyle(Color(hex: "94A3B8"))
             
             Spacer()
             
             Text(value)
-                .font(.subheadline)
-                .fontWeight(.medium)
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.white)
+            
+            if copyable {
+                Button {
+                    UIPasteboard.general.string = value
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 11))
+                        .foregroundStyle(AppTheme.accent)
+                }
+                .buttonStyle(.plain)
+            }
         }
+        .padding(.vertical, 2)
     }
     
     private func colorForNotification(_ notification: KeyNotification) -> Color {
@@ -349,63 +384,83 @@ struct KeyActivationSheet: View {
     let onActivate: () -> Void
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 24) {
-                // Icon
-                Image(systemName: "key.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(AppTheme.accent)
-                    .padding(.top, 32)
+        NavigationStack {
+            ZStack {
+                Color(hex: "08080C").ignoresSafeArea()
                 
-                // Title
-                Text("Activar Key")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
-                Text("Introduce tu Key de Free Fire")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                
-                // Input field
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Key")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
+                VStack(spacing: 24) {
+                    ZStack {
+                        Circle()
+                            .fill(AppTheme.accent.opacity(0.15))
+                            .frame(width: 80, height: 80)
+                        Image(systemName: "key.fill")
+                            .font(.system(size: 36))
+                            .foregroundStyle(AppTheme.accent)
+                    }
+                    .padding(.top, 24)
                     
-                    TextField("Ej: JUSTINRAGEX-001-002 o TU-KEY", text: $keyInput)
-                        .textFieldStyle(.roundedBorder)
-                        .textInputAutocapitalization(.characters)
-                        .font(.system(.body, design: .monospaced))
+                    VStack(spacing: 6) {
+                        Text("Activar MembresÃ­a")
+                            .font(.system(size: 22, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white)
+                        
+                        Text("Introduce tu clave asignada para activar el acceso")
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "94A3B8"))
+                            .multilineTextAlignment(.center)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("CLAVE DE ACCESO")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color(hex: "94A3B8"))
+                        
+                        TextField("Ej: PRO-KEY-XXXX o PERSONALIZADA", text: $keyInput)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .font(.system(.body, design: .monospaced))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(Color(hex: "131420"))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .stroke(AppTheme.accent.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
+                    }
+                    .padding(.horizontal, 24)
+                    
+                    Button {
+                        onActivate()
+                    } label: {
+                        Text("Activar Clave")
+                            .font(.system(size: 16, weight: .bold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(keyInput.isEmpty ? Color.white.opacity(0.1) : AppTheme.accent)
+                            )
+                            .foregroundStyle(keyInput.isEmpty ? Color(hex: "94A3B8") : .white)
+                    }
+                    .disabled(keyInput.isEmpty)
+                    .padding(.horizontal, 24)
+                    
+                    Spacer()
                 }
-                .padding(.horizontal, 24)
-                
-                // Activate button
-                Button {
-                    onActivate()
-                } label: {
-                    Text("Activar")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(keyInput.isEmpty ? Color.gray.opacity(0.3) : AppTheme.accent)
-                        )
-                        .foregroundStyle(.white)
-                }
-                .disabled(keyInput.isEmpty)
-                .padding(.horizontal, 24)
-                
-                Spacer()
             }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color(hex: "08080C"), for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") {
                         isPresented = false
                     }
+                    .foregroundStyle(.white)
                 }
             }
         }
@@ -424,81 +479,109 @@ struct AdminLoginView: View {
     @State private var errorMessage: String?
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 24) {
-                // Icon
-                Image(systemName: "person.badge.key.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.blue)
-                    .padding(.top, 32)
+        NavigationStack {
+            ZStack {
+                Color(hex: "08080C").ignoresSafeArea()
                 
-                // Title
-                Text("Acceso Administrador")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
-                Text("Introduce las credenciales de administrador")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                
-                // Input fields
-                VStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Usuario")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
+                VStack(spacing: 24) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: "8B5CF6").opacity(0.15))
+                            .frame(width: 80, height: 80)
+                        Image(systemName: "shield.checkered")
+                            .font(.system(size: 36))
+                            .foregroundStyle(Color(hex: "8B5CF6"))
+                    }
+                    .padding(.top, 24)
+                    
+                    VStack(spacing: 6) {
+                        Text("Acceso Administrador")
+                            .font(.system(size: 22, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white)
                         
-                        TextField("Usuario", text: $username)
-                            .textFieldStyle(.roundedBorder)
-                            .textInputAutocapitalization(.characters)
+                        Text("Introduce credenciales autorizadas")
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "94A3B8"))
                     }
                     
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Contraseña")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
+                    VStack(spacing: 14) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("USUARIO")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color(hex: "94A3B8"))
+                            
+                            TextField("Usuario", text: $username)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(hex: "131420"))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                        )
+                                )
+                        }
                         
-                        SecureField("Contraseña", text: $password)
-                            .textFieldStyle(.roundedBorder)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("CONTRASEÃ‘A")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color(hex: "94A3B8"))
+                            
+                            SecureField("ContraseÃ±a", text: $password)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(hex: "131420"))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                        )
+                                )
+                        }
                     }
+                    .padding(.horizontal, 24)
+                    
+                    if let error = errorMessage {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "EF4444"))
+                            .padding(.horizontal, 24)
+                    }
+                    
+                    Button {
+                        attemptLogin()
+                    } label: {
+                        Text("Entrar al Panel")
+                            .font(.system(size: 16, weight: .bold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(username.isEmpty || password.isEmpty ? Color.white.opacity(0.1) : Color(hex: "8B5CF6"))
+                            )
+                            .foregroundStyle(username.isEmpty || password.isEmpty ? Color(hex: "94A3B8") : .white)
+                    }
+                    .disabled(username.isEmpty || password.isEmpty)
+                    .padding(.horizontal, 24)
+                    
+                    Spacer()
                 }
-                .padding(.horizontal, 24)
-                
-                if let error = errorMessage {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal, 24)
-                }
-                
-                // Login button
-                Button {
-                    attemptLogin()
-                } label: {
-                    Text("Iniciar Sesión")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(username.isEmpty || password.isEmpty ? Color.gray.opacity(0.3) : Color.blue)
-                        )
-                        .foregroundStyle(.white)
-                }
-                .disabled(username.isEmpty || password.isEmpty)
-                .padding(.horizontal, 24)
-                
-                Spacer()
             }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color(hex: "08080C"), for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") {
                         isPresented = false
                     }
+                    .foregroundStyle(.white)
                 }
             }
         }
@@ -513,7 +596,6 @@ struct AdminLoginView: View {
         } else {
             errorMessage = "Credenciales incorrectas"
             
-            // Haptic feedback
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.error)
         }
