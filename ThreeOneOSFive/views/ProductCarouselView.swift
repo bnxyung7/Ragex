@@ -8,85 +8,78 @@ struct Product: Identifiable {
 }
 
 struct ProductCarouselView: View {
-    let products: [Product] = [
-        Product(
-            imageName: "product-holograma-arma",
-            title: "Holograma Arma Rojo Negro",
-            description: "Destaca en Free Fire con este holograma rojo y negro premium"
-        ),
-        Product(
-            imageName: "product-holograma-verde",
-            title: "Holograma Arma Verde",
-            description: "Holograma verde exclusivo para personalizar tu arsenal"
-        )
-    ]
+    let products: [Product] = []
     
     @State private var currentIndex = 0
     @State private var timer: Timer?
     @State private var offset: CGFloat = 0
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("PREVIEW PRODUCTOS")
-                .font(.caption)
-                .fontWeight(.bold)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
-            
-            GeometryReader { geometry in
-                HStack(spacing: 16) {
-                    ForEach(Array(products.enumerated()), id: \.element.id) { index, product in
-                        ProductCardView(product: product)
-                            .frame(width: geometry.size.width - 40)
+        if !products.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("PREVIEW PRODUCTOS")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                
+                GeometryReader { geometry in
+                    HStack(spacing: 16) {
+                        ForEach(Array(products.enumerated()), id: \.element.id) { index, product in
+                            ProductCardView(product: product)
+                                .frame(width: geometry.size.width - 40)
+                        }
                     }
-                }
-                .offset(x: offset)
-                .gesture(
-                    DragGesture()
-                        .onEnded { value in
-                            let threshold: CGFloat = 50
-                            if value.translation.width > threshold && currentIndex > 0 {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                    currentIndex -= 1
-                                }
-                            } else if value.translation.width < -threshold && currentIndex < products.count - 1 {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                    currentIndex += 1
+                    .offset(x: offset)
+                    .gesture(
+                        DragGesture()
+                            .onEnded { value in
+                                let threshold: CGFloat = 50
+                                if value.translation.width > threshold && currentIndex > 0 {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        currentIndex -= 1
+                                    }
+                                } else if value.translation.width < -threshold && currentIndex < products.count - 1 {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        currentIndex += 1
+                                    }
                                 }
                             }
+                    )
+                    .onAppear {
+                        startAutoScroll()
+                    }
+                    .onDisappear {
+                        stopAutoScroll()
+                    }
+                    .onChange(of: currentIndex) { _ in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            offset = -CGFloat(currentIndex) * (geometry.size.width - 24)
                         }
-                )
-                .onAppear {
-                    startAutoScroll()
-                }
-                .onDisappear {
-                    stopAutoScroll()
-                }
-                .onChange(of: currentIndex) { _ in
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        offset = -CGFloat(currentIndex) * (geometry.size.width - 24)
                     }
                 }
-            }
-            .frame(height: 160)
-            
-            // Page indicators
-            HStack(spacing: 6) {
-                ForEach(0..<products.count, id: \.self) { index in
-                    Circle()
-                        .fill(currentIndex == index ? Color.accentColor : Color.gray.opacity(0.3))
-                        .frame(width: currentIndex == index ? 8 : 6, height: currentIndex == index ? 8 : 6)
-                        .animation(.spring(response: 0.3), value: currentIndex)
+                .frame(height: 160)
+                
+                // Page indicators
+                HStack(spacing: 6) {
+                    ForEach(0..<products.count, id: \.self) { index in
+                        Circle()
+                            .fill(currentIndex == index ? Color.accentColor : Color.gray.opacity(0.3))
+                            .frame(width: currentIndex == index ? 8 : 6, height: currentIndex == index ? 8 : 6)
+                            .animation(.spring(response: 0.3), value: currentIndex)
+                    }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 8)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 8)
+            .padding(.vertical, 12)
         }
-        .padding(.vertical, 12)
     }
     
     private func startAutoScroll() {
+        guard !products.isEmpty else { return }
         timer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { _ in
+            guard !products.isEmpty else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 currentIndex = (currentIndex + 1) % products.count
             }
