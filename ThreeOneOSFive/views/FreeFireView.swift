@@ -64,6 +64,7 @@ struct FreeFireView: View {
         case aimbot = "AIMBOT"
         case holograma = "HOLOGRAMA"
         case modSkin = "MOD SKIN"
+        case combo = "COMBO"
         case others = "OTROS"
         
         var id: String { rawValue }
@@ -73,6 +74,7 @@ struct FreeFireView: View {
             case .aimbot: return "scope"
             case .holograma: return "cube.transparent"
             case .modSkin: return "paintbrush.fill"
+            case .combo: return "star.fill"
             case .others: return "ellipsis.circle"
             }
         }
@@ -958,6 +960,8 @@ struct BundlePatch: Identifiable {
                   filename.contains("TEXTURA") || filename.contains("TEXTURE") ||
                   filename.contains("SKIN") || filename.contains("MOD") {
             return .modSkin
+        } else if folderName == "COMBO" || filename.contains("COMBO") {
+            return .combo
         }
         
         return .others
