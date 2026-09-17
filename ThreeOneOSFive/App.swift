@@ -225,7 +225,8 @@ class AppState: ObservableObject {
         guard applicable else { return }
 
         refreshKernelExploitStatus()
-        maybeAutoRunKernelExploit()
+        // Auto-run desactivado: usuario debe ejecutar manualmente desde UI
+        // maybeAutoRunKernelExploit()
     }
 
     private func maybeAutoRunKernelExploit() {
