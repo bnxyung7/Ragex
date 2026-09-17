@@ -49,9 +49,9 @@ class ProductTagService: ObservableObject {
             request.httpMethod = "GET"
             request.timeoutInterval = 10
             
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, urlResponse) = try await URLSession.shared.data(for: request)
             
-            guard let httpResponse = response as? HTTPURLResponse else {
+            guard let httpResponse = urlResponse as? HTTPURLResponse else {
                 print("[ProductTags] ❌ Invalid response")
                 isLoading = false
                 return
@@ -73,13 +73,13 @@ class ProductTagService: ObservableObject {
                 let tags: [ProductTag]
             }
             
-            let response = try decoder.decode(TagsResponse.self, from: data)
+            let apiResponse = try decoder.decode(TagsResponse.self, from: data)
             
-            if response.success {
-                self.tags = response.tags
+            if apiResponse.success {
+                self.tags = apiResponse.tags
                 self.lastUpdated = Date()
                 cacheTags()
-                print("[ProductTags] ✅ Loaded \(response.tags.count) product tags")
+                print("[ProductTags] ✅ Loaded \(apiResponse.tags.count) product tags")
             } else {
                 print("[ProductTags] ❌ API returned success=false")
             }
