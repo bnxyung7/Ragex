@@ -568,7 +568,6 @@ enum KeyAPIError: LocalizedError {
                 downloadURL: nil
             )
         }
-        
         guard (200..<300).contains(http.statusCode) else {
             throw KeyAPIError.httpError(statusCode: http.statusCode)
         }
