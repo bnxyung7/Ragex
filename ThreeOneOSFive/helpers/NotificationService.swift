@@ -154,8 +154,8 @@ class NotificationService: ObservableObject {
     // MARK: - Fetch
 
     func fetchNotifications() {
-        // Get device ID from KeyStore if available
-        let deviceId = KeyStore.shared.activeSession?.key.deviceId ?? ""
+        // Get device ID (hardware ID)
+        let deviceId = MG.getUniqueDeviceID()
         let urlString = deviceId.isEmpty 
             ? "\(baseURL)/notifications/active"
             : "\(baseURL)/notifications/active?deviceId=\(deviceId)"
@@ -267,8 +267,19 @@ class NotificationService: ObservableObject {
             title: "Tu acceso expiró",
             message: "Tu membresía ha vencido. Renueva tu key para seguir usando Free Fire y FF MAX.",
             type: "warning",
-            targetUsers: "expired",
-            createdAt: Int(Date().timeIntervalSince1970 * 1000)
+            priority: "high",
+            link: "",
+            imageUrl: "",
+            actionButton: "",
+            actionUrl: "",
+            targetAudience: "all",
+            targetDevices: "",
+            isActive: true,
+            expiresAt: nil,
+            createdAt: ISO8601DateFormatter().string(from: Date()),
+            createdBy: "system",
+            viewCount: 0,
+            clickCount: 0
         )
         if !notifications.contains(where: { $0.id == -1 }) {
             notifications.insert(notif, at: 0)

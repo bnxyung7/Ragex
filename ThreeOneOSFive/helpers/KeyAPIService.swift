@@ -543,11 +543,11 @@ enum KeyAPIError: LocalizedError {
         let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let appName = "X" // Bundle name
         
-        let url = URL(string: "\(adminPanelURL)/version/check")!
+        let url = URL(string: "\(self.adminPanelURL)/version/check")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiToken, forHTTPHeaderField: "X-API-Token")
+        request.setValue(self.apiToken, forHTTPHeaderField: "X-API-Token")
         request.timeoutInterval = 10
         
         let body: [String: Any] = [
