@@ -10,6 +10,7 @@ struct ProfileView: View {
     @State private var showAdminLogin = false
     @State private var showAdminPanel = false
     @State private var showKeyActivation = false
+    @State private var showNotificationsSheet = false
     @State private var keyInput = ""
     @State private var activationError: String?
     @State private var isLoading = false
@@ -44,7 +45,7 @@ struct ProfileView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        notificationService.showNotificationsSheet = true
+                        showNotificationsSheet = true
                     } label: {
                         ZStack(alignment: .topTrailing) {
                             Image(systemName: "bell.fill")
@@ -60,7 +61,7 @@ struct ProfileView: View {
                     }
                 }
             }
-            .sheet(isPresented: $notificationService.showNotificationsSheet) {
+            .sheet(isPresented: $showNotificationsSheet) {
                 NotificationsCenterView()
             }
         }

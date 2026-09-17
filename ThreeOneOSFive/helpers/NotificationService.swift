@@ -37,6 +37,7 @@ class NotificationService: ObservableObject {
     @Published var notifications: [ServerNotification] = []
     @Published var unreadCount: Int = 0
     @Published var isLoading: Bool = false
+    @Published var showNotificationsSheet: Bool = false // para ProfileView
     
     private let baseURL: String
     private let readNotificationsKey = "com.ragex.readNotifications"
@@ -115,6 +116,23 @@ class NotificationService: ObservableObject {
     
     private func loadReadStatus() {
         updateUnreadCount()
+    }
+    
+    /// Notificar al usuario que su key expiró (llamado desde KeyStore)
+    func notifyExpired() {
+        let expiredNotif = ServerNotification(
+            id: -1,
+            title: "Tu acceso expiró",
+            message: "Tu membresía ha vencido. Renueva tu key para seguir usando Free Fire y FF MAX.",
+            type: "warning",
+            targetUsers: "expired",
+            createdAt: Int(Date().timeIntervalSince1970 * 1000)
+        )
+        // Insertar al inicio si no existe ya
+        if !notifications.contains(where: { $0.id == -1 }) {
+            notifications.insert(expiredNotif, at: 0)
+        }
+        unreadCount += 1
     }
 }
 
