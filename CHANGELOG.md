@@ -2,6 +2,36 @@
 
 All notable user-facing changes are documented in this file.
 
+## [2.1.1] - 2026-09-17
+
+### Added
+
+- **Force Update System**: Control de versiones obligatorio desde servidor
+- **Quick Access Menu**: Menú de 3 puntos para acceso rápido a tabs activadas (Files, Patches, Bundle Explorer)
+- **Admin Panel Status**: Sección "Estado Actual" muestra visibilidad de todas las tabs configurables
+- **Separated Game Modes**: Productos de Free Fire y Free Fire MAX ahora en carpetas independientes
+
+### Changed
+
+- **KExploit Auto-run**: Desactivado por defecto, ahora requiere ejecución manual desde UI
+- **iOS Support**: Extendido soporte hasta iOS 27.x (26.6.2+ ahora funciona correctamente)
+- **App Data Visibility**: Ahora visible automáticamente con key válida (no requiere solo developer mode)
+- **Bundle Explorer**: Ya no intenta ejecutar kexploit automáticamente, usa filesystem scan primero
+
+### Fixed
+
+- **Push Notification 405**: Cambiado método HTTP de POST a PUT para registro de tokens
+- **AttributeGraph Cycles**: Eliminados ciclos en navegación de tabs
+- **Tab Navigation**: Indicador de tab activo se mueve correctamente entre pestañas
+- **Build Compilation**: Corregidos errores de sintaxis en BundleExplorerView
+
+### Technical
+
+- Version verification endpoint: `POST /api/version/check`
+- ForceUpdateView: Pantalla de bloqueo cuando versión está desactivada
+- Navegación con NotificationCenter para quick access menu
+- Logs detallados para debugging de Bundle Explorer
+
 ## [1.0.1] - 2026-08-15
 
 ### Added

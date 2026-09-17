@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-1.1.1-E6753A?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-2.1.1-E6753A?style=flat-square">
   <img alt="iOS" src="https://img.shields.io/badge/iOS-17.0–18.7.1%20%7C%2026.0–26.6.1%20%7C%2027%20beta-222222?style=flat-square">
   <img alt="Swift" src="https://img.shields.io/badge/Swift-5-F05138?style=flat-square&logo=swift&logoColor=white">
   <img alt="License" src="https://img.shields.io/badge/license-GPL%20v3.0-blue?style=flat-square">
