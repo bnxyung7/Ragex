@@ -77,12 +77,14 @@ class FileEncryptionService {
     
     // MARK: - Key Derivation
     
-    /// Derive AES-256 key from user's API key using PBKDF2
-    /// - Parameter userKey: User's API key
+    /// Derive AES-256 key from master key (hardcoded)
+    /// MUST match Python encrypt_patches.py MASTER_KEY
+    /// - Parameter userKey: Not used - kept for API compatibility
     /// - Returns: SymmetricKey for AES-256
     private func deriveKey(from userKey: String) -> SymmetricKey {
-        // Combine user key with salt
-        let keyData = (userKey + salt).data(using: .utf8)!
+        // Use MASTER_KEY (same as Python script)
+        let masterKey = "RagexMasterEncryption2024"
+        let keyData = (masterKey + salt).data(using: .utf8)!
         
         // Use SHA256 to derive 256-bit key
         let hashedKey = SHA256.hash(data: keyData)
