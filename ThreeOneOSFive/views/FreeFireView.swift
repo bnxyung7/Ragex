@@ -889,10 +889,11 @@ struct PatchToggleRow: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(patch.displayName)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .minimumScaleFactor(0.85)
                 
                 // Product Tag Badge
                 if let tag = productTagService.getTag(for: patch.productId) {
@@ -933,7 +934,7 @@ struct PatchToggleRow: View {
             }
         }
         .padding(.horizontal, AppTheme.cardPadding)
-        .padding(.vertical, AppTheme.spacing12)
+        .padding(.vertical, 14)
         .obsidianCard(cornerRadius: 16, borderColor: isActive ? AppTheme.accent.opacity(0.4) : AppTheme.cardBorder, glowing: isActive)
         .contentShape(Rectangle())
         .onTapGesture {
