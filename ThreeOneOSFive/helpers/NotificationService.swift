@@ -66,26 +66,67 @@ struct ServerNotification: Codable, Identifiable {
     let id: Int
     let title: String
     let message: String
-    let type: String
-    let targetUsers: String
-    let createdAt: Int
+    let type: String           // info, warning, success, update
+    let priority: String       // low, normal, high, urgent
+    let link: String
+    let imageUrl: String
+    let actionButton: String
+    let actionUrl: String
+    let targetAudience: String
+    let targetDevices: String
+    let isActive: Bool
+    let expiresAt: String?
+    let createdAt: String
+    let createdBy: String
+    let viewCount: Int
+    let clickCount: Int
 
     enum CodingKeys: String, CodingKey {
-        case id, title, message, type
-        case targetUsers = "target_users"
-        case createdAt   = "created_at"
+        case id, title, message, type, priority, link
+        case imageUrl, actionButton, actionUrl
+        case targetAudience, targetDevices, isActive
+        case expiresAt, createdAt, createdBy
+        case viewCount, clickCount
     }
 
-    var date: Date { Date(timeIntervalSince1970: TimeInterval(createdAt) / 1000) }
+    var date: Date { 
+        if let timestamp = Double(createdAt.replacingOccurrences(of: "T", with: " ").replacingOccurrences(of: "Z", with: "").prefix(19)) {
+            return Date(timeIntervalSince1970: timestamp)
+        }
+        return Date()
+    }
 
     var icon: String {
         switch type {
         case "success": return "✅"
         case "warning": return "⚠️"
         case "error":   return "❌"
+        case "update":  return "🔄"
         default:        return "ℹ️"
         }
     }
+    
+    var badgeColor: Color {
+        switch type {
+        case "success": return Color(hex: "22C55E")
+        case "warning": return Color(hex: "F59E0B")
+        case "error":   return Color(hex: "EF4444")
+        case "update":  return Color(hex: "3B82F6")
+        default:        return Color(hex: "3B82F6")
+        }
+    }
+    
+    var priorityBadgeColor: Color {
+        switch priority {
+        case "urgent":  return Color(hex: "EF4444")
+        case "high":    return Color(hex: "F59E0B")
+        case "normal":  return Color(hex: "3B82F6")
+        case "low":     return Color(hex: "6B7280")
+        default:        return Color(hex: "3B82F6")
+        }
+    }
+    
+    var targetUsers: String { targetAudience } // Backward compatibility
 }
 
 // MARK: - NotificationService
@@ -113,7 +154,13 @@ class NotificationService: ObservableObject {
     // MARK: - Fetch
 
     func fetchNotifications() {
-        guard let url = URL(string: "\(baseURL)/notifications/active") else { return }
+        // Get device ID from KeyStore if available
+        let deviceId = KeyStore.shared.activeSession?.key.deviceId ?? ""
+        let urlString = deviceId.isEmpty 
+            ? "\(baseURL)/notifications/active"
+            : "\(baseURL)/notifications/active?deviceId=\(deviceId)"
+        
+        guard let url = URL(string: urlString) else { return }
         isLoading = true
         URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
             DispatchQueue.main.async {
@@ -131,6 +178,26 @@ class NotificationService: ObservableObject {
     func fetchAdminBroadcasts() async {
         fetchNotifications()
     }
+    
+    // MARK: - Track notification view
+    
+    func trackNotificationView(_ notificationId: Int) {
+        guard let url = URL(string: "\(baseURL)/notifications/\(notificationId)/view") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    // MARK: - Track notification click
+    
+    func trackNotificationClick(_ notificationId: Int) {
+        guard let url = URL(string: "\(baseURL)/notifications/\(notificationId)/click") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        URLSession.shared.dataTask(with: request).resume()
+    }
 
     // MARK: - Mark as read
 
@@ -139,6 +206,7 @@ class NotificationService: ObservableObject {
         var ids = getReadServerIDs()
         ids.insert(notificationId)
         saveReadServerIDs(ids)
+        trackNotificationView(notificationId)  // Track view on server
         recalcUnread()
     }
 

@@ -21,10 +21,16 @@ struct NotificationsCenterView: View {
                         headerCard
 
                         // Messages
-                        if service.broadcastMessages.isEmpty {
+                        if service.notifications.isEmpty && service.broadcastMessages.isEmpty {
                             emptyState
                         } else {
                             VStack(spacing: 10) {
+                                // Server notifications first (from new push system)
+                                ForEach(service.notifications) { notification in
+                                    serverNotificationCard(notification)
+                                }
+                                
+                                // Then broadcast messages
                                 ForEach(service.broadcastMessages) { message in
                                     messageCard(message)
                                 }
@@ -159,6 +165,152 @@ struct NotificationsCenterView: View {
         }
         .padding(14)
         .obsidianCard(cornerRadius: 16, borderColor: AppTheme.accent.opacity(0.25), glowing: true)
+    }
+
+    // MARK: - Message card
+
+    // Server notification card (new push notification system)
+    private func serverNotificationCard(_ notif: ServerNotification) -> some View {
+        let isUnread = !service.isRead(notif.id)
+        let isUrgent = notif.priority == "urgent" || notif.priority == "high"
+        let accentCol = notif.priorityBadgeColor
+
+        return VStack(alignment: .leading, spacing: 12) {
+            // Top bar: type badge + priority + unread dot
+            HStack(spacing: 8) {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(accentCol)
+                        .frame(width: 6, height: 6)
+                    Text("\(notif.icon) \(notif.type.uppercased())")
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundStyle(accentCol)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(accentCol.opacity(0.15))
+                .clipShape(Capsule())
+                
+                // Priority badge
+                if notif.priority != "normal" {
+                    Text(notif.priority.uppercased())
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(notif.priorityBadgeColor)
+                        .clipShape(Capsule())
+                }
+
+                Spacer()
+
+                // Unread dot
+                if isUnread {
+                    Circle()
+                        .fill(Color(hex: "3B82F6"))
+                        .frame(width: 8, height: 8)
+                }
+
+                Text(notif.date.formatted(.relative(presentation: .named)))
+                    .font(.caption2)
+                    .foregroundStyle(Color(hex: "64748B"))
+            }
+
+            // Title
+            Text(notif.title)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(isUrgent ? Color(hex: "FCA5A5") : .white)
+
+            // Message
+            Text(notif.message)
+                .font(.system(size: 13))
+                .foregroundStyle(Color(hex: "CBD5E1"))
+                .lineSpacing(3)
+            
+            // Image if provided
+            if !notif.imageUrl.isEmpty, let url = URL(string: notif.imageUrl) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(height: 160)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    case .failure:
+                        EmptyView()
+                    case .empty:
+                        ProgressView()
+                            .frame(height: 160)
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
+            }
+
+            // Action button if provided
+            if !notif.actionButton.isEmpty, !notif.actionUrl.isEmpty, let url = URL(string: notif.actionUrl) {
+                Divider()
+                    .background(Color.white.opacity(0.08))
+
+                Button {
+                    service.trackNotificationClick(notif.id)
+                    UIApplication.shared.open(url)
+                } label: {
+                    HStack {
+                        Image(systemName: "hand.tap.fill")
+                            .font(.system(size: 13))
+                        Text(notif.actionButton)
+                            .font(.system(size: 13, weight: .bold))
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundStyle(accentCol)
+                    .padding(.vertical, 4)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Regular link if no action button but link exists
+            else if !notif.link.isEmpty, let url = URL(string: notif.link) {
+                Divider()
+                    .background(Color.white.opacity(0.08))
+
+                Link(destination: url) {
+                    HStack {
+                        Image(systemName: "link")
+                            .font(.system(size: 13))
+                        Text("Ver más")
+                            .font(.system(size: 13, weight: .bold))
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundStyle(accentCol)
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+        .padding(16)
+        .obsidianCard(
+            cornerRadius: 16,
+            borderColor: isUrgent ? Color(hex: "EF4444").opacity(0.4) : Color.white.opacity(0.06),
+            glowing: isUrgent
+        )
+        .overlay(alignment: .topLeading) {
+            if isUnread {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color(hex: "3B82F6"))
+                    .frame(width: 3, height: 40)
+                    .padding(.leading, 0)
+                    .padding(.top, 12)
+                    .clipShape(RoundedRectangle(cornerRadius: 3))
+            }
+        }
+        .onTapGesture {
+            service.markAsRead(notif.id)
+        }
     }
 
     // MARK: - Message card
