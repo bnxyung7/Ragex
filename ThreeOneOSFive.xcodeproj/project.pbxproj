@@ -10,6 +10,7 @@
 		NOTIF011 /* NotificationsCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTIF001; };
 		NOTIF012 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTIF002; };
 		NOTIF013 /* InAppToastOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTIF003; };
+		FORCE001 /* ForceUpdateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FORCE000; };
 		PUSH011 /* PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PUSH001; };
 		CTAB011 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CTAB001; };
 		ANN00011 /* AnnouncementModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANN00001; };
@@ -110,6 +111,7 @@
 		NOTIF001 /* NotificationsCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsCenterView.swift; sourceTree = "<group>"; };
 		NOTIF002 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		NOTIF003 /* InAppToastOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppToastOverlay.swift; sourceTree = "<group>"; };
+		FORCE000 /* ForceUpdateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForceUpdateView.swift; sourceTree = "<group>"; };
 		PUSH001 /* PushNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationService.swift; sourceTree = "<group>"; };
 		CTAB001 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
 		ANN00001 /* AnnouncementModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnouncementModalView.swift; sourceTree = "<group>"; };
@@ -307,6 +309,7 @@
 				3105L104 /* RepositorySourcesView.swift */,
 				A2DE34D5 /* ProfileView.swift */,
 				NOTIF001 /* NotificationsCenterView.swift */,
+				FORCE000 /* ForceUpdateView.swift */,
 				NOTIF003 /* InAppToastOverlay.swift */,
 				CTAB001 /* CustomTabBar.swift */,
 				ANN00001 /* AnnouncementModalView.swift */,
@@ -509,6 +512,7 @@
 				NOTIF011,
 				NOTIF012,
 				NOTIF013,
+				FORCE001,
 				PUSH011,
 				CTAB011,
 				ANN00011,

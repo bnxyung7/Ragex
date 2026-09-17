@@ -155,7 +155,20 @@ class NotificationService: ObservableObject {
 
     func fetchNotifications() {
         // Get device ID (hardware ID)
-        let deviceId = MG.getUniqueDeviceID()
+        let deviceId: String
+        if let uuid = UIDevice.current.identifierForVendor {
+            deviceId = uuid.uuidString
+        } else {
+            let key = "com.x.deviceId"
+            if let stored = UserDefaults.standard.string(forKey: key) {
+                deviceId = stored
+            } else {
+                let newId = UUID().uuidString
+                UserDefaults.standard.set(newId, forKey: key)
+                deviceId = newId
+            }
+        }
+        
         let urlString = deviceId.isEmpty 
             ? "\(baseURL)/notifications/active"
             : "\(baseURL)/notifications/active?deviceId=\(deviceId)"
