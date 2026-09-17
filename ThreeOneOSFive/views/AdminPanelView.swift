@@ -114,6 +114,36 @@ struct AdminPanelView: View {
             Section {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
+                        Text("Patches")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(adminSettings.tabSettings.patchesEnabled ? "Visible" : "Oculto")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(adminSettings.tabSettings.patchesEnabled ? .green : .red)
+                    }
+                    Spacer()
+                    Image(systemName: adminSettings.tabSettings.patchesEnabled ? "eye.fill" : "eye.slash.fill")
+                        .foregroundStyle(adminSettings.tabSettings.patchesEnabled ? .green : .red)
+                }
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Files")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(adminSettings.tabSettings.filesEnabled ? "Visible" : "Oculto")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(adminSettings.tabSettings.filesEnabled ? .green : .red)
+                    }
+                    Spacer()
+                    Image(systemName: adminSettings.tabSettings.filesEnabled ? "eye.fill" : "eye.slash.fill")
+                        .foregroundStyle(adminSettings.tabSettings.filesEnabled ? .green : .red)
+                }
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text("Free Fire")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -140,6 +170,21 @@ struct AdminPanelView: View {
                     Spacer()
                     Image(systemName: adminSettings.tabSettings.freeFireMaxEnabled ? "eye.fill" : "eye.slash.fill")
                         .foregroundStyle(adminSettings.tabSettings.freeFireMaxEnabled ? .green : .red)
+                }
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Bundle Explorer")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(adminSettings.tabSettings.bundleExplorerEnabled ? "Visible" : "Oculto")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(adminSettings.tabSettings.bundleExplorerEnabled ? .green : .red)
+                    }
+                    Spacer()
+                    Image(systemName: adminSettings.tabSettings.bundleExplorerEnabled ? "eye.fill" : "eye.slash.fill")
+                        .foregroundStyle(adminSettings.tabSettings.bundleExplorerEnabled ? .green : .red)
                 }
             } header: {
                 Text("Estado Actual")
