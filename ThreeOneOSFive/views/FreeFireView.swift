@@ -545,7 +545,11 @@ struct FreeFireView: View {
                     // Handle encrypted files
                     if patch.isEncrypted {
                         // Decrypt file before copying
-                        guard let userKey = await MainActor.run({ KeyStore.shared.activeSession?.key.licenseKey }) else {
+                        let userKey = await MainActor.run {
+                            KeyStore.shared.activeSession?.key.licenseKey
+                        }
+                        
+                        guard let userKey = userKey else {
                             throw NSError(domain: "FreeFire", code: 3, userInfo: [
                                 NSLocalizedDescriptionKey: "No se pudo obtener la clave de desencriptación"
                             ])
