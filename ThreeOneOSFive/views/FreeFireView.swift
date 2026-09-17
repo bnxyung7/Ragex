@@ -46,6 +46,7 @@ struct FreeFireView: View {
     @EnvironmentObject private var patchStore: PatchProjectStore
     @StateObject private var keyStore = KeyStore.shared
     @StateObject private var announcementService = AnnouncementService.shared
+    @StateObject private var productTagService = ProductTagService.shared
     
     @State private var bundlePatches: [BundlePatch] = []
     @State private var selectedCategory: PatchCategory = .aimbot
@@ -127,7 +128,10 @@ struct FreeFireView: View {
         .onAppear {
             loadBundlePatches()
             // Refresh announcements immediately when tab opens
-            Task { await announcementService.fetchAnnouncements() }
+            Task { 
+                await announcementService.fetchAnnouncements()
+                await productTagService.fetchTags()
+            }
         }
         .onDisappear {
             // Nothing to tear down — timer is task-based and cancels with view
@@ -200,6 +204,7 @@ struct FreeFireView: View {
                                 }
                             )
                             .environmentObject(patchStore)
+                            .environmentObject(productTagService)
                         }
                     }
                 }
@@ -467,6 +472,7 @@ struct FreeFireView: View {
                     }
                 )
                 .environmentObject(patchStore)
+                .environmentObject(productTagService)
             }
         }
     }
@@ -810,6 +816,7 @@ struct PatchToggleRow: View {
     let isProcessing: Bool
     let onToggle: (Bool) -> Void
     @EnvironmentObject private var patchStore: PatchProjectStore
+    @EnvironmentObject private var productTagService: ProductTagService
     
     private var patchProject: PatchProject? {
         let items = patchStore.items
@@ -835,11 +842,32 @@ struct PatchToggleRow: View {
                     .foregroundStyle(isActive ? AppTheme.accent : .white)
             }
             
-            Text(patch.displayName)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(patch.displayName)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                
+                // Product Tag Badge
+                if let tag = productTagService.getTag(for: patch.productId) {
+                    HStack(spacing: 4) {
+                        Text(tag.tag.emoji)
+                            .font(.system(size: 10))
+                        Text(tag.tag.displayName.uppercased())
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color(hex: tag.hexColor))
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color(hex: tag.hexColor).opacity(0.15))
+                    .cornerRadius(6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color(hex: tag.hexColor).opacity(0.3), lineWidth: 1)
+                    )
+                }
+            }
             
             Spacer()
             
@@ -950,5 +978,15 @@ struct BundlePatch: Identifiable {
         let formatter = ByteCountFormatter()
         formatter.countStyle = .file
         return formatter.string(fromByteCount: size)
+    }
+    
+    /// Generate product ID for tag lookup (format: GAME_CATEGORY_NAME)
+    var productId: String {
+        let game = "FREE_FIRE" // Could be detected from parent folder
+        let cat = category.rawValue
+        let name = url.deletingPathExtension().lastPathComponent
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "%", with: "_PERCENT")
+        return "\(game)_\(cat)_\(name)"
     }
 }

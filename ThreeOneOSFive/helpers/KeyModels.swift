@@ -196,3 +196,72 @@ struct UserSession: Codable {
         return !key.isExpired
     }
 }
+
+/// Product/Patch tag status (Test, Safe, Banned)
+enum ProductTagStatus: String, Codable {
+    case test = "test"
+    case safe = "safe"
+    case banned = "banned"
+    
+    var displayName: String {
+        switch self {
+        case .test: return "Test Mode"
+        case .safe: return "Safe"
+        case .banned: return "Banned"
+        }
+    }
+    
+    var emoji: String {
+        switch self {
+        case .test: return "🧪"
+        case .safe: return "✅"
+        case .banned: return "❌"
+        }
+    }
+    
+    var color: String {
+        switch self {
+        case .test: return "FFA500" // Orange/Amber
+        case .safe: return "10B981" // Emerald/Green
+        case .banned: return "EF4444" // Rose/Red
+        }
+    }
+}
+
+/// Product Tag Model - Real-time product status from server
+struct ProductTag: Codable, Identifiable {
+    let id: Int
+    let productId: String
+    let productName: String
+    let category: String
+    let game: String
+    let tag: ProductTagStatus
+    let tagColor: String?
+    let notes: String?
+    let updatedAt: String?
+    let createdAt: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, productId, productName, category, game, tag, tagColor, notes, updatedAt, createdAt
+    }
+    
+    /// Get hex color (custom or default based on tag)
+    var hexColor: String {
+        return tagColor?.isEmpty == false ? tagColor! : tag.color
+    }
+    
+    /// Check if product is safe to use
+    var isSafe: Bool {
+        return tag == .safe
+    }
+    
+    /// Check if product is in test mode
+    var isTest: Bool {
+        return tag == .test
+    }
+    
+    /// Check if product is banned
+    var isBanned: Bool {
+        return tag == .banned
+    }
+}
