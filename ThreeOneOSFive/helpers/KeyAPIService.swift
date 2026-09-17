@@ -318,7 +318,7 @@ class KeyAPIService {
         let url = URL(string: "\(baseURL)/push/register")!
 
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = "PUT"  // Cambiado de POST a PUT para registro/actualización
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(apiToken, forHTTPHeaderField: "X-API-Token")
         request.timeoutInterval = 15
@@ -335,6 +335,11 @@ class KeyAPIService {
         guard let http = response as? HTTPURLResponse,
               http.statusCode == 200 || http.statusCode == 201 else {
             let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            // Si es 405 (Method Not Allowed), el servidor no soporta este endpoint aún
+            if code == 405 {
+                print("[Push] ⚠️ Server does not support push token registration (405 Method Not Allowed)")
+                throw KeyAPIError.httpError(statusCode: code)
+            }
             throw KeyAPIError.httpError(statusCode: code)
         }
     }

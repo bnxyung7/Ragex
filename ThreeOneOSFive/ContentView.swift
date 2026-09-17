@@ -230,6 +230,8 @@ struct ContentView: View {
         let visibility = featureVisibility
         if let current = AppSection(rawValue: selectedTab),
            !visibility.isVisible(current) {
+            // Evitar ciclo: solo cambiar si no está ya en home
+            guard selectedTab != AppSection.home.rawValue else { return }
             selectedTab = AppSection.home.rawValue
         }
     }

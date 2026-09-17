@@ -63,7 +63,8 @@ struct FeatureVisibility: Equatable {
         case .home:
             return true
         case .files:
-            return tabSettings.filesEnabled && developerModeEnabled
+            // App Data browser visible con: key válida O developer mode habilitado
+            return hasValidAccess || (tabSettings.filesEnabled && developerModeEnabled)
         case .patches:
             return tabSettings.patchesEnabled && developerModeEnabled
         case .freeFire:
