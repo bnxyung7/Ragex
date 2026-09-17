@@ -1,5 +1,5 @@
 // API Base URL
-const API_URL = window.location.origin + '/api';
+const API_URL = 'https://xkeyapi.onrender.com/api';
 
 // Estado global
 let authToken = localStorage.getItem('authToken');

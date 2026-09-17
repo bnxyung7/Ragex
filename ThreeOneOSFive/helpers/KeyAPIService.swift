@@ -6,7 +6,7 @@ class KeyAPIService {
     
     // API base URLs
     private let baseURL = "https://xkeyapi.onrender.com/api" // Keys API (legacy)
-    private let adminPanelURL = "http://localhost:3000/api"  // TODO: Cambiar a tu servidor en producción
+    private let adminPanelURL = "https://xkeyapi.onrender.com/api"  // Admin Panel
     
     // API authorization token
     private let apiToken = "xkey_admin_secret_token_2026"
@@ -487,7 +487,7 @@ struct IPAVersionInfo: Codable {
     }
     
     var downloadURL: String {
-        "http://localhost:3000/api/ipa/download/\(id)" // TODO: cambiar a servidor real
+        "https://xkeyapi.onrender.com/api/ipa/download/\(id)"
     }
     
     var formattedSize: String {

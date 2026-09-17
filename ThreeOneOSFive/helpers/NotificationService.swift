@@ -43,8 +43,7 @@ class NotificationService: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     private init() {
-        // TODO: Cambiar a tu servidor en producción
-        self.baseURL = "http://localhost:3000/api"
+        self.baseURL = "https://xkeyapi.onrender.com/api"
         loadReadStatus()
     }
     
