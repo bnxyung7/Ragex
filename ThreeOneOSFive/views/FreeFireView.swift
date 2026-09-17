@@ -213,17 +213,18 @@ struct FreeFireView: View {
     // MARK: - Header Hero Banner
     
     private var headerHeroBanner: some View {
-        VStack(spacing: AppTheme.spacing12) {
-            HStack(spacing: AppTheme.spacing12) {
+        VStack(spacing: 0) {
+            // Fila principal: Logo + Info + Botón
+            HStack(alignment: .center, spacing: AppTheme.spacing12) {
                 gameLogoView
                 
-                VStack(alignment: .leading, spacing: AppTheme.spacing6) {
+                VStack(alignment: .leading, spacing: AppTheme.spacing4) {
+                    // Título con badge
                     HStack(spacing: AppTheme.spacing6) {
                         Text(mode.rawValue)
                             .font(.system(size: 16, weight: .heavy, design: .rounded))
                             .foregroundStyle(.white)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.85)
                         
                         Text(mode.badgeText)
                             .font(.system(size: 9, weight: .black))
@@ -240,26 +241,25 @@ struct FreeFireView: View {
                             .clipShape(Capsule())
                     }
                     
-                    HStack(spacing: AppTheme.spacing8) {
+                    // Status line con separadores
+                    HStack(spacing: 6) {
                         HStack(spacing: AppTheme.spacing4) {
                             PulseStatusDot(color: Color(hex: "10B981"))
-                            Text("Bypass Activo")
-                                .font(.system(size: 11, weight: .semibold))
+                            Text("Activo")
+                                .font(.system(size: 10, weight: .semibold))
                                 .foregroundStyle(Color(hex: "10B981"))
-                                .fixedSize()
                         }
 
-                        Text("·")
-                            .font(.caption2)
+                        Text("•")
+                            .font(.system(size: 8))
                             .foregroundStyle(Color(hex: "64748B"))
 
                         Text("120 FPS")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(AppTheme.accent)
-                            .fixedSize()
 
-                        Text("·")
-                            .font(.caption2)
+                        Text("•")
+                            .font(.system(size: 8))
                             .foregroundStyle(Color(hex: "64748B"))
 
                         Button {
@@ -269,41 +269,42 @@ struct FreeFireView: View {
                                 if isRefreshing {
                                     ProgressView()
                                         .progressViewStyle(.circular)
-                                        .scaleEffect(0.55)
+                                        .scaleEffect(0.5)
                                         .tint(AppTheme.accent)
-                                        .frame(width: 10, height: 10)
+                                        .frame(width: 8, height: 8)
                                 } else {
                                     Image(systemName: "arrow.clockwise")
-                                        .font(.system(size: 9, weight: .bold))
+                                        .font(.system(size: 8, weight: .bold))
                                         .foregroundStyle(AppTheme.accent)
                                 }
-                                Text("LIVE")
-                                    .font(.system(size: 9, weight: .black))
+                                Text("EN VIVO")
+                                    .font(.system(size: 8, weight: .black))
                                     .foregroundStyle(AppTheme.accent)
                             }
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(AppTheme.accent.opacity(0.12))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(AppTheme.accent.opacity(0.15))
                             .clipShape(Capsule())
-                            .overlay(Capsule().stroke(AppTheme.accent.opacity(0.3), lineWidth: 0.6))
                         }
                         .buttonStyle(.plain)
                         .disabled(isRefreshing)
                     }
-                    .fixedSize(horizontal: false, vertical: true)
                 }
                 
-                Spacer()
+                Spacer(minLength: 8)
                 
                 viewAnnouncementButton
             }
+            .padding(.horizontal, AppTheme.pageInset)
+            .padding(.vertical, AppTheme.spacing12)
             
+            // Banner de anuncios (si existe)
             if let latest = announcementService.latestAnnouncement {
                 marqueeBanner(latest)
+                    .padding(.horizontal, AppTheme.pageInset)
+                    .padding(.bottom, AppTheme.spacing10)
             }
         }
-        .padding(.horizontal, AppTheme.pageInset)
-        .padding(.vertical, 14)
         .background(Color(hex: "0C0D14"))
         .overlay(
             Rectangle()
@@ -340,26 +341,22 @@ struct FreeFireView: View {
         Button {
             showAnnouncementsSheet = true
         } label: {
-            VStack(spacing: 3) {
-                HStack(spacing: 4) {
-                    Image(systemName: "bell.badge.fill")
-                        .font(.system(size: 11, weight: .bold))
-                    Text("Ver Anuncio")
-                        .font(.system(size: 11, weight: .bold))
-                }
-                .foregroundStyle(.white)
-                
-                Text("Tiempo Real")
-                    .font(.system(size: 9, weight: .medium))
+            VStack(spacing: AppTheme.spacing2) {
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(AppTheme.accent)
+                
+                Text("Anuncios")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.white)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .frame(width: 52)
+            .padding(.vertical, AppTheme.spacing8)
             .background(Color(hex: "171827"))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(AppTheme.accent.opacity(0.35), lineWidth: 1)
+                    .stroke(AppTheme.accent.opacity(0.30), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -369,34 +366,33 @@ struct FreeFireView: View {
         Button {
             showAnnouncementsSheet = true
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: AppTheme.spacing8) {
                 Text(latest.tag)
                     .font(.system(size: 9, weight: .black))
-                    .foregroundStyle(AppTheme.accent)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(AppTheme.accent.opacity(0.18))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(AppTheme.accent)
                     .clipShape(Capsule())
                 
                 Text(latest.title)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color(hex: "E2E8F0"))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.85)
                 
-                Spacer()
+                Spacer(minLength: 4)
                 
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Color(hex: "64748B"))
+                Image(systemName: "chevron.right.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppTheme.accent.opacity(0.6))
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color(hex: "11121B"))
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .padding(.horizontal, AppTheme.spacing12)
+            .padding(.vertical, AppTheme.spacing10)
+            .background(Color(hex: "13141F"))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.white.opacity(0.04), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(AppTheme.accent.opacity(0.25), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

@@ -155,32 +155,23 @@ private struct CustomTabBarItem: View {
     let isSelected: Bool
     let isPressed: Bool
 
-    @State private var appeared = false
-
     var body: some View {
         VStack(spacing: AppTheme.spacing4) {
             ZStack(alignment: .topTrailing) {
-                // Selected pill background
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(AppTheme.accent.opacity(0.20))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(AppTheme.accent.opacity(0.50), lineWidth: 1)
-                        )
-                        .frame(width: 54, height: 34)
-                        .shadow(color: AppTheme.accent.opacity(0.40), radius: 8, x: 0, y: 2)
-                        .transition(.scale.combined(with: .opacity))
-                } else {
-                    Color.clear.frame(width: 54, height: 34)
-                }
+                // Selected pill background - ALWAYS reactiva al isSelected
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(isSelected ? AppTheme.accent.opacity(0.20) : Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(isSelected ? AppTheme.accent.opacity(0.50) : Color.clear, lineWidth: 1)
+                    )
+                    .frame(width: 54, height: 34)
+                    .shadow(color: isSelected ? AppTheme.accent.opacity(0.40) : Color.clear, radius: 8, x: 0, y: 2)
 
                 // Icon
                 iconView
                     .frame(width: 54, height: 34)
                     .scaleEffect(isPressed ? 0.90 : (isSelected ? 1.05 : 1.0))
-                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
-                    .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isSelected)
 
                 // Badge
                 if item.badge > 0 {
@@ -194,6 +185,8 @@ private struct CustomTabBarItem: View {
                         .offset(x: 4, y: -4)
                 }
             }
+            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isSelected)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isPressed)
 
             // Label
             Text(item.title)
@@ -219,6 +212,7 @@ private struct CustomTabBarItem: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 .opacity(isSelected ? 1.0 : 0.55)
                 .saturation(isSelected ? 1.0 : 0.4)
+                .animation(.easeInOut(duration: 0.2), value: isSelected)
         } else {
             if #available(iOS 17, *) {
                 Image(systemName: item.systemImage)
@@ -229,6 +223,7 @@ private struct CustomTabBarItem: View {
                 Image(systemName: item.systemImage)
                     .font(.system(size: 18, weight: isSelected ? .bold : .regular))
                     .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "5A5A72"))
+                    .animation(.easeInOut(duration: 0.2), value: isSelected)
             }
         }
     }
