@@ -524,10 +524,18 @@ enum KeyAPIError: LocalizedError {
             return msg
         }
     }
-}
-
     
     // MARK: - Version Control (Force Update)
+    
+    struct VersionStatusResponse: Codable {
+        let isAllowed: Bool
+        let currentVersion: String
+        let minimumVersion: String?
+        let latestVersion: String?
+        let forceUpdate: Bool
+        let message: String?
+        let downloadURL: String?
+    }
     
     /// Check if current app version is allowed to run
     /// Returns: (isAllowed, minimumVersion, forceUpdateMessage)
@@ -575,15 +583,5 @@ enum KeyAPIError: LocalizedError {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try decoder.decode(VersionStatusResponse.self, from: data)
-    }
-    
-    struct VersionStatusResponse: Codable {
-        let isAllowed: Bool
-        let currentVersion: String
-        let minimumVersion: String?
-        let latestVersion: String?
-        let forceUpdate: Bool
-        let message: String?
-        let downloadURL: String?
     }
 }
