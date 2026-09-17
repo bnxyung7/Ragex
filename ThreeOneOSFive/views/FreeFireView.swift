@@ -383,38 +383,39 @@ struct FreeFireView: View {
     // MARK: - Category Picker
     
     private var categoryPicker: some View {
-        HStack(spacing: AppTheme.spacing8) {
-            ForEach(PatchCategory.allCases) { category in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        selectedCategory = category
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AppTheme.spacing8) {
+                ForEach(PatchCategory.allCases) { category in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedCategory = category
+                        }
+                    } label: {
+                        HStack(spacing: AppTheme.spacing6) {
+                            Image(systemName: category.icon)
+                                .font(.system(size: 13, weight: .semibold))
+                            Text(category.rawValue)
+                                .font(.system(size: 13, weight: .bold))
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(selectedCategory == category ? .white : Color(hex: "94A3B8"))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(
+                            Capsule()
+                                .fill(selectedCategory == category ? AppTheme.accent : Color(hex: "131420"))
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(selectedCategory == category ? AppTheme.accent.opacity(0.6) : Color.white.opacity(0.06), lineWidth: 1)
+                        )
+                        .shadow(color: selectedCategory == category ? AppTheme.accent.opacity(0.3) : Color.clear, radius: 6)
                     }
-                } label: {
-                    HStack(spacing: AppTheme.spacing6) {
-                        Image(systemName: category.icon)
-                            .font(.system(size: 12, weight: .semibold))
-                        Text(category.rawValue)
-                            .font(.system(size: 12, weight: .bold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
-                    .foregroundStyle(selectedCategory == category ? .white : Color(hex: "94A3B8"))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 9)
-                    .background(
-                        Capsule()
-                            .fill(selectedCategory == category ? AppTheme.accent : Color(hex: "131420"))
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(selectedCategory == category ? AppTheme.accent.opacity(0.6) : Color.white.opacity(0.06), lineWidth: 1)
-                    )
-                    .shadow(color: selectedCategory == category ? AppTheme.accent.opacity(0.3) : Color.clear, radius: 6)
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
+            .padding(.horizontal, AppTheme.pageInset)
         }
-        .padding(.horizontal, AppTheme.pageInset)
         .padding(.vertical, AppTheme.spacing10)
         .background(Color(hex: "08080C"))
     }
