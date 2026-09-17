@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ragex Admin Panel</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen" class="screen active">
+    <div class="login-card">
+      <h1>🔐 Ragex Admin Panel</h1>
+      <form id="loginForm">
+        <input type="text" id="username" placeholder="Usuario" required>
+        <input type="password" id="password" placeholder="Contraseña" required>
+        <button type="submit">Iniciar Sesión</button>
+      </form>
+      <div id="loginError" class="error"></div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboardScreen" class="screen">
+    <nav class="navbar">
+      <h1>📱 Ragex Admin Panel</h1>
+      <div class="nav-buttons">
+        <button class="nav-btn active" data-section="ipa">📦 IPAs</button>
+        <button class="nav-btn" data-section="keys">🔑 Keys</button>
+        <button class="nav-btn" data-section="notifications">🔔 Notificaciones</button>
+        <button class="logout-btn" id="logoutBtn">Salir</button>
+      </div>
+    </nav>
+
+    <main class="dashboard">
+      <!-- IPA Manager -->
+      <section id="ipaSection" class="section active">
+        <div class="section-header">
+          <h2>📦 Gestión de IPAs</h2>
+          <button class="btn-primary" onclick="showUploadModal()">+ Subir Nueva Versión</button>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn active" data-app="FreeFire">🔥 Free Fire</button>
+          <button class="tab-btn" data-app="FreeFireMax">⚡ FF MAX</button>
+        </div>
+
+        <div id="ipaList" class="ipa-list"></div>
+      </section>
+
+      <!-- Keys Manager -->
+      <section id="keysSection" class="section">
+        <div class="section-header">
+          <h2>🔑 Gestión de Keys</h2>
+          <button class="btn-primary" onclick="showKeyModal()">+ Generar Nueva Key</button>
+        </div>
+
+        <div id="keysList" class="keys-list"></div>
+      </section>
+
+      <!-- Notifications Manager -->
+      <section id="notificationsSection" class="section">
+        <div class="section-header">
+          <h2>🔔 Notificaciones</h2>
+          <button class="btn-primary" onclick="showNotificationModal()">+ Nueva Notificación</button>
+        </div>
+
+        <div id="notificationsList" class="notifications-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Upload IPA Modal -->
+  <div id="uploadModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('uploadModal')">&times;</span>
+      <h2>📤 Subir Nueva Versión IPA</h2>
+
+      <form id="uploadForm">
+        <label>
+          App:
+          <select id="uploadAppName" required>
+            <option value="FreeFire">🔥 Free Fire</option>
+            <option value="FreeFireMax">⚡ Free Fire MAX</option>
+          </select>
+        </label>
+
+        <label>
+          Versión (ej: 1.0.0):
+          <input type="text" id="uploadVersion" placeholder="1.0.0" required>
+        </label>
+
+        <label>
+          Notas (opcional):
+          <textarea id="uploadNotes" rows="3" placeholder="Mejoras, cambios, etc."></textarea>
+        </label>
+
+        <label class="file-input-label">
+          <input type="file" id="uploadFile" accept=".ipa" required>
+          <span>Seleccionar archivo .ipa</span>
+        </label>
+
+        <div id="uploadProgress" class="upload-progress"></div>
+
+        <button type="submit" class="btn-primary">Subir IPA</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Generate Key Modal -->
+  <div id="keyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('keyModal')">&times;</span>
+      <h2>🔑 Generar Nueva Key</h2>
+
+      <form id="keyForm">
+        <label>
+          Nombre de Usuario:
+          <input type="text" id="keyUserName" placeholder="ej: Juan Pérez" required>
+        </label>
+
+        <label>
+          Duración:
+          <select id="keyDuration" required>
+            <option value="permanent">♾️ Permanente</option>
+            <option value="1day">1 día</option>
+            <option value="7days">7 días</option>
+            <option value="30days">30 días</option>
+            <option value="90days">90 días</option>
+            <option value="365days">1 año</option>
+          </select>
+        </label>
+
+        <label>
+          Notas (opcional):
+          <textarea id="keyNotes" rows="3" placeholder="Información adicional"></textarea>
+        </label>
+
+        <button type="submit" class="btn-primary">Generar Key</button>
+      </form>
+
+      <div id="generatedKeyDisplay" class="generated-key"></div>
+    </div>
+  </div>
+
+  <!-- Notification Modal -->
+  <div id="notificationModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('notificationModal')">&times;</span>
+      <h2>🔔 Nueva Notificación</h2>
+
+      <form id="notificationForm">
+        <label>
+          Título:
+          <input type="text" id="notifTitle" placeholder="ej: Nueva versión disponible" required>
+        </label>
+
+        <label>
+          Mensaje:
+          <textarea id="notifMessage" rows="4" placeholder="Contenido del mensaje" required></textarea>
+        </label>
+
+        <label>
+          Tipo:
+          <select id="notifType">
+            <option value="info">ℹ️ Información</option>
+            <option value="success">✅ Éxito</option>
+            <option value="warning">⚠️ Advertencia</option>
+            <option value="error">❌ Error</option>
+          </select>
+        </label>
+
+        <label>
+          Destinatarios:
+          <select id="notifTarget">
+            <option value="all">Todos los usuarios</option>
+            <option value="active">Usuarios activos</option>
+            <option value="expired">Keys expiradas</option>
+          </select>
+        </label>
+
+        <button type="submit" class="btn-primary">Enviar Notificación</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

@@ -41,6 +41,7 @@ struct FeatureVisibility: Equatable {
     let developerModeEnabled: Bool
     let tabSettings: TabVisibilitySettings
     let hasValidAccess: Bool
+    let demoModeEnabled: Bool // 🔥 DEMO MODE bypass
 
     init(
         developerModeEnabled: Bool,
@@ -50,6 +51,7 @@ struct FeatureVisibility: Equatable {
         self.developerModeEnabled = developerModeEnabled
         self.tabSettings = adminSettings.tabSettings
         self.hasValidAccess = hasValidAccess
+        self.demoModeEnabled = adminSettings.demoModeEnabled
     }
 
     var visibleSections: [AppSection] {
@@ -65,11 +67,11 @@ struct FeatureVisibility: Equatable {
         case .patches:
             return tabSettings.patchesEnabled
         case .freeFire:
-            // Ocultar si la key expiró o no tiene membresía activa
-            return tabSettings.freeFireEnabled && hasValidAccess
+            // Demo mode bypass OR valid access key
+            return tabSettings.freeFireEnabled && (demoModeEnabled || hasValidAccess)
         case .freeFireMax:
-            // Ocultar si la key expiró o no tiene membresía activa
-            return tabSettings.freeFireMaxEnabled && hasValidAccess
+            // Demo mode bypass OR valid access key
+            return tabSettings.freeFireMaxEnabled && (demoModeEnabled || hasValidAccess)
         case .profile:
             return true // Siempre visible para ver estado, renovar y recibir avisos
         case .support:

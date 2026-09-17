@@ -69,9 +69,11 @@ class AdminSettings: ObservableObject {
     
     @Published var isAdminAuthenticated: Bool = false
     @Published var tabSettings: TabVisibilitySettings
+    @Published var demoModeEnabled: Bool = true // 🔥 DEMO MODE: muestra tabs FF/FFMax sin key
     
     private let sessionKey = "com.x.adminSession"
     private let settingsKey = "com.x.tabSettings"
+    private let demoModeKey = "com.x.demoModeEnabled"
     
     private init() {
         // Load tab settings
@@ -81,6 +83,9 @@ class AdminSettings: ObservableObject {
         } else {
             self.tabSettings = .default
         }
+        
+        // Load demo mode (default: true)
+        self.demoModeEnabled = UserDefaults.standard.object(forKey: demoModeKey) as? Bool ?? true
         
         // Load admin session
         loadAdminSession()
@@ -136,6 +141,12 @@ class AdminSettings: ObservableObject {
     func toggleBundleExplorer() {
         tabSettings.bundleExplorerEnabled.toggle()
         saveTabSettings()
+    }
+    
+    /// Toggle demo mode (shows FF/FFMax tabs without key requirement)
+    func toggleDemoMode() {
+        demoModeEnabled.toggle()
+        UserDefaults.standard.set(demoModeEnabled, forKey: demoModeKey)
     }
     
     // MARK: - Persistence
