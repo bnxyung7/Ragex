@@ -163,7 +163,7 @@ struct ThreeOneOSFiveApp: App {
                     Task { @MainActor in
                         PushNotificationService.shared.requestPermissionIfNeeded()
                     }
-                    // Cargar notificaciones del servidor
+                    // Cargar notificaciones del panel admin
                     NotificationService.shared.fetchNotifications()
                 }
             }
