@@ -92,19 +92,15 @@ struct CustomTabBar: View {
                 )
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
+        .padding(.horizontal, AppTheme.spacing12)
+        .padding(.top, AppTheme.spacing10)
         .padding(.bottom, bottomPadding)
         .background(
             ZStack {
-                // Blur base
                 BlurView(style: .systemUltraThinMaterialDark)
-                // Dark overlay for depth
                 Color(hex: "06060E").opacity(0.82)
             }
-            .clipShape(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-            )
+            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 28, style: .continuous)
                     .stroke(
@@ -122,26 +118,33 @@ struct CustomTabBar: View {
             )
             .shadow(color: .black.opacity(0.55), radius: 20, x: 0, y: -4)
         )
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
+        .padding(.horizontal, AppTheme.spacing16)
+        .padding(.bottom, bottomPaddingOuter)
     }
 
     private var bottomPadding: CGFloat {
-        // Add extra space on devices with home indicator
         let inset = (UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .first?.windows
             .first?.safeAreaInsets.bottom ?? 0)
-        return inset > 0 ? max(inset - 8, 8) : 12
+        return inset > 0 ? max(inset - 16, 4) : 8
+    }
+    
+    private var bottomPaddingOuter: CGFloat {
+        let inset = (UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows
+            .first?.safeAreaInsets.bottom ?? 0)
+        return inset > 0 ? 8 : 12
     }
 
     private func selectTab(_ id: Int) {
         guard id != selectedTab else { return }
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
             selectedTab = id
         }
-        let gen = UIImpactFeedbackGenerator(style: .light)
-        gen.impactOccurred()
+        let gen = UIImpactFeedbackGenerator(style: .medium)
+        gen.impactOccurred(intensity: 0.7)
     }
 }
 
@@ -155,30 +158,29 @@ private struct CustomTabBarItem: View {
     @State private var appeared = false
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: AppTheme.spacing4) {
             ZStack(alignment: .topTrailing) {
-                // Selected pill background — más visible
+                // Selected pill background
                 if isSelected {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(AppTheme.accent.opacity(0.22))
+                        .fill(AppTheme.accent.opacity(0.20))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(AppTheme.accent.opacity(0.55), lineWidth: 1)
+                                .stroke(AppTheme.accent.opacity(0.50), lineWidth: 1)
                         )
                         .frame(width: 54, height: 34)
-                        .shadow(color: AppTheme.accent.opacity(0.45), radius: 10, x: 0, y: 3)
+                        .shadow(color: AppTheme.accent.opacity(0.40), radius: 8, x: 0, y: 2)
                         .transition(.scale.combined(with: .opacity))
                 } else {
-                    Color.clear
-                        .frame(width: 54, height: 34)
+                    Color.clear.frame(width: 54, height: 34)
                 }
 
                 // Icon
                 iconView
                     .frame(width: 54, height: 34)
-                    .scaleEffect(isPressed ? 0.88 : (isSelected ? 1.08 : 1.0))
-                    .animation(.spring(response: 0.25, dampingFraction: 0.65), value: isPressed)
-                    .animation(.spring(response: 0.3,  dampingFraction: 0.7),  value: isSelected)
+                    .scaleEffect(isPressed ? 0.90 : (isSelected ? 1.05 : 1.0))
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isSelected)
 
                 // Badge
                 if item.badge > 0 {
@@ -198,10 +200,10 @@ private struct CustomTabBarItem: View {
                 .font(.system(size: 10, weight: isSelected ? .bold : .medium))
                 .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "5A5A72"))
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .animation(.easeInOut(duration: 0.18), value: isSelected)
+                .minimumScaleFactor(0.8)
+                .animation(.easeInOut(duration: 0.2), value: isSelected)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppTheme.spacing4)
     }
 
     @ViewBuilder

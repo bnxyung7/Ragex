@@ -21,7 +21,7 @@ struct ProfileView: View {
                 Color(hex: "08080C").ignoresSafeArea()
                 
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: AppTheme.sectionSpacing) {
                         // Key Status Section
                         keyStatusCard
                         
@@ -33,9 +33,9 @@ struct ProfileView: View {
                         // Admin Access Section
                         adminCard
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    .padding(.bottom, 40)
+                    .padding(.horizontal, AppTheme.pageInset)
+                    .padding(.top, AppTheme.spacing16)
+                    .padding(.bottom, AppTheme.spacing32)
                 }
             }
             .navigationTitle("Perfil")
@@ -88,7 +88,7 @@ struct ProfileView: View {
 
     @ViewBuilder
     private var pushPermissionRow: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: AppTheme.spacing10) {
             Image(systemName: pushService.permissionGranted ? "bell.fill" : "bell.slash.fill")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(pushService.permissionGranted ? Color(hex: "10B981") : Color(hex: "F59E0B"))
@@ -113,8 +113,8 @@ struct ProfileView: View {
                     Text("Activar")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, AppTheme.spacing10)
+                        .padding(.vertical, AppTheme.spacing4)
                         .background(Color(hex: "F59E0B"))
                         .clipShape(Capsule())
                 }
@@ -125,20 +125,20 @@ struct ProfileView: View {
                     .foregroundStyle(Color(hex: "94A3B8"))
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, AppTheme.spacing4)
     }
 
     // MARK: - Key Status Card
     
     private var keyStatusCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: AppTheme.spacing12) {
             if let session = keyStore.activeSession {
                 // Active or Expired key card
                 let isExp = session.key.isExpired
                 let isBan = session.key.isBanned
                 let statusColor: Color = isBan ? Color(hex: "EF4444") : (isExp ? Color(hex: "F59E0B") : Color(hex: "10B981"))
                 
-                HStack(spacing: 12) {
+                HStack(spacing: AppTheme.spacing12) {
                     ZStack {
                         Circle()
                             .fill(statusColor.opacity(0.18))
@@ -148,7 +148,7 @@ struct ProfileView: View {
                             .font(.system(size: 22))
                     }
                     
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: AppTheme.spacing4) {
                         Text(isBan ? "ACCESO BANEADO" : (isExp ? "MEMBRESÍA EXPIRADA" : "MEMBRESÍA ACTIVA"))
                             .font(.system(size: 15, weight: .heavy, design: .rounded))
                             .foregroundStyle(isBan ? Color(hex: "EF4444") : (isExp ? Color(hex: "F59E0B") : .white))
@@ -166,7 +166,7 @@ struct ProfileView: View {
                 }
                 
                 if isExp {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: AppTheme.spacing8) {
                         Text("⚠️ Tu clave ha vencido")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(Color(hex: "F59E0B"))
@@ -185,14 +185,14 @@ struct ProfileView: View {
                             }
                             .font(.caption)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, AppTheme.spacing12)
+                            .padding(.vertical, AppTheme.spacing8)
                             .background(Color(hex: "10B981"))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
-                        .padding(.top, 4)
+                        .padding(.top, AppTheme.spacing4)
                     }
-                    .padding(12)
+                    .padding(AppTheme.spacing12)
                     .background(Color(hex: "F59E0B").opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
@@ -201,7 +201,7 @@ struct ProfileView: View {
                     .background(Color.white.opacity(0.08))
                 
                 // Key details
-                VStack(spacing: 4) {
+                VStack(spacing: AppTheme.spacing6) {
                     keyDetailRow(icon: "key.fill", label: "Clave", value: session.key.keyString, copyable: true)
                     Divider().background(Color.white.opacity(0.05))
                     keyDetailRow(icon: "clock.fill", label: "Tiempo restante", value: session.key.timeRemaining)
@@ -216,12 +216,11 @@ struct ProfileView: View {
                     }
 
                     Divider().background(Color.white.opacity(0.05))
-                    // Push notification permission row
                     pushPermissionRow
                 }
                 
                 if session.key.isBanned, let reason = session.key.banReason {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.spacing6) {
                         Text("Motivo de suspensión:")
                             .font(.caption)
                             .foregroundStyle(Color(hex: "94A3B8"))
@@ -229,7 +228,7 @@ struct ProfileView: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Color(hex: "EF4444"))
                     }
-                    .padding(10)
+                    .padding(AppTheme.spacing12)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
                             .fill(Color(hex: "EF4444").opacity(0.1))
@@ -249,7 +248,7 @@ struct ProfileView: View {
                     }
                     .foregroundStyle(Color(hex: "EF4444"))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, AppTheme.spacing12)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color(hex: "EF4444").opacity(0.12))
@@ -259,10 +258,10 @@ struct ProfileView: View {
                             )
                     )
                 }
-                .padding(.top, 4)
+                .padding(.top, AppTheme.spacing6)
             } else {
                 // Inactive state
-                VStack(spacing: 14) {
+                VStack(spacing: AppTheme.spacing12) {
                     ZStack {
                         Circle()
                             .fill(AppTheme.accent.opacity(0.15))
@@ -272,7 +271,7 @@ struct ProfileView: View {
                             .font(.system(size: 26))
                     }
                     
-                    VStack(spacing: 4) {
+                    VStack(spacing: AppTheme.spacing6) {
                         Text("Sin Membresía Activa")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
@@ -283,10 +282,10 @@ struct ProfileView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
+                .padding(.vertical, AppTheme.spacing12)
             }
         }
-        .padding(16)
+        .padding(AppTheme.cardPadding)
         .obsidianCard(cornerRadius: 18, borderColor: keyStore.activeSession != nil ? AppTheme.accent.opacity(0.3) : AppTheme.cardBorder, glowing: keyStore.activeSession != nil)
     }
     
@@ -296,7 +295,7 @@ struct ProfileView: View {
         Button {
             showKeyActivation = true
         } label: {
-            HStack(spacing: 14) {
+            HStack(spacing: AppTheme.spacing12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(AppTheme.accent.opacity(0.15))
@@ -306,7 +305,7 @@ struct ProfileView: View {
                         .foregroundStyle(AppTheme.accent)
                 }
                 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: AppTheme.spacing4) {
                     Text("Activar Nueva Clave")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(.white)
@@ -321,7 +320,7 @@ struct ProfileView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color(hex: "94A3B8"))
             }
-            .padding(16)
+            .padding(AppTheme.cardPadding)
             .obsidianCard(cornerRadius: 16, borderColor: AppTheme.accent.opacity(0.2))
         }
         .buttonStyle(.plain)
@@ -330,12 +329,12 @@ struct ProfileView: View {
     // MARK: - Admin Card
     
     private var adminCard: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: AppTheme.spacing12) {
             if adminSettings.isAdminAuthenticated {
                 Button {
                     showAdminPanel = true
                 } label: {
-                    HStack(spacing: 14) {
+                    HStack(spacing: AppTheme.spacing12) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 12)
                                 .fill(Color(hex: "8B5CF6").opacity(0.15))
@@ -345,7 +344,7 @@ struct ProfileView: View {
                                 .foregroundStyle(Color(hex: "8B5CF6"))
                         }
                         
-                        VStack(alignment: .leading, spacing: 3) {
+                        VStack(alignment: .leading, spacing: AppTheme.spacing4) {
                             Text("Panel de Administración")
                                 .font(.system(size: 15, weight: .bold))
                                 .foregroundStyle(.white)
@@ -360,7 +359,7 @@ struct ProfileView: View {
                             .font(.caption.weight(.bold))
                             .foregroundStyle(Color(hex: "94A3B8"))
                     }
-                    .padding(16)
+                    .padding(AppTheme.cardPadding)
                     .obsidianCard(cornerRadius: 16, borderColor: Color(hex: "8B5CF6").opacity(0.3))
                 }
                 .buttonStyle(.plain)
@@ -374,13 +373,13 @@ struct ProfileView: View {
                             .font(.caption.weight(.semibold))
                     }
                     .foregroundStyle(Color(hex: "EF4444"))
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppTheme.spacing8)
                 }
             } else {
                 Button {
                     showAdminLogin = true
                 } label: {
-                    HStack(spacing: 14) {
+                    HStack(spacing: AppTheme.spacing12) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 12)
                                 .fill(Color.white.opacity(0.06))
@@ -390,7 +389,7 @@ struct ProfileView: View {
                                 .foregroundStyle(Color(hex: "94A3B8"))
                         }
                         
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: AppTheme.spacing4) {
                             Text("Acceso Administrador")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(.white)
@@ -416,7 +415,7 @@ struct ProfileView: View {
     // MARK: - Helper Views
     
     private func keyDetailRow(icon: String, label: String, value: String, copyable: Bool = false) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppTheme.spacing12) {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(AppTheme.accent)
@@ -432,6 +431,7 @@ struct ProfileView: View {
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.trailing)
+                .lineLimit(2)
             
             if copyable {
                 Button {
@@ -446,7 +446,7 @@ struct ProfileView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.vertical, 7)
+        .padding(.vertical, AppTheme.spacing6)
     }
     
     private func colorForNotification(_ notification: KeyNotification) -> Color {

@@ -153,7 +153,7 @@ struct FreeFireView: View {
         Button {
             showAnnouncementsSheet = true
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: AppTheme.spacing6) {
                 Image(systemName: "megaphone.fill")
                     .font(.system(size: 12, weight: .bold))
                 Text("Anuncios")
@@ -165,8 +165,8 @@ struct FreeFireView: View {
                 }
             }
             .foregroundStyle(.white)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
+            .padding(.horizontal, AppTheme.spacing10)
+            .padding(.vertical, AppTheme.spacing6)
             .background(AppTheme.accent.opacity(0.22))
             .clipShape(Capsule())
             .overlay(
@@ -184,7 +184,7 @@ struct FreeFireView: View {
             categoryPicker
             
             ScrollView {
-                VStack(spacing: 12) {
+                VStack(spacing: AppTheme.itemSpacing) {
                     if selectedCategory == .holograma {
                         hologramaSubcategoryPicker
                         hologramaPatchList
@@ -203,9 +203,9 @@ struct FreeFireView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 32)
+                .padding(.horizontal, AppTheme.pageInset)
+                .padding(.top, AppTheme.itemSpacing)
+                .padding(.bottom, AppTheme.spacing32)
             }
         }
     }
@@ -213,12 +213,12 @@ struct FreeFireView: View {
     // MARK: - Header Hero Banner
     
     private var headerHeroBanner: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 12) {
+        VStack(spacing: AppTheme.spacing12) {
+            HStack(spacing: AppTheme.spacing12) {
                 gameLogoView
                 
-                VStack(alignment: .leading, spacing: 5) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: AppTheme.spacing6) {
+                    HStack(spacing: AppTheme.spacing6) {
                         Text(mode.rawValue)
                             .font(.system(size: 16, weight: .heavy, design: .rounded))
                             .foregroundStyle(.white)
@@ -240,9 +240,8 @@ struct FreeFireView: View {
                             .clipShape(Capsule())
                     }
                     
-                    // Estado en 2 líneas para evitar compresión
-                    HStack(spacing: 8) {
-                        HStack(spacing: 4) {
+                    HStack(spacing: AppTheme.spacing8) {
+                        HStack(spacing: AppTheme.spacing4) {
                             PulseStatusDot(color: Color(hex: "10B981"))
                             Text("Bypass Activo")
                                 .font(.system(size: 11, weight: .semibold))
@@ -263,7 +262,6 @@ struct FreeFireView: View {
                             .font(.caption2)
                             .foregroundStyle(Color(hex: "64748B"))
 
-                        // Live refresh indicator
                         Button {
                             Task { await performRefresh() }
                         } label: {
@@ -304,7 +302,7 @@ struct FreeFireView: View {
                 marqueeBanner(latest)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppTheme.pageInset)
         .padding(.vertical, 14)
         .background(Color(hex: "0C0D14"))
         .overlay(
@@ -407,14 +405,14 @@ struct FreeFireView: View {
     // MARK: - Category Picker
     
     private var categoryPicker: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: AppTheme.spacing8) {
             ForEach(PatchCategory.allCases) { category in
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         selectedCategory = category
                     }
                 } label: {
-                    HStack(spacing: 6) {
+                    HStack(spacing: AppTheme.spacing6) {
                         Image(systemName: category.icon)
                             .font(.system(size: 12, weight: .semibold))
                         Text(category.rawValue)
@@ -438,22 +436,22 @@ struct FreeFireView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, AppTheme.pageInset)
+        .padding(.vertical, AppTheme.spacing10)
         .background(Color(hex: "08080C"))
     }
     
     // MARK: - Holograma Subcategory Picker
     
     private var hologramaSubcategoryPicker: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: AppTheme.spacing10) {
             ForEach(HologramaSubcategory.allCases) { subcategory in
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         selectedHologramaSubcategory = subcategory
                     }
                 } label: {
-                    HStack(spacing: 6) {
+                    HStack(spacing: AppTheme.spacing6) {
                         Image(systemName: subcategory.icon)
                             .font(.system(size: 12, weight: .medium))
                         Text(subcategory.displayName)
@@ -462,7 +460,7 @@ struct FreeFireView: View {
                     }
                     .foregroundStyle(selectedHologramaSubcategory == subcategory ? .white : Color(hex: "94A3B8"))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppTheme.spacing8)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(selectedHologramaSubcategory == subcategory ? Color(hex: "1E2033") : Color(hex: "11121A"))
@@ -475,7 +473,7 @@ struct FreeFireView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.bottom, 6)
+        .padding(.bottom, AppTheme.spacing6)
     }
     
     // MARK: - Holograma Patch List
@@ -511,7 +509,7 @@ struct FreeFireView: View {
     // MARK: - Empty State
     
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: AppTheme.spacing16) {
             ZStack {
                 Circle()
                     .fill(AppTheme.accent.opacity(0.1))
@@ -523,7 +521,7 @@ struct FreeFireView: View {
             }
             .padding(.top, 36)
             
-            VStack(spacing: 6) {
+            VStack(spacing: AppTheme.spacing8) {
                 Text("Categoría Vacía")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
@@ -533,20 +531,20 @@ struct FreeFireView: View {
                     .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)
                     .lineSpacing(3)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, AppTheme.spacing24)
             }
             
             Button {
                 showAnnouncementsSheet = true
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: AppTheme.spacing6) {
                     Image(systemName: "megaphone.fill")
                         .font(.system(size: 12))
                     Text("Ver Anuncios y Novedades")
                         .font(.system(size: 13, weight: .bold))
                 }
                 .foregroundStyle(.white)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppTheme.spacing16)
                 .padding(.vertical, 9)
                 .background(
                     Capsule()
@@ -554,7 +552,7 @@ struct FreeFireView: View {
                 )
                 .shadow(color: AppTheme.accent.opacity(0.4), radius: 6)
             }
-            .padding(.top, 6)
+            .padding(.top, AppTheme.spacing6)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 30)
@@ -678,8 +676,8 @@ struct FreeFireView: View {
     
     private var bannedView: some View {
         ScrollView {
-            VStack(spacing: 24) {
-                Spacer(minLength: 20)
+            VStack(spacing: AppTheme.spacing24) {
+                Spacer(minLength: AppTheme.spacing20)
                 
                 ZStack {
                     Circle()
@@ -694,9 +692,9 @@ struct FreeFireView: View {
                         .font(.system(size: 54, weight: .bold))
                         .foregroundStyle(Color(hex: "EF4444"))
                 }
-                .padding(.top, 10)
+                .padding(.top, AppTheme.spacing10)
                 
-                VStack(spacing: 8) {
+                VStack(spacing: AppTheme.spacing10) {
                     Text("ACCESO BANEADO")
                         .font(.system(size: 22, weight: .heavy, design: .rounded))
                         .foregroundStyle(Color(hex: "EF4444"))
@@ -705,10 +703,10 @@ struct FreeFireView: View {
                         .font(.subheadline)
                         .foregroundStyle(Color(hex: "94A3B8"))
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, AppTheme.spacing24)
                 }
                 
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: AppTheme.spacing14) {
                     HStack {
                         Image(systemName: "shield.slash.fill")
                             .foregroundStyle(Color(hex: "EF4444"))
@@ -719,7 +717,7 @@ struct FreeFireView: View {
                         Spacer()
                         Text("SUSPENDIDO")
                             .font(.system(size: 10, weight: .black))
-                            .padding(.horizontal, 8)
+                            .padding(.horizontal, AppTheme.spacing8)
                             .padding(.vertical, 3)
                             .background(Color(hex: "EF4444").opacity(0.2))
                             .foregroundStyle(Color(hex: "EF4444"))
@@ -730,7 +728,7 @@ struct FreeFireView: View {
                         .background(Color.white.opacity(0.08))
                     
                     if let keyString = keyStore.activeSession?.key.keyString {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: AppTheme.spacing6) {
                             Text("Clave afectada:")
                                 .font(.caption2)
                                 .foregroundStyle(Color(hex: "94A3B8"))
@@ -741,7 +739,7 @@ struct FreeFireView: View {
                         }
                     }
                     
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.spacing6) {
                         Text("Motivo del bloqueo:")
                             .font(.caption2)
                             .foregroundStyle(Color(hex: "94A3B8"))
@@ -751,11 +749,11 @@ struct FreeFireView: View {
                             .foregroundStyle(Color(hex: "EF4444"))
                     }
                 }
-                .padding(16)
+                .padding(AppTheme.cardPadding)
                 .obsidianCard(cornerRadius: 18, borderColor: Color(hex: "EF4444").opacity(0.3))
-                .padding(.horizontal, 24)
+                .padding(.horizontal, AppTheme.spacing24)
                 
-                VStack(spacing: 12) {
+                VStack(spacing: AppTheme.itemSpacing) {
                     Text("Comunícate con soporte para apelar tu clave:")
                         .font(.caption)
                         .foregroundStyle(Color(hex: "94A3B8"))
@@ -802,7 +800,7 @@ struct FreeFireView: View {
     // MARK: - Locked View
     
     private var lockedView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: AppTheme.spacing24) {
             Spacer()
             
             ZStack {
@@ -815,7 +813,7 @@ struct FreeFireView: View {
                     .foregroundStyle(AppTheme.accent)
             }
             
-            VStack(spacing: 6) {
+            VStack(spacing: AppTheme.spacing8) {
                 Text("\(mode.rawValue) Bloqueado")
                     .font(.system(size: 22, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
@@ -824,16 +822,16 @@ struct FreeFireView: View {
                     .font(.subheadline)
                     .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, AppTheme.spacing32)
             }
             
-            VStack(spacing: 12) {
-                HStack(spacing: 12) {
+            VStack(spacing: AppTheme.itemSpacing) {
+                HStack(spacing: AppTheme.spacing12) {
                     Image(systemName: "key.fill")
                         .font(.system(size: 18))
                         .foregroundStyle(AppTheme.accent)
                     
-                    VStack(alignment: .leading, spacing: 3) {
+                    VStack(alignment: .leading, spacing: AppTheme.spacing4) {
                         Text("¿Cómo activar?")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.white)
@@ -844,10 +842,10 @@ struct FreeFireView: View {
                     
                     Spacer()
                 }
-                .padding(16)
+                .padding(AppTheme.cardPadding)
                 .obsidianCard(cornerRadius: 14, borderColor: AppTheme.accent.opacity(0.25))
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, AppTheme.spacing24)
             
             Spacer()
             Spacer()
@@ -879,7 +877,7 @@ struct PatchToggleRow: View {
     }
     
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AppTheme.spacing12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(AppTheme.accent.opacity(isActive ? 0.2 : 0.08))
@@ -913,8 +911,8 @@ struct PatchToggleRow: View {
                 .tint(AppTheme.accent)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AppTheme.cardPadding)
+        .padding(.vertical, AppTheme.spacing12)
         .obsidianCard(cornerRadius: 16, borderColor: isActive ? AppTheme.accent.opacity(0.4) : AppTheme.cardBorder, glowing: isActive)
         .contentShape(Rectangle())
         .onTapGesture {

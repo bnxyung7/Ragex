@@ -9,13 +9,35 @@ enum AppTheme {
         ThemeManager.shared.currentTheme.gradient
     }
     
+    // MARK: - Colors
     static let pageBackground = Color(hex: "08080C")
     static let cardBackground = Color(hex: "11121A")
     static let cardElevated = Color(hex: "161826")
     static let cardBorder = Color(hex: "232536")
     static let consoleBackground = Color(hex: "0D0E15")
     
+    // MARK: - Spacing System (Consistent Spacing Scale)
+    static let spacing2: CGFloat = 2
+    static let spacing4: CGFloat = 4
+    static let spacing6: CGFloat = 6
+    static let spacing8: CGFloat = 8
+    static let spacing10: CGFloat = 10
+    static let spacing12: CGFloat = 12
+    static let spacing14: CGFloat = 14
+    static let spacing16: CGFloat = 16
+    static let spacing20: CGFloat = 20
+    static let spacing24: CGFloat = 24
+    static let spacing32: CGFloat = 32
+    
+    // MARK: - Layout Constants
     static let pageInset: CGFloat = 16
+    static let cardPadding: CGFloat = 16
+    static let sectionSpacing: CGFloat = 20
+    static let itemSpacing: CGFloat = 12
+    static let compactSpacing: CGFloat = 8
+    static let tightSpacing: CGFloat = 4
+    
+    // MARK: - Icon Sizes
     static let rowIconSize: CGFloat = 17
     static let rowIconFrame: CGFloat = 28
     static let fileRowIconSize: CGFloat = 17
@@ -24,7 +46,15 @@ enum AppTheme {
     static let appIconSize: CGFloat = 32
     static let emptyIconSize: CGFloat = 30
     static let selectionIconSize: CGFloat = 18
-    static let contentCardCornerRadius: CGFloat = 20
+    
+    // MARK: - Corner Radius
+    static let cornerRadiusSmall: CGFloat = 8
+    static let cornerRadiusMedium: CGFloat = 12
+    static let cornerRadiusLarge: CGFloat = 16
+    static let cornerRadiusXLarge: CGFloat = 20
+    static let contentCardCornerRadius: CGFloat = 18
+    
+    // MARK: - Legacy (keeping for compatibility)
     static let contentCardInset: CGFloat = 16
     static let contentCardPadding: CGFloat = 16
 }
