@@ -221,10 +221,16 @@ private struct CustomTabBarItem: View {
                 .opacity(isSelected ? 1.0 : 0.65)
         } else {
             // ─── SF SYMBOL ───────────────────────────────────────────
-            Image(systemName: item.systemImage)
-                .font(.system(size: 17, weight: isSelected ? .bold : .regular))
-                .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "6B7280"))
-                .symbolEffect(.bounce, value: isSelected)
+            if #available(iOS 17, *) {
+                Image(systemName: item.systemImage)
+                    .font(.system(size: 17, weight: isSelected ? .bold : .regular))
+                    .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "6B7280"))
+                    .symbolEffect(.bounce, value: isSelected)
+            } else {
+                Image(systemName: item.systemImage)
+                    .font(.system(size: 17, weight: isSelected ? .bold : .regular))
+                    .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "6B7280"))
+            }
         }
     }
 }

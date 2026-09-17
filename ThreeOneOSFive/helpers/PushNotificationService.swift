@@ -185,8 +185,10 @@ public final class PushNotificationService: NSObject, ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.checkCurrentPermission()
-            self?.retryPendingUploadIfNeeded()
+            Task { @MainActor [weak self] in
+                self?.checkCurrentPermission()
+                self?.retryPendingUploadIfNeeded()
+            }
         }
     }
 
