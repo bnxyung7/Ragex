@@ -100,7 +100,7 @@ struct BundleExplorerView: View {
                 loadedApps = await scanAppsFromFilesystem()
             }
             
-            // If still empty, try to run exploit and retry
+            // If still empty, log warning
             if loadedApps.isEmpty && appState.exploitStatus != .success(method: "kexploit") {
                 print("[Bundle] ⚠️ No apps found, exploit not running. You may need to run kernel exploit manually.")
             }
@@ -109,14 +109,6 @@ struct BundleExplorerView: View {
             isLoading = false
             
             print("[Bundle] Loaded \(apps.count) apps")
-        }
-    }
-                    )
-                ]
-            }
-            
-            apps = loadedApps
-            isLoading = false
         }
     }
     
