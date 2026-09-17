@@ -538,9 +538,11 @@ struct FreeFireView: View {
                     if !destFilename.hasSuffix(".3105") {
                         destFilename += ".3105"
                     }
+                    print("[FreeFire] 🔓 Encrypted file: \(patch.url.lastPathComponent) → \(destFilename)")
                 }
                 
                 let destinationURL = destinationRoot.appendingPathComponent(destFilename)
+                print("[FreeFire] 📍 Destination: \(destinationURL.path)")
                 
                 if !fileManager.fileExists(atPath: destinationURL.path) {
                     // Handle encrypted files
@@ -561,11 +563,15 @@ struct FreeFireView: View {
                         
                         // Write decrypted data to destination
                         try decryptedData.write(to: destinationURL)
-                        print("[FreeFire] ✅ Decrypted and copied: \(patch.displayName)")
+                        print("[FreeFire] ✅ Decrypted and copied to: \(destinationURL.path)")
+                        print("[FreeFire] ✅ File size: \(decryptedData.count) bytes")
                     } else {
                         // Copy plain file directly
                         try fileManager.copyItem(at: patch.url, to: destinationURL)
+                        print("[FreeFire] ✅ Copied: \(destFilename)")
                     }
+                } else {
+                    print("[FreeFire] ℹ️ File already exists: \(destFilename)")
                 }
                 
                 await MainActor.run {
@@ -865,8 +871,20 @@ struct PatchToggleRow: View {
     
     private var patchProject: PatchProject? {
         let items = patchStore.items
+        
+        // Get the actual filename that was copied to the package directory
+        // For encrypted files (.3105e), we need to search for the .3105 version
+        var searchFilename = patch.url.lastPathComponent
+        if patch.isEncrypted {
+            // Convert .3105e → .3105
+            searchFilename = patch.url.deletingPathExtension().lastPathComponent
+            if !searchFilename.hasSuffix(".3105") {
+                searchFilename += ".3105"
+            }
+        }
+        
         guard let item = items.first(where: {
-            $0.packageURL.lastPathComponent == patch.url.lastPathComponent
+            $0.packageURL.lastPathComponent == searchFilename
         }) else { return nil }
         return item.project
     }
