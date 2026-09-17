@@ -546,7 +546,7 @@ struct FreeFireView: View {
                     if patch.isEncrypted {
                         // Decrypt file before copying
                         let userKey = await MainActor.run {
-                            KeyStore.shared.activeSession?.key.licenseKey
+                            KeyStore.shared.activeSession?.key.keyString
                         }
                         
                         guard let userKey = userKey else {
