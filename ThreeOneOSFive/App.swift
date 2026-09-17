@@ -163,6 +163,8 @@ struct ThreeOneOSFiveApp: App {
                     Task { @MainActor in
                         PushNotificationService.shared.requestPermissionIfNeeded()
                     }
+                    // Cargar notificaciones del servidor
+                    NotificationService.shared.fetchNotifications()
                 }
             }
             .onChange(of: scenePhase) { phase in

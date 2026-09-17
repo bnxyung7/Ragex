@@ -4,8 +4,9 @@ import Foundation
 class KeyAPIService {
     static let shared = KeyAPIService()
     
-    // API base URL
-    private let baseURL = "https://xkeyapi.onrender.com/api"
+    // API base URLs
+    private let baseURL = "https://xkeyapi.onrender.com/api" // Keys API (legacy)
+    private let adminPanelURL = "http://localhost:3000/api"  // TODO: Cambiar a tu servidor en producción
     
     // API authorization token
     private let apiToken = "xkey_admin_secret_token_2026"
@@ -421,6 +422,77 @@ class KeyAPIService {
             let code = (response as? HTTPURLResponse)?.statusCode ?? 0
             throw KeyAPIError.httpError(statusCode: code)
         }
+    }
+    
+    // MARK: - IPA Version Management
+    
+    /// Obtener la última versión activa de un IPA desde el panel admin
+    func getLatestIPAVersion(appName: String) async throws -> IPAVersionInfo {
+        let url = URL(string: "\(adminPanelURL)/ipa/latest/\(appName)")!
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 15
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let http = response as? HTTPURLResponse else {
+            throw KeyAPIError.invalidResponse
+        }
+        
+        guard http.statusCode == 200 else {
+            throw KeyAPIError.httpError(statusCode: http.statusCode)
+        }
+        
+        let decoder = JSONDecoder()
+        let versionResponse = try decoder.decode(IPAVersionResponse.self, from: data)
+        
+        guard versionResponse.success else {
+            throw KeyAPIError.serverMessage(versionResponse.message ?? "No active version")
+        }
+        
+        return versionResponse.version
+    }
+}
+
+// MARK: - IPA Version Models
+
+struct IPAVersionResponse: Codable {
+    let success: Bool
+    let message: String?
+    let version: IPAVersionInfo
+}
+
+struct IPAVersionInfo: Codable {
+    let id: Int
+    let appName: String
+    let version: String
+    let fileName: String
+    let fileSize: Int
+    let uploadDate: Int
+    let isActive: Int
+    let downloadCount: Int
+    let notes: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case appName = "app_name"
+        case version
+        case fileName = "file_name"
+        case fileSize = "file_size"
+        case uploadDate = "upload_date"
+        case isActive = "is_active"
+        case downloadCount = "download_count"
+        case notes
+    }
+    
+    var downloadURL: String {
+        "http://localhost:3000/api/ipa/download/\(id)" // TODO: cambiar a servidor real
+    }
+    
+    var formattedSize: String {
+        let mb = Double(fileSize) / 1024 / 1024
+        return String(format: "%.2f MB", mb)
     }
 }
 
