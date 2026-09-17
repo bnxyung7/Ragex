@@ -63,22 +63,24 @@ struct FeatureVisibility: Equatable {
         case .home:
             return true
         case .files:
-            // App Data browser visible con: key válida O developer mode habilitado
-            return hasValidAccess || (tabSettings.filesEnabled && developerModeEnabled)
+            // OCULTO: No mostrar tab de archivos
+            return false
         case .patches:
-            return tabSettings.patchesEnabled && developerModeEnabled
+            // OCULTO: No mostrar tab de patches
+            return false
         case .freeFire:
             // Visible si está habilitada EN admin settings Y (demo mode O key válida)
             return tabSettings.freeFireEnabled && (demoModeEnabled || hasValidAccess)
         case .freeFireMax:
-            // Visible si está habilitada EN admin settings Y (demo mode O key válida)
-            return tabSettings.freeFireMaxEnabled && (demoModeEnabled || hasValidAccess)
+            // OCULTO: No mostrar Free Fire MAX
+            return false
         case .profile:
             return true // Siempre visible
         case .support:
             return true // Siempre visible
         case .bundleExplorer:
-            return tabSettings.bundleExplorerEnabled && developerModeEnabled
+            // OCULTO: No mostrar bundle explorer
+            return false
         }
     }
 }

@@ -624,6 +624,11 @@ struct FreeFireView: View {
         
         bundlePatches = patches
         print("[FreeFireView:\(mode.rawValue)] Loaded \(patches.count) patches from \(modeFolder)")
+        
+        // Debug: Print all product IDs for tag matching
+        for patch in patches where patch.category == .aimbot {
+            print("[ProductTag Debug] \(patch.displayName) → productId: \(patch.productId)")
+        }
     }
     
     // MARK: - Banned View
@@ -910,17 +915,8 @@ struct BundlePatch: Identifiable {
         var name = filename.replacingOccurrences(of: "_", with: " ")
         name = name.replacingOccurrences(of: " PERCENT", with: "%")
         
-        let components = name.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-        let cleanWords = components.map { word -> String in
-            let upper = word.uppercased()
-            if upper == "AIM" || upper == "ESP" || upper == "FPS" || upper.contains("%") {
-                return upper
-            } else if upper == "PJ" {
-                return "Personaje"
-            }
-            return word.capitalized
-        }
-        return cleanWords.joined(separator: " ")
+        // Convert everything to uppercase for better visibility
+        return name.uppercased()
     }
     
     var icon: String {
@@ -982,7 +978,7 @@ struct BundlePatch: Identifiable {
     
     /// Generate product ID for tag lookup (format: GAME_CATEGORY_NAME)
     var productId: String {
-        let game = "FREE_FIRE" // Could be detected from parent folder
+        let game = "FREE_FIRE"
         let cat = category.rawValue
         let name = url.deletingPathExtension().lastPathComponent
             .replacingOccurrences(of: " ", with: "_")
