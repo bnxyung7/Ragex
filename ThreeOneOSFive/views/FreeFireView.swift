@@ -529,10 +529,38 @@ struct FreeFireView: View {
                     ])
                 }
                 
-                let destinationURL = destinationRoot.appendingPathComponent(patch.url.lastPathComponent)
+                // Determine destination filename (always .3105, never .3105e)
+                var destFilename = patch.url.lastPathComponent
+                if patch.isEncrypted {
+                    // Remove .3105e extension, add .3105
+                    destFilename = patch.url.deletingPathExtension().lastPathComponent
+                    if !destFilename.hasSuffix(".3105") {
+                        destFilename += ".3105"
+                    }
+                }
+                
+                let destinationURL = destinationRoot.appendingPathComponent(destFilename)
                 
                 if !fileManager.fileExists(atPath: destinationURL.path) {
-                    try fileManager.copyItem(at: patch.url, to: destinationURL)
+                    // Handle encrypted files
+                    if patch.isEncrypted {
+                        // Decrypt file before copying
+                        guard let userKey = await MainActor.run({ KeyStore.shared.activeSession?.key.licenseKey }) else {
+                            throw NSError(domain: "FreeFire", code: 3, userInfo: [
+                                NSLocalizedDescriptionKey: "No se pudo obtener la clave de desencriptación"
+                            ])
+                        }
+                        
+                        let encryptionService = await MainActor.run { FileEncryptionService.shared }
+                        let decryptedData = try await encryptionService.decryptFile(at: patch.url, userKey: userKey)
+                        
+                        // Write decrypted data to destination
+                        try decryptedData.write(to: destinationURL)
+                        print("[FreeFire] ✅ Decrypted and copied: \(patch.displayName)")
+                    } else {
+                        // Copy plain file directly
+                        try fileManager.copyItem(at: patch.url, to: destinationURL)
+                    }
                 }
                 
                 await MainActor.run {
@@ -541,7 +569,7 @@ struct FreeFireView: View {
                 
                 let items = await MainActor.run { patchStore.items }
                 guard let item = items.first(where: {
-                    $0.packageURL.lastPathComponent == patch.url.lastPathComponent
+                    $0.packageURL.lastPathComponent == destFilename
                 }), let project = item.project else {
                     throw NSError(domain: "FreeFire", code: 2, userInfo: [
                         NSLocalizedDescriptionKey: "No se encontró el proyecto para \(patch.displayName)"
@@ -615,7 +643,10 @@ struct FreeFireView: View {
         if fileManager.fileExists(atPath: preinstalledFolder.path) {
             if let enumerator = fileManager.enumerator(at: preinstalledFolder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
                 for case let fileURL as URL in enumerator {
-                    if fileURL.pathExtension.lowercased() == "3105" {
+                    let ext = fileURL.pathExtension.lowercased()
+                    
+                    // Soportar archivos .3105 (legacy) y .3105e (encriptados)
+                    if ext == "3105" || ext == "3105e" {
                         let filename = fileURL.lastPathComponent
                         if !seenFilenames.contains(filename) {
                             seenFilenames.insert(filename)
@@ -914,8 +945,20 @@ struct BundlePatch: Identifiable {
     let id = UUID()
     let url: URL
     
+    /// Check if this patch is encrypted (.3105e)
+    var isEncrypted: Bool {
+        return url.pathExtension.lowercased() == "3105e"
+    }
+    
     var displayName: String {
-        let filename = url.deletingPathExtension().lastPathComponent
+        // Remove .3105e extension if encrypted, show clean name
+        var filename = url.deletingPathExtension().lastPathComponent
+        
+        // If still has .3105 (from .3105e), remove it
+        if filename.hasSuffix(".3105") {
+            filename = String(filename.dropLast(5))
+        }
+        
         var name = filename.replacingOccurrences(of: "_", with: " ")
         name = name.replacingOccurrences(of: " PERCENT", with: "%")
         
@@ -998,7 +1041,16 @@ struct BundlePatch: Identifiable {
     var productId: String {
         let game = "FREE_FIRE"
         let cat = category.rawValue
-        let name = url.deletingPathExtension().lastPathComponent
+        
+        // Get filename without extension
+        var filename = url.deletingPathExtension().lastPathComponent
+        
+        // If encrypted (.3105e), remove the .3105 part too
+        if isEncrypted && filename.hasSuffix(".3105") {
+            filename = String(filename.dropLast(5))
+        }
+        
+        let name = filename
             .replacingOccurrences(of: " ", with: "_")
             .replacingOccurrences(of: "%", with: "_PERCENT")
         return "\(game)_\(cat)_\(name)"
