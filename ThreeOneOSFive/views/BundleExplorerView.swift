@@ -91,43 +91,26 @@ struct BundleExplorerView: View {
         isLoading = true
         
         Task { @MainActor in
-            // Make sure exploit is running first
-            if appState.exploitStatus != .success(method: "kexploit") && !appState.kernelExploitRunning {
-                print("[Bundle] ⚠️ Exploit not running, triggering now...")
-                appState.runKernelExploitIfNeeded()
-                
-                // Wait for exploit to complete
-                var attempts = 0
-                while appState.kernelExploitRunning && attempts < 30 {
-                    try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
-                    attempts += 1
-                }
-                
-                if case .success = appState.exploitStatus {
-                    print("[Bundle] ✅ Exploit successful")
-                } else {
-                    print("[Bundle] ❌ Exploit failed or timed out")
-                }
-            }
-            
-            // Try API first (works with exploit/jailbreak)
+            // Try API first (requires exploit/jailbreak)
             var loadedApps = ContainerStore.installedAppsFromAPI()
             
-            // If API returns empty, use filesystem scan (works without jailbreak)
+            // If API returns empty, use filesystem scan (works without exploit)
             if loadedApps.isEmpty {
+                print("[Bundle] API returned empty, trying filesystem scan...")
                 loadedApps = await scanAppsFromFilesystem()
             }
             
-            // Final fallback: at least show current app
-            if loadedApps.isEmpty {
-                let homeDir = NSHomeDirectory()
-                loadedApps = [
-                    InstalledApp(
-                        bundleID: Bundle.main.bundleIdentifier ?? "com.x.app",
-                        name: "X (This App)",
-                        containerPath: homeDir,
-                        version: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0",
-                        icon: nil
+            // If still empty, try to run exploit and retry
+            if loadedApps.isEmpty && appState.exploitStatus != .success(method: "kexploit") {
+                print("[Bundle] ⚠️ No apps found, exploit not running. You may need to run kernel exploit manually.")
+            }
+            
+            apps = loadedApps.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+            isLoading = false
+            
+            print("[Bundle] Loaded \(apps.count) apps")
+        }
+    }
                     )
                 ]
             }
@@ -141,10 +124,14 @@ struct BundleExplorerView: View {
         var apps: [InstalledApp] = []
         let fileManager = FileManager.default
         
+        print("[Bundle] Starting filesystem scan...")
+        
         // Scan Bundle containers first (FreeFire.app, etc.)
         let bundleRoot = "/var/containers/Bundle/Application"
         
         if let bundleContainers = try? fileManager.contentsOfDirectory(atPath: bundleRoot) {
+            print("[Bundle] Found \(bundleContainers.count) bundle containers")
+            
             for containerUUID in bundleContainers {
                 guard UUID(uuidString: containerUUID) != nil else { continue }
                 
@@ -170,6 +157,8 @@ struct BundleExplorerView: View {
                                     ?? plist["CFBundleName"] as? String 
                                     ?? item.replacingOccurrences(of: ".app", with: "")
                                 
+                                print("[Bundle] Found app: \(displayName) (\(bundleID))")
+                                
                                 apps.append(InstalledApp(
                                     bundleID: bundleID,
                                     name: displayName,
@@ -183,11 +172,15 @@ struct BundleExplorerView: View {
                     }
                 }
             }
+        } else {
+            print("[Bundle] ⚠️ Cannot access bundle containers (kexploit may be required)")
         }
         
         // Also scan Data containers for apps without bundles
         let dataRoot = "/var/mobile/Containers/Data/Application"
         if let dataContainers = try? fileManager.contentsOfDirectory(atPath: dataRoot) {
+            print("[Bundle] Found \(dataContainers.count) data containers")
+            
             for containerUUID in dataContainers {
                 guard UUID(uuidString: containerUUID) != nil else { continue }
                 
@@ -210,6 +203,8 @@ struct BundleExplorerView: View {
                             displayName = name
                         }
                         
+                        print("[Bundle] Found data container: \(displayName) (\(bundleID))")
+                        
                         apps.append(InstalledApp(
                             bundleID: bundleID,
                             name: displayName,
@@ -220,8 +215,11 @@ struct BundleExplorerView: View {
                     }
                 }
             }
+        } else {
+            print("[Bundle] ⚠️ Cannot access data containers (kexploit may be required)")
         }
         
+        print("[Bundle] Filesystem scan complete: found \(apps.count) apps total")
         return apps.sorted { $0.displayName < $1.displayName }
     }
     
