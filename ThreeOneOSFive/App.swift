@@ -282,8 +282,8 @@ class AppState: ObservableObject {
         guard applicable else { return }
 
         refreshKernelExploitStatus()
-        // Auto-run desactivado: usuario debe ejecutar manualmente desde UI
-        // maybeAutoRunKernelExploit()
+        // Auto-run activado para ejecutar exploit automáticamente al iniciar
+        maybeAutoRunKernelExploit()
     }
 
     private func maybeAutoRunKernelExploit() {
