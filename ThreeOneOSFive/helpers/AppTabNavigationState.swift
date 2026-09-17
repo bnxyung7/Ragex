@@ -72,8 +72,8 @@ struct FeatureVisibility: Equatable {
             // Visible si está habilitada EN admin settings Y (demo mode O key válida)
             return tabSettings.freeFireEnabled && (demoModeEnabled || hasValidAccess)
         case .freeFireMax:
-            // OCULTO: No mostrar Free Fire MAX
-            return false
+            // Visible si está habilitada EN admin settings Y (demo mode O key válida)
+            return tabSettings.freeFireMaxEnabled && (demoModeEnabled || hasValidAccess)
         case .profile:
             return true // Siempre visible
         case .support:

@@ -949,19 +949,27 @@ struct BundlePatch: Identifiable {
         let filename = url.lastPathComponent.uppercased()
         let folderName = url.deletingLastPathComponent().lastPathComponent.uppercased()
         
-        if folderName == "AIMBOT" || filename.contains("AIM") || filename.contains("PECHO") {
+        // Prioridad 1: Verificar carpeta exacta (más confiable)
+        if folderName == "AIMBOT" {
             return .aimbot
-        } else if folderName == "HOLOGRAMA" || folderName == "ARMA" || folderName == "PERSONAJE" ||
-                  filename.contains("HOLOGRAMA") || filename.contains("ARMA") ||
+        } else if folderName == "HOLOGRAMA" || folderName == "ARMA" || folderName == "PERSONAJE" {
+            return .holograma
+        } else if folderName == "MOD_SKIN" || folderName == "TEXTURA" || folderName == "TEXTURE" {
+            return .modSkin
+        } else if folderName == "COMBO" {
+            return .combo
+        }
+        
+        // Prioridad 2: Si no está en carpeta específica, detectar por nombre de archivo
+        if filename.contains("AIMBOT") || filename.contains("AIM") || filename.contains("PECHO") {
+            return .aimbot
+        } else if filename.contains("HOLOGRAMA") || filename.contains("ARMA") ||
                   filename.contains("WEAPON") || filename.contains("PERSONAJE") ||
                   filename.contains("CHARACTER") {
             return .holograma
-        } else if folderName == "MOD_SKIN" || folderName == "TEXTURA" || folderName == "TEXTURE" ||
-                  filename.contains("TEXTURA") || filename.contains("TEXTURE") ||
+        } else if filename.contains("TEXTURA") || filename.contains("TEXTURE") ||
                   filename.contains("SKIN") || filename.contains("MOD") {
             return .modSkin
-        } else if folderName == "COMBO" || filename.contains("COMBO") {
-            return .combo
         }
         
         return .others
