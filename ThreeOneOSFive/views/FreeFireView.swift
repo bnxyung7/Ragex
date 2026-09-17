@@ -596,7 +596,12 @@ struct FreeFireView: View {
         var patches: [BundlePatch] = []
         var seenFilenames = Set<String>()
         
-        let preinstalledFolder = bundleURL.appendingPathComponent("PreinstalledPatches", isDirectory: true)
+        // Determinar subcarpeta según modo
+        let modeFolder = mode == .normal ? "FREE_FIRE" : "FREE_FIRE_MAX"
+        let preinstalledFolder = bundleURL
+            .appendingPathComponent("PreinstalledPatches", isDirectory: true)
+            .appendingPathComponent(modeFolder, isDirectory: true)
+        
         if fileManager.fileExists(atPath: preinstalledFolder.path) {
             if let enumerator = fileManager.enumerator(at: preinstalledFolder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
                 for case let fileURL as URL in enumerator {
@@ -612,6 +617,7 @@ struct FreeFireView: View {
         }
         
         bundlePatches = patches
+        print("[FreeFireView:\(mode.rawValue)] Loaded \(patches.count) patches from \(modeFolder)")
     }
     
     // MARK: - Banned View
