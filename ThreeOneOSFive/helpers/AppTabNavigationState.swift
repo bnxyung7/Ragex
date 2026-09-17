@@ -63,21 +63,21 @@ struct FeatureVisibility: Equatable {
         case .home:
             return true
         case .files:
-            return tabSettings.filesEnabled
+            return tabSettings.filesEnabled && developerModeEnabled
         case .patches:
-            return tabSettings.patchesEnabled
+            return tabSettings.patchesEnabled && developerModeEnabled
         case .freeFire:
-            // Demo mode bypass OR valid access key
+            // Visible si está habilitada EN admin settings Y (demo mode O key válida)
             return tabSettings.freeFireEnabled && (demoModeEnabled || hasValidAccess)
         case .freeFireMax:
-            // Demo mode bypass OR valid access key
+            // Visible si está habilitada EN admin settings Y (demo mode O key válida)
             return tabSettings.freeFireMaxEnabled && (demoModeEnabled || hasValidAccess)
         case .profile:
-            return true // Siempre visible para ver estado, renovar y recibir avisos
+            return true // Siempre visible
         case .support:
             return true // Siempre visible
         case .bundleExplorer:
-            return tabSettings.bundleExplorerEnabled
+            return tabSettings.bundleExplorerEnabled && developerModeEnabled
         }
     }
 }
