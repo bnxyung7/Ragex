@@ -11,110 +11,94 @@ struct ContentView: View {
     @StateObject private var keyStore = KeyStore.shared
     @AppStorage(FeatureVisibility.developerModeStorageKey)
     private var developerModeEnabled = false
-    @State private var tabNavigation: AppTabNavigationState
+
+    @State private var selectedTab: Int = 0
     @State private var showSettings = false
     @State private var showLogs = false
     @State private var showWelcome = false
+    @State private var filesSession = FilesTabSession()
+
+    // MARK: - Init (simulator flags)
 
     init() {
 #if targetEnvironment(simulator)
-        let arguments = ProcessInfo.processInfo.arguments
-        let initialTab: Int
-        if arguments.contains("--simulate-files-tab") {
-            initialTab = 1
-        } else if arguments.contains("--simulate-patch-tab") {
-            initialTab = 2
-        } else {
-            initialTab = 0
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("--simulate-files-tab") {
+            _selectedTab = State(initialValue: AppSection.files.rawValue)
+        } else if args.contains("--simulate-patch-tab") {
+            _selectedTab = State(initialValue: AppSection.patches.rawValue)
         }
-        _tabNavigation = State(initialValue: AppTabNavigationState(selectedTab: initialTab))
-        _showSettings = State(
-            initialValue: arguments.contains("--simulate-settings")
-        )
-#else
-        _tabNavigation = State(initialValue: AppTabNavigationState())
 #endif
     }
 
+    // MARK: - Body
+
     var body: some View {
         ZStack {
-            Group {
-                if horizontalSizeClass == .regular {
-                    regularLayout
-                } else {
-                    compactLayout
-                }
+            if horizontalSizeClass == .regular {
+                regularLayout
+            } else {
+                compactLayout
             }
-            
-            // In-app interactive toast notification overlay
+
+            // Global in-app toast overlay — always on top
             InAppToastOverlay()
         }
         .tint(AppTheme.accent)
-        .imageScale(.small)
-        .onChange(of: patchDraftCoordinator.request?.id) { requestID in
-            if requestID != nil { tabNavigation.select(AppSection.patches.rawValue) }
-        }
-        .onChange(of: patchDraftCoordinator.importRequest?.id) { requestID in
-            if requestID != nil { tabNavigation.select(AppSection.patches.rawValue) }
-        }
-        .onChange(of: developerModeEnabled) { _ in
-            tabNavigation.reconcileSelection(with: featureVisibility)
-        }
-        .onChange(of: adminSettings.tabSettings) { _ in
-            tabNavigation.reconcileSelection(with: featureVisibility)
-        }
-        .onChange(of: keyStore.activeSession?.key.status) { _ in
-            tabNavigation.reconcileSelection(with: featureVisibility)
-        }
+        // Reconcile tab when key/admin settings change
+        .onChange(of: developerModeEnabled) { _ in reconcile() }
+        .onChange(of: adminSettings.tabSettings) { _ in reconcile() }
+        .onChange(of: keyStore.activeSession?.key.status) { _ in reconcile() }
         .onAppear {
-            tabNavigation.reconcileSelection(with: featureVisibility)
-            
-            // Play welcome sound every time app opens
+            reconcile()
             SoundPlayer.shared.playWelcome()
-            
-            // Show welcome sheet on first launch only
             if !UserDefaults.standard.bool(forKey: "hasSeenWelcome") {
                 showWelcome = true
                 UserDefaults.standard.set(true, forKey: "hasSeenWelcome")
             }
+            // Hide the native UITabBar completely — we use our own
+            UITabBar.appearance().isHidden = true
+        }
+        // Patch coordinator deep-links
+        .onChange(of: patchDraftCoordinator.request?.id) { id in
+            if id != nil { selectedTab = AppSection.patches.rawValue }
+        }
+        .onChange(of: patchDraftCoordinator.importRequest?.id) { id in
+            if id != nil { selectedTab = AppSection.patches.rawValue }
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
-        .sheet(isPresented: $showLogs) { LogView() }
-        .sheet(isPresented: $showWelcome) { WelcomeSheet() }
+        .sheet(isPresented: $showLogs)     { LogView()      }
+        .sheet(isPresented: $showWelcome)  { WelcomeSheet() }
         .patchStorePresentation(patchStore)
         .repositoryStorePresentation(repositoryStore, patchStore: patchStore)
     }
 
+    // MARK: - Compact layout (iPhone)
+
     private var compactLayout: some View {
-        TabView(selection: tabSelection) {
-            ForEach(featureVisibility.visibleSections) { section in
-                sectionContent(section)
-                    .tabItem {
-                        CompactTabLabel(
-                            section: section,
-                            title: sectionTitle(section)
-                        )
-                    }
-                    .tag(section.rawValue)
-            }
+        CustomTabBarContainer(
+            selectedTab: $selectedTab,
+            items: tabItems
+        ) { section in
+            AnyView(sectionContent(section))
         }
-        .toolbarBackground(Color(hex: "08080C"), for: .tabBar)
-        .toolbarColorScheme(.dark, for: .tabBar)
     }
+
+    // MARK: - Regular layout (iPad sidebar)
 
     private var regularLayout: some View {
         NavigationSplitView {
             List {
-                ForEach(featureVisibility.visibleSections) { section in
+                ForEach(visibleSections) { section in
                     Button {
                         withAnimation(.easeInOut(duration: 0.18)) {
-                            tabNavigation.select(section.rawValue)
+                            selectedTab = section.rawValue
                         }
                     } label: {
                         HStack(spacing: 12) {
                             sidebarIcon(for: section)
                             Text(sectionTitle(section))
-                                .fontWeight(section.rawValue == tabNavigation.selectedTab ? .semibold : .regular)
+                                .fontWeight(section.rawValue == selectedTab ? .semibold : .regular)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.85)
                             Spacer()
@@ -123,12 +107,12 @@ struct ContentView: View {
                     }
                     .buttonStyle(.plain)
                     .listRowBackground(
-                        section.rawValue == tabNavigation.selectedTab
+                        section.rawValue == selectedTab
                             ? AppTheme.accent.opacity(0.14)
                             : Color.clear
                     )
                     .accessibilityAddTraits(
-                        section.rawValue == tabNavigation.selectedTab ? .isSelected : []
+                        section.rawValue == selectedTab ? .isSelected : []
                     )
                 }
             }
@@ -141,16 +125,15 @@ struct ContentView: View {
         .navigationSplitViewStyle(.balanced)
     }
 
+    // MARK: - Sidebar icon (iPad)
+
     @ViewBuilder
     private func sidebarIcon(for section: AppSection) -> some View {
-        if section == .freeFire, let img = UIImage(named: "freefire-icon") {
+        if let assetName = assetImageName(for: section),
+           let img = UIImage(named: assetName) {
             Image(uiImage: img)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 20, height: 20)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-        } else if section == .freeFireMax, let img = UIImage(named: "freefire-max-icon") {
-            Image(uiImage: img)
+                .renderingMode(.original)
+                .interpolation(.high)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 20, height: 20)
@@ -158,29 +141,27 @@ struct ContentView: View {
         } else {
             Image(systemName: section.systemImage)
                 .font(.system(size: 16))
-                .foregroundStyle(section.rawValue == tabNavigation.selectedTab ? AppTheme.accent : .secondary)
+                .foregroundStyle(section.rawValue == selectedTab ? AppTheme.accent : .secondary)
         }
     }
+
+    // MARK: - Section content
 
     @ViewBuilder
     private func sectionContent(_ section: AppSection) -> some View {
         switch section {
         case .home:
-            RepositoryHomeView(
-                onOpenSettings: openSettings,
-                onOpenLogs: openLogs
-            )
+            RepositoryHomeView(onOpenSettings: { showSettings = true },
+                               onOpenLogs:     { showLogs     = true })
         case .files:
             AppDataBrowserView(
-                tabSession: filesTabSession,
-                onOpenSettings: openSettings,
-                onOpenLogs: openLogs
+                tabSession:     filesTabSession,
+                onOpenSettings: { showSettings = true },
+                onOpenLogs:     { showLogs     = true }
             )
         case .patches:
-            PatchProjectsView(
-                onOpenSettings: openSettings,
-                onOpenLogs: openLogs
-            )
+            PatchProjectsView(onOpenSettings: { showSettings = true },
+                              onOpenLogs:     { showLogs     = true })
         case .freeFire:
             FreeFireView(mode: .normal)
         case .freeFireMax:
@@ -194,22 +175,31 @@ struct ContentView: View {
         }
     }
 
-    private var tabSelection: Binding<Int> {
-        Binding(
-            get: { tabNavigation.selectedTab },
-            set: { tabNavigation.select($0) }
-        )
+    // MARK: - Tab items for CustomTabBar
+
+    private var tabItems: [TabBarItemModel] {
+        visibleSections.map { section in
+            TabBarItemModel(
+                id:          section.rawValue,
+                section:     section,
+                title:       sectionTitle(section),
+                systemImage: section.systemImage,
+                assetImage:  assetImageName(for: section)
+            )
+        }
     }
 
-    private var filesTabSession: Binding<FilesTabSession> {
-        Binding(
-            get: { tabNavigation.filesTabs },
-            set: { tabNavigation.setFilesTabs($0) }
-        )
-    }
+    // MARK: - Helpers
 
     private var featureVisibility: FeatureVisibility {
-        FeatureVisibility(developerModeEnabled: developerModeActive, adminSettings: adminSettings)
+        FeatureVisibility(
+            developerModeEnabled: developerModeActive,
+            adminSettings: adminSettings
+        )
+    }
+
+    private var visibleSections: [AppSection] {
+        featureVisibility.visibleSections
     }
 
     private var developerModeActive: Bool {
@@ -223,72 +213,62 @@ struct ContentView: View {
     }
 
     private var selectedVisibleSection: AppSection {
-        let selected = AppSection(rawValue: tabNavigation.selectedTab)
+        let selected = AppSection(rawValue: selectedTab)
         return selected.flatMap {
             featureVisibility.isVisible($0) ? $0 : nil
         } ?? .home
     }
 
+    private var filesTabSession: Binding<FilesTabSession> {
+        Binding(
+            get: { filesSession },
+            set: { filesSession = $0 }
+        )
+    }
+
+    private func reconcile() {
+        let visibility = featureVisibility
+        if let current = AppSection(rawValue: selectedTab),
+           !visibility.isVisible(current) {
+            selectedTab = AppSection.home.rawValue
+        }
+    }
+
+    private func assetImageName(for section: AppSection) -> String? {
+        switch section {
+        case .freeFire:    return "freefire-icon"
+        case .freeFireMax: return "freefire-max-icon"
+        default:           return nil
+        }
+    }
+
     private func sectionTitle(_ section: AppSection) -> String {
         switch section {
-        case .home: return language.text("tab.home")
-        case .files: return language.text("tab.files")
-        case .patches: return language.text("tab.patches")
-        case .freeFire: return "Free Fire"
-        case .freeFireMax: return "FF MAX"
-        case .profile: return "Perfil"
-        case .support: return "Soporte"
-        case .bundleExplorer: return "Bundle"
+        case .home:          return language.text("tab.home")
+        case .files:         return language.text("tab.files")
+        case .patches:       return language.text("tab.patches")
+        case .freeFire:      return "Free Fire"
+        case .freeFireMax:   return "FF MAX"
+        case .profile:       return "Perfil"
+        case .support:       return "Soporte"
+        case .bundleExplorer:return "Bundle"
         }
-    }
-
-    private func openSettings() {
-        showSettings = true
-    }
-
-    private func openLogs() {
-        showLogs = true
     }
 }
 
-private struct CompactTabLabel: View {
-    let section: AppSection
-    let title: String
-
-    @ViewBuilder
-    var body: some View {
-        if section == .freeFire, let img = UIImage(named: "freefire-icon") {
-            Image(uiImage: img)
-                .renderingMode(.original)
-        } else if section == .freeFireMax, let img = UIImage(named: "freefire-max-icon") {
-            Image(uiImage: img)
-                .renderingMode(.original)
-        } else if let image = UIImage(
-            systemName: section.systemImage,
-            withConfiguration: UIImage.SymbolConfiguration(pointSize: 17, weight: .medium)
-        )?.withRenderingMode(.alwaysTemplate) {
-            Image(uiImage: image)
-        } else {
-            Image(systemName: section.systemImage)
-                .font(.system(size: 17, weight: .medium))
-        }
-        Text(title)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-    }
-}
+// MARK: - AppSection system image extension
 
 private extension AppSection {
     var systemImage: String {
         switch self {
-        case .home: return "house.fill"
-        case .files: return "folder.fill"
-        case .patches: return "shippingbox.fill"
-        case .freeFire: return "flame.fill"
-        case .freeFireMax: return "flame.circle.fill"
-        case .profile: return "person.fill"
-        case .support: return "headphones.circle.fill"
-        case .bundleExplorer: return "folder.badge.gearshape"
+        case .home:          return "house.fill"
+        case .files:         return "folder.fill"
+        case .patches:       return "shippingbox.fill"
+        case .freeFire:      return "flame.fill"
+        case .freeFireMax:   return "flame.circle.fill"
+        case .profile:       return "person.fill"
+        case .support:       return "headphones.circle.fill"
+        case .bundleExplorer:return "folder.badge.gearshape"
         }
     }
 }

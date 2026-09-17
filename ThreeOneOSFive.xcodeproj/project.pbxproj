@@ -11,6 +11,7 @@
 		NOTIF012 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTIF002; };
 		NOTIF013 /* InAppToastOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTIF003; };
 		PUSH011 /* PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PUSH001; };
+		CTAB011 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CTAB001; };
 		ANN00011 /* AnnouncementModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANN00001; };
 		ANN00012 /* AnnouncementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANN00002; };
 		3105A200 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105A020; };
@@ -110,6 +111,7 @@
 		NOTIF002 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		NOTIF003 /* InAppToastOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppToastOverlay.swift; sourceTree = "<group>"; };
 		PUSH001 /* PushNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationService.swift; sourceTree = "<group>"; };
+		CTAB001 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
 		ANN00001 /* AnnouncementModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnouncementModalView.swift; sourceTree = "<group>"; };
 		ANN00002 /* AnnouncementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnouncementService.swift; sourceTree = "<group>"; };
 		3105A010 /* X.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "X.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -306,6 +308,7 @@
 				A2DE34D5 /* ProfileView.swift */,
 				NOTIF001 /* NotificationsCenterView.swift */,
 				NOTIF003 /* InAppToastOverlay.swift */,
+				CTAB001 /* CustomTabBar.swift */,
 				ANN00001 /* AnnouncementModalView.swift */,
 				F25A548D /* AdminPanelView.swift */,
 				SUP10002 /* SupportView.swift */,
@@ -507,6 +510,7 @@
 				NOTIF012,
 				NOTIF013,
 				PUSH011,
+				CTAB011,
 				ANN00011,
 				ANN00012,
 				3105WW200,

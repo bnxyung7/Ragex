@@ -54,6 +54,10 @@ struct FreeFireView: View {
     @State private var errorMessage: String?
     @State private var showErrorAlert = false
     @State private var showAnnouncementsSheet = false
+    // Auto-refresh state
+    @State private var lastRefreshed: Date = Date()
+    @State private var isRefreshing: Bool = false
+    private let refreshInterval: TimeInterval = 30
     
     enum PatchCategory: String, CaseIterable, Identifiable {
         case aimbot = "AIMBOT"
@@ -122,6 +126,19 @@ struct FreeFireView: View {
         }
         .onAppear {
             loadBundlePatches()
+            // Refresh announcements immediately when tab opens
+            Task { await announcementService.fetchAnnouncements() }
+        }
+        .onDisappear {
+            // Nothing to tear down — timer is task-based and cancels with view
+        }
+        // Auto-refresh every 30s while the view is on screen
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(refreshInterval) * 1_000_000_000)
+                guard !Task.isCancelled else { break }
+                await performRefresh()
+            }
         }
         .alert("Error", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) { }
@@ -225,21 +242,52 @@ struct FreeFireView: View {
                     
                     HStack(spacing: 6) {
                         HStack(spacing: 4) {
-                            Circle()
-                                .fill(Color(hex: "10B981"))
-                                .frame(width: 6, height: 6)
+                            PulseStatusDot(color: Color(hex: "10B981"))
                             Text("Bypass Activo")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundStyle(Color(hex: "10B981"))
                         }
-                        
+
                         Text("•")
                             .font(.caption2)
                             .foregroundStyle(Color(hex: "64748B"))
-                        
+
                         Text("120 FPS")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(AppTheme.accent)
+
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundStyle(Color(hex: "64748B"))
+
+                        // Live refresh indicator
+                        Button {
+                            Task { await performRefresh() }
+                        } label: {
+                            HStack(spacing: 3) {
+                                if isRefreshing {
+                                    ProgressView()
+                                        .progressViewStyle(.circular)
+                                        .scaleEffect(0.55)
+                                        .tint(AppTheme.accent)
+                                        .frame(width: 10, height: 10)
+                                } else {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundStyle(AppTheme.accent)
+                                }
+                                Text("LIVE")
+                                    .font(.system(size: 9, weight: .black))
+                                    .foregroundStyle(AppTheme.accent)
+                            }
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(AppTheme.accent.opacity(0.12))
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(AppTheme.accent.opacity(0.3), lineWidth: 0.6))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isRefreshing)
                     }
                 }
                 
@@ -574,6 +622,27 @@ struct FreeFireView: View {
         }
     }
     
+    // MARK: - Auto-Refresh
+
+    @MainActor
+    private func performRefresh() async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+
+        // 1. Reload bundle patches from disk (picks up any newly added .3105 files)
+        loadBundlePatches()
+
+        // 2. Refresh patch store so toggle states are current
+        patchStore.reload()
+
+        // 3. Pull latest announcements from server
+        await announcementService.fetchAnnouncements()
+
+        lastRefreshed = Date()
+        print("[FreeFireView:\(mode.rawValue)] 🔄 Auto-refreshed at \(lastRefreshed)")
+    }
+
     // MARK: - Load Bundle Patches
     
     private func loadBundlePatches() {
