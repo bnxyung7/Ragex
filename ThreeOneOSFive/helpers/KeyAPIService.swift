@@ -525,3 +525,66 @@ enum KeyAPIError: LocalizedError {
         }
     }
 }
+
+    
+    // MARK: - Version Control (Force Update)
+    
+    /// Check if current app version is allowed to run
+    /// Returns: (isAllowed, minimumVersion, forceUpdateMessage)
+    func checkVersionStatus() async throws -> VersionStatusResponse {
+        let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let appName = "X" // Bundle name
+        
+        let url = URL(string: "\(adminPanelURL)/version/check")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiToken, forHTTPHeaderField: "X-API-Token")
+        request.timeoutInterval = 10
+        
+        let body: [String: Any] = [
+            "appName": appName,
+            "currentVersion": currentVersion,
+            "platform": "iOS"
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let http = response as? HTTPURLResponse else {
+            throw KeyAPIError.invalidResponse
+        }
+        
+        // If endpoint doesn't exist (404/405), allow by default
+        if http.statusCode == 404 || http.statusCode == 405 {
+            print("[VersionCheck] ⚠️ Endpoint not implemented, allowing by default")
+            return VersionStatusResponse(
+                isAllowed: true,
+                currentVersion: currentVersion,
+                minimumVersion: nil,
+                latestVersion: nil,
+                forceUpdate: false,
+                message: nil,
+                downloadURL: nil
+            )
+        }
+        
+        guard (200..<300).contains(http.statusCode) else {
+            throw KeyAPIError.httpError(statusCode: http.statusCode)
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode(VersionStatusResponse.self, from: data)
+    }
+    
+    struct VersionStatusResponse: Codable {
+        let isAllowed: Bool
+        let currentVersion: String
+        let minimumVersion: String?
+        let latestVersion: String?
+        let forceUpdate: Bool
+        let message: String?
+        let downloadURL: String?
+    }
+}

@@ -81,6 +81,8 @@ struct ThreeOneOSFiveApp: App {
     @State private var showOnboarding = false  // Disabled - using WelcomeSheet instead
     @State private var showAttribution = false
     @State private var updateOffer: AppUpdateChecker.Offer?
+    @State private var versionStatus: KeyAPIService.VersionStatusResponse?
+    @State private var isCheckingVersion = true
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -105,38 +107,92 @@ struct ThreeOneOSFiveApp: App {
             await MainActor.run { updateOffer = offer }
         }
     }
+    
+    private func checkVersionStatus() {
+        Task {
+            do {
+                let status = try await KeyAPIService.shared.checkVersionStatus()
+                await MainActor.run {
+                    versionStatus = status
+                    isCheckingVersion = false
+                    
+                    if status.isAllowed {
+                        print("[VersionCheck] ✅ Version \(status.currentVersion) is allowed")
+                    } else {
+                        print("[VersionCheck] ❌ Version \(status.currentVersion) is BLOCKED")
+                        print("[VersionCheck] Minimum version: \(status.minimumVersion ?? "N/A")")
+                        print("[VersionCheck] Message: \(status.message ?? "N/A")")
+                    }
+                }
+            } catch {
+                // On error, allow by default (graceful degradation)
+                print("[VersionCheck] ⚠️ Check failed: \(error.localizedDescription), allowing by default")
+                await MainActor.run {
+                    versionStatus = KeyAPIService.VersionStatusResponse(
+                        isAllowed: true,
+                        currentVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0",
+                        minimumVersion: nil,
+                        latestVersion: nil,
+                        forceUpdate: false,
+                        message: nil,
+                        downloadURL: nil
+                    )
+                    isCheckingVersion = false
+                }
+            }
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
             ZStack {
-                ContentView()
-                    .environmentObject(appState)
-                    .environmentObject(patchDraftCoordinator)
-                    .environmentObject(fileOperationCoordinator)
-                    .environmentObject(patchStore)
-                    .environmentObject(repositoryStore)
-                    .environment(\.appLanguage, language)
-                    .environment(\.locale, language.locale)
-                    .opacity(showOnboarding ? 0 : 1)
-                    .allowsHitTesting(!showOnboarding)
-
-                if showOnboarding {
-                    OnboardingView {
-                        OnboardingStore.markCompleted()
-                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.24)) {
-                            showOnboarding = false
-                        }
-                        appState.detectSupport()
-                        checkForUpdate()
+                // Show force update screen if version is blocked
+                if let status = versionStatus, !status.isAllowed {
+                    ForceUpdateView(versionStatus: status)
+                        .transition(.opacity)
+                        .zIndex(999)
+                } else if isCheckingVersion {
+                    // Loading screen while checking version
+                    ZStack {
+                        Color(hex: "06060E")
+                            .ignoresSafeArea()
+                        ProgressView()
+                            .scaleEffect(1.2)
+                            .tint(.white)
                     }
-                    .environment(\.appLanguage, language)
-                    .environment(\.locale, language.locale)
-                    .transition(
-                        reduceMotion
-                            ? .opacity
-                            : .opacity.combined(with: .scale(scale: 0.98))
-                    )
-                    .zIndex(1)
+                    .transition(.opacity)
+                    .zIndex(999)
+                } else {
+                    // Normal app content
+                    ContentView()
+                        .environmentObject(appState)
+                        .environmentObject(patchDraftCoordinator)
+                        .environmentObject(fileOperationCoordinator)
+                        .environmentObject(patchStore)
+                        .environmentObject(repositoryStore)
+                        .environment(\.appLanguage, language)
+                        .environment(\.locale, language.locale)
+                        .opacity(showOnboarding ? 0 : 1)
+                        .allowsHitTesting(!showOnboarding)
+
+                    if showOnboarding {
+                        OnboardingView {
+                            OnboardingStore.markCompleted()
+                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.24)) {
+                                showOnboarding = false
+                            }
+                            appState.detectSupport()
+                            checkForUpdate()
+                        }
+                        .environment(\.appLanguage, language)
+                        .environment(\.locale, language.locale)
+                        .transition(
+                            reduceMotion
+                                ? .opacity
+                                : .opacity.combined(with: .scale(scale: 0.98))
+                        )
+                        .zIndex(1)
+                    }
                 }
             }
             .displayIdentityAttribution(isPresented: $showAttribution, enabled: !showOnboarding)
@@ -157,6 +213,7 @@ struct ThreeOneOSFiveApp: App {
             }
             .onAppear {
                 if !showOnboarding {
+                    checkVersionStatus() // ⬅️ NUEVO: Verificar versión al iniciar
                     appState.detectSupport()
                     checkForUpdate()
                     // Request APNs permission and register device token with server
