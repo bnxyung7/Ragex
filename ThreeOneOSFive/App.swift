@@ -1,8 +1,77 @@
 import SwiftUI
 import UIKit
+import UserNotifications
+
+// MARK: - AppDelegate (APNs + UNUserNotificationCenter delegate)
+
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        // Set this class as the UNUserNotificationCenter delegate so we can
+        // intercept foreground delivery and notification taps.
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    // Called when APNs successfully issues a device token.
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        Task { @MainActor in
+            PushNotificationService.shared.didRegisterWithToken(deviceToken)
+        }
+    }
+
+    // Called when APNs registration fails (simulator, no entitlement, etc.)
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        Task { @MainActor in
+            PushNotificationService.shared.didFailToRegisterWithError(error)
+        }
+    }
+
+    // Show push while app is in foreground → convert to in-app toast.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        Task { @MainActor in
+            PushNotificationService.shared.handleForegroundNotification(
+                notification,
+                completionHandler: completionHandler
+            )
+        }
+    }
+
+    // User tapped a notification banner (background / killed state).
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        Task { @MainActor in
+            PushNotificationService.shared.handleNotificationResponse(
+                response,
+                completionHandler: completionHandler
+            )
+        }
+    }
+}
+
+// MARK: - App Entry Point
 
 @main
 struct ThreeOneOSFiveApp: App {
+    // Connect the UIApplicationDelegate so APNs callbacks fire.
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     @StateObject private var appState = AppState()
     @StateObject private var patchDraftCoordinator = PatchDraftCoordinator()
     @StateObject private var fileOperationCoordinator = FileOperationCoordinator()
@@ -90,6 +159,10 @@ struct ThreeOneOSFiveApp: App {
                 if !showOnboarding {
                     appState.detectSupport()
                     checkForUpdate()
+                    // Request APNs permission and register device token with server
+                    Task { @MainActor in
+                        PushNotificationService.shared.requestPermissionIfNeeded()
+                    }
                 }
             }
             .onChange(of: scenePhase) { phase in

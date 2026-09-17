@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		NOTIF011 /* NotificationsCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTIF001; };
+		NOTIF012 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTIF002; };
+		NOTIF013 /* InAppToastOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTIF003; };
 		ANN00011 /* AnnouncementModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANN00001; };
 		ANN00012 /* AnnouncementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANN00002; };
 		3105A200 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3105A020; };
@@ -102,6 +105,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		NOTIF001 /* NotificationsCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsCenterView.swift; sourceTree = "<group>"; };
+		NOTIF002 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		NOTIF003 /* InAppToastOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppToastOverlay.swift; sourceTree = "<group>"; };
 		ANN00001 /* AnnouncementModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnouncementModalView.swift; sourceTree = "<group>"; };
 		ANN00002 /* AnnouncementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnouncementService.swift; sourceTree = "<group>"; };
 		3105A010 /* X.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "X.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -296,6 +302,8 @@
 				3105L103 /* RepositoryHomeView.swift */,
 				3105L104 /* RepositorySourcesView.swift */,
 				A2DE34D5 /* ProfileView.swift */,
+				NOTIF001 /* NotificationsCenterView.swift */,
+				NOTIF003 /* InAppToastOverlay.swift */,
 				ANN00001 /* AnnouncementModalView.swift */,
 				F25A548D /* AdminPanelView.swift */,
 				SUP10002 /* SupportView.swift */,
@@ -354,6 +362,7 @@
 				DCE3C114 /* KeyStore.swift */,
 				KEYAPI14 /* KeyAPIService.swift */,
 				90DFBCB7 /* AdminSettings.swift */,
+				NOTIF002 /* NotificationService.swift */,
 				ANN00002 /* AnnouncementService.swift */,
 				PREKEY01 /* PreloadedKeys.swift */,
 				THEME001 /* ThemeManager.swift */,
@@ -491,6 +500,9 @@
 				3105B220,
 				3105B221,
 				3105FF200,
+				NOTIF011,
+				NOTIF012,
+				NOTIF013,
 				ANN00011,
 				ANN00012,
 				3105WW200,

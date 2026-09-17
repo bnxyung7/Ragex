@@ -307,6 +307,121 @@ class KeyAPIService {
             return (false, "local", "Key not found")
         }
     }
+
+    // MARK: - Push Notifications
+
+    /// Register (or update) the APNs device token on the server.
+    /// The server stores { token, keyString, platform } so the admin
+    /// web panel can target specific users or broadcast to all devices.
+    func registerDevicePushToken(token: String, keyString: String) async throws {
+        let url = URL(string: "\(baseURL)/push/register")!
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiToken, forHTTPHeaderField: "X-API-Token")
+        request.timeoutInterval = 15
+
+        let body: [String: Any] = [
+            "token": token,
+            "keyString": keyString,
+            "platform": "apns"
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse,
+              http.statusCode == 200 || http.statusCode == 201 else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw KeyAPIError.httpError(statusCode: code)
+        }
+    }
+
+    /// Send a push notification broadcast from the admin panel.
+    /// - Parameters:
+    ///   - title:     Notification title
+    ///   - message:   Notification body
+    ///   - keyString: Target key string, or "ALL" to broadcast to every device
+    ///   - linkURL:   Optional deep-link URL included in push payload
+    ///   - linkTitle: Human-readable label for the link button
+    ///   - isUrgent:  If true, the app displays a warning-style toast
+    func sendPushBroadcast(
+        title: String,
+        message: String,
+        keyString: String = "ALL",
+        linkURL: String? = nil,
+        linkTitle: String? = nil,
+        isUrgent: Bool = false
+    ) async throws {
+        let url = URL(string: "\(baseURL)/push/send")!
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiToken, forHTTPHeaderField: "X-API-Token")
+        request.timeoutInterval = 20
+
+        var body: [String: Any] = [
+            "title":     title,
+            "message":   message,
+            "keyString": keyString,
+            "urgent":    isUrgent
+        ]
+        if let linkURL   = linkURL   { body["linkURL"]   = linkURL }
+        if let linkTitle = linkTitle { body["linkTitle"] = linkTitle }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse,
+              http.statusCode == 200 || http.statusCode == 201 else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            // Try to surface the server error message
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let errMsg = json["error"] as? String {
+                throw KeyAPIError.serverMessage(errMsg)
+            }
+            throw KeyAPIError.httpError(statusCode: code)
+        }
+    }
+
+    /// Post a notification message to the server's notification feed
+    /// (shows up in NotificationsCenter via the polling endpoint).
+    func postAdminNotification(
+        title: String,
+        message: String,
+        linkURL: String? = nil,
+        linkTitle: String? = nil,
+        isUrgent: Bool = false
+    ) async throws {
+        let url = URL(string: "\(baseURL)/notifications")!
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiToken, forHTTPHeaderField: "X-API-Token")
+        request.timeoutInterval = 15
+
+        var body: [String: Any] = [
+            "title":    title,
+            "message":  message,
+            "isUrgent": isUrgent
+        ]
+        if let linkURL   = linkURL   { body["linkURL"]   = linkURL }
+        if let linkTitle = linkTitle { body["linkTitle"] = linkTitle }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse,
+              http.statusCode == 200 || http.statusCode == 201 else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            throw KeyAPIError.httpError(statusCode: code)
+        }
+    }
 }
 
 // MARK: - Errors
@@ -316,7 +431,8 @@ enum KeyAPIError: LocalizedError {
     case httpError(statusCode: Int)
     case networkError(Error)
     case decodingError(Error)
-    
+    case serverMessage(String)
+
     var errorDescription: String? {
         switch self {
         case .invalidResponse:
@@ -327,6 +443,8 @@ enum KeyAPIError: LocalizedError {
             return "Network error: \(error.localizedDescription)"
         case .decodingError(let error):
             return "Failed to decode response: \(error.localizedDescription)"
+        case .serverMessage(let msg):
+            return msg
         }
     }
 }

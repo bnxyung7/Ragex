@@ -4,7 +4,9 @@ struct ProfileView: View {
     @Environment(\.appLanguage) private var language
     @StateObject private var keyStore = KeyStore.shared
     @StateObject private var adminSettings = AdminSettings.shared
-    
+    @StateObject private var pushService = PushNotificationService.shared
+    @StateObject private var notificationService = NotificationService.shared
+
     @State private var showAdminLogin = false
     @State private var showAdminPanel = false
     @State private var showKeyActivation = false
@@ -39,6 +41,28 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color(hex: "08080C"), for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        notificationService.showNotificationsSheet = true
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(.white)
+                            if notificationService.unreadCount > 0 {
+                                Circle()
+                                    .fill(Color(hex: "EF4444"))
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 2, y: -2)
+                            }
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $notificationService.showNotificationsSheet) {
+                NotificationsCenterView()
+            }
         }
         .sheet(isPresented: $showAdminLogin) {
             AdminLoginView(isPresented: $showAdminLogin, onSuccess: {
@@ -59,27 +83,75 @@ struct ProfileView: View {
         }
     }
     
+    // MARK: - Push permission row
+
+    @ViewBuilder
+    private var pushPermissionRow: some View {
+        HStack(spacing: 10) {
+            Image(systemName: pushService.permissionGranted ? "bell.fill" : "bell.slash.fill")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(pushService.permissionGranted ? Color(hex: "10B981") : Color(hex: "F59E0B"))
+                .frame(width: 20)
+
+            Text("Notificaciones Push")
+                .font(.system(size: 13))
+                .foregroundStyle(Color(hex: "94A3B8"))
+
+            Spacer()
+
+            if pushService.permissionGranted {
+                Text("Activas")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(hex: "10B981"))
+            } else if pushService.permissionDetermined {
+                Button {
+                    if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Text("Activar")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color(hex: "F59E0B"))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            } else {
+                Text("Pendiente")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(hex: "94A3B8"))
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
     // MARK: - Key Status Card
     
     private var keyStatusCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             if let session = keyStore.activeSession {
-                // Active key VIP card
+                // Active or Expired key card
+                let isExp = session.key.isExpired
+                let isBan = session.key.isBanned
+                let statusColor: Color = isBan ? Color(hex: "EF4444") : (isExp ? Color(hex: "F59E0B") : Color(hex: "10B981"))
+                
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill((session.key.isBanned ? Color(hex: "EF4444") : Color(hex: "10B981")).opacity(0.18))
+                            .fill(statusColor.opacity(0.18))
                             .frame(width: 44, height: 44)
-                        Image(systemName: session.key.isBanned ? "xmark.octagon.fill" : "checkmark.seal.fill")
-                            .foregroundStyle(session.key.isBanned ? Color(hex: "EF4444") : Color(hex: "10B981"))
+                        Image(systemName: isBan ? "xmark.octagon.fill" : (isExp ? "exclamationmark.triangle.fill" : "checkmark.seal.fill"))
+                            .foregroundStyle(statusColor)
                             .font(.system(size: 22))
                     }
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(session.key.isBanned ? "ACCESO BANEADO" : "MEMBRESÍA ACTIVA")
+                        Text(isBan ? "ACCESO BANEADO" : (isExp ? "MEMBRESÍA EXPIRADA" : "MEMBRESÍA ACTIVA"))
                             .font(.system(size: 15, weight: .heavy, design: .rounded))
-                            .foregroundStyle(session.key.isBanned ? Color(hex: "EF4444") : .white)
-                        Text(session.key.isBanned ? "Clave suspendida por administración" : "Acceso verificado a Project X")
+                            .foregroundStyle(isBan ? Color(hex: "EF4444") : (isExp ? Color(hex: "F59E0B") : .white))
+                        Text(isBan ? "Clave suspendida por administración" : (isExp ? "Pestañas de juego deshabilitadas" : "Acceso verificado a Project X"))
                             .font(.caption)
                             .foregroundStyle(Color(hex: "94A3B8"))
                     }
@@ -87,9 +159,41 @@ struct ProfileView: View {
                     Spacer()
                     
                     CyberBadge(
-                        text: session.key.isBanned ? "BANEADO" : "PRO",
-                        color: session.key.isBanned ? Color(hex: "EF4444") : AppTheme.accent
+                        text: isBan ? "BANEADO" : (isExp ? "EXPIRADO" : "PRO"),
+                        color: statusColor
                     )
+                }
+                
+                if isExp {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("⚠️ Tu clave ha vencido")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(Color(hex: "F59E0B"))
+                        Text("Tu sesión sigue guardada. Renueva tu clave o activa una nueva para habilitar las pestañas Free Fire y Free Fire MAX.")
+                            .font(.caption2)
+                            .foregroundStyle(Color(hex: "CBD5E1"))
+                            .lineSpacing(2)
+                        
+                        Link(destination: URL(string: "https://wa.me/18099289722?text=Hola,%20mi%20clave%20de%20Project%20X%20expiró%20y%20deseo%20renovarla:\(session.key.keyString)")!) {
+                            HStack {
+                                Image(systemName: "arrow.clockwise.circle.fill")
+                                Text("Renovar Clave por WhatsApp")
+                                    .fontWeight(.bold)
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(hex: "10B981"))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .padding(.top, 4)
+                    }
+                    .padding(12)
+                    .background(Color(hex: "F59E0B").opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 
                 Divider()
@@ -105,6 +209,9 @@ struct ProfileView: View {
                     if let userName = session.key.userName {
                         keyDetailRow(icon: "person.fill", label: "Usuario asignado", value: userName)
                     }
+
+                    // Push notification permission row
+                    pushPermissionRow
                 }
                 
                 if session.key.isBanned, let reason = session.key.banReason {

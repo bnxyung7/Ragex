@@ -8,6 +8,7 @@ struct ContentView: View {
     @EnvironmentObject private var patchStore: PatchProjectStore
     @EnvironmentObject private var repositoryStore: PackageRepositoryStore
     @StateObject private var adminSettings = AdminSettings.shared
+    @StateObject private var keyStore = KeyStore.shared
     @AppStorage(FeatureVisibility.developerModeStorageKey)
     private var developerModeEnabled = false
     @State private var tabNavigation: AppTabNavigationState
@@ -36,12 +37,17 @@ struct ContentView: View {
     }
 
     var body: some View {
-        Group {
-            if horizontalSizeClass == .regular {
-                regularLayout
-            } else {
-                compactLayout
+        ZStack {
+            Group {
+                if horizontalSizeClass == .regular {
+                    regularLayout
+                } else {
+                    compactLayout
+                }
             }
+            
+            // In-app interactive toast notification overlay
+            InAppToastOverlay()
         }
         .tint(AppTheme.accent)
         .imageScale(.small)
@@ -55,6 +61,9 @@ struct ContentView: View {
             tabNavigation.reconcileSelection(with: featureVisibility)
         }
         .onChange(of: adminSettings.tabSettings) { _ in
+            tabNavigation.reconcileSelection(with: featureVisibility)
+        }
+        .onChange(of: keyStore.activeSession?.key.status) { _ in
             tabNavigation.reconcileSelection(with: featureVisibility)
         }
         .onAppear {

@@ -4,34 +4,33 @@ struct AdminPanelView: View {
     @Binding var isPresented: Bool
     @EnvironmentObject var keyStore: KeyStore
     @EnvironmentObject var adminSettings: AdminSettings
-    
+
     @State private var showCreateKey = false
     @State private var selectedTab = 0
-    
+
     var body: some View {
         NavigationView {
             TabView(selection: $selectedTab) {
-                // Tab Controls
+                // Tab 0 – Tab Controls
                 tabControlsView
-                    .tabItem {
-                        Label("Tabs", systemImage: "square.grid.2x2")
-                    }
+                    .tabItem { Label("Tabs", systemImage: "square.grid.2x2") }
                     .tag(0)
-                
-                // Key Management
+
+                // Tab 1 – Key Management
                 keyManagementView
-                    .tabItem {
-                        Label("Keys", systemImage: "key.fill")
-                    }
+                    .tabItem { Label("Keys", systemImage: "key.fill") }
                     .tag(1)
+
+                // Tab 2 – Push Broadcast
+                BroadcastComposeView()
+                    .tabItem { Label("Notificar", systemImage: "megaphone.fill") }
+                    .tag(2)
             }
             .navigationTitle("Panel Admin")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cerrar") {
-                        isPresented = false
-                    }
+                    Button("Cerrar") { isPresented = false }
                 }
             }
         }
@@ -805,6 +804,170 @@ struct ReduceTimeSheet: View {
                     Button("Cancelar") {
                         dismiss()
                     }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Broadcast Compose View
+// Lets the admin compose and send a push notification + server-feed message
+// to all devices or a specific keyString, directly from inside the app.
+
+struct BroadcastComposeView: View {
+    @State private var title: String = ""
+    @State private var message: String = ""
+    @State private var targetKey: String = "ALL"
+    @State private var linkURL: String = ""
+    @State private var linkTitle: String = ""
+    @State private var isUrgent: Bool = false
+    @State private var alsoPostFeed: Bool = true
+
+    @State private var isSending: Bool = false
+    @State private var resultMessage: String? = nil
+    @State private var resultIsError: Bool = false
+
+    var body: some View {
+        Form {
+            Section {
+                TextField("Título", text: $title)
+                TextField("Mensaje", text: $message, axis: .vertical)
+                    .lineLimit(3...6)
+            } header: {
+                Text("Contenido")
+            } footer: {
+                Text("El mensaje se enviará como notificación push a todos los dispositivos registrados.")
+            }
+
+            Section {
+                TextField("Dirigido a (key o ALL)", text: $targetKey)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .font(.system(.body, design: .monospaced))
+            } header: {
+                Text("Destinatario")
+            } footer: {
+                Text("Usa \"ALL\" para enviar a todos. O escribe un keyString específico.")
+            }
+
+            Section {
+                TextField("URL del enlace (opcional)", text: $linkURL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.URL)
+                TextField("Texto del botón de enlace", text: $linkTitle)
+            } header: {
+                Text("Enlace Opcional")
+            }
+
+            Section {
+                Toggle(isOn: $isUrgent) {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(isUrgent ? .red : .gray)
+                        Text("Urgente (toast 10s, borde rojo)")
+                    }
+                }
+                Toggle(isOn: $alsoPostFeed) {
+                    HStack {
+                        Image(systemName: "list.bullet.rectangle.fill")
+                            .foregroundStyle(alsoPostFeed ? .blue : .gray)
+                        Text("Publicar también en el feed")
+                    }
+                }
+            } header: {
+                Text("Opciones")
+            }
+
+            Section {
+                Button {
+                    sendBroadcast()
+                } label: {
+                    HStack {
+                        if isSending {
+                            ProgressView()
+                                .tint(.white)
+                                .padding(.trailing, 6)
+                        } else {
+                            Image(systemName: "paperplane.fill")
+                        }
+                        Text(isSending ? "Enviando…" : "Enviar Notificación")
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(title.isEmpty || message.isEmpty || isSending)
+                .tint(isUrgent ? .red : AppTheme.accent)
+            }
+
+            if let result = resultMessage {
+                Section {
+                    HStack(spacing: 10) {
+                        Image(systemName: resultIsError ? "xmark.circle.fill" : "checkmark.circle.fill")
+                            .foregroundStyle(resultIsError ? .red : .green)
+                        Text(result)
+                            .font(.footnote)
+                            .foregroundStyle(resultIsError ? .red : .green)
+                    }
+                }
+            }
+        }
+        .navigationTitle("Notificar Usuarios")
+    }
+
+    private func sendBroadcast() {
+        let trimTitle   = title.trimmingCharacters(in: .whitespaces)
+        let trimMessage = message.trimmingCharacters(in: .whitespaces)
+        let trimTarget  = targetKey.trimmingCharacters(in: .whitespaces).uppercased()
+        let trimURL     = linkURL.trimmingCharacters(in: .whitespaces)
+        let trimBtnText = linkTitle.trimmingCharacters(in: .whitespaces)
+
+        guard !trimTitle.isEmpty, !trimMessage.isEmpty else { return }
+
+        isSending = true
+        resultMessage = nil
+
+        Task {
+            do {
+                // 1. Send push notification to devices
+                try await KeyAPIService.shared.sendPushBroadcast(
+                    title:     trimTitle,
+                    message:   trimMessage,
+                    keyString: trimTarget,
+                    linkURL:   trimURL.isEmpty   ? nil : trimURL,
+                    linkTitle: trimBtnText.isEmpty ? nil : trimBtnText,
+                    isUrgent:  isUrgent
+                )
+
+                // 2. Optionally post to in-app notification feed
+                if alsoPostFeed {
+                    try await KeyAPIService.shared.postAdminNotification(
+                        title:     trimTitle,
+                        message:   trimMessage,
+                        linkURL:   trimURL.isEmpty   ? nil : trimURL,
+                        linkTitle: trimBtnText.isEmpty ? nil : trimBtnText,
+                        isUrgent:  isUrgent
+                    )
+                }
+
+                await MainActor.run {
+                    isSending = false
+                    resultIsError = false
+                    resultMessage = "✅ Notificación enviada correctamente"
+                    // Clear form
+                    title = ""
+                    message = ""
+                    linkURL = ""
+                    linkTitle = ""
+                    isUrgent = false
+                }
+            } catch {
+                await MainActor.run {
+                    isSending = false
+                    resultIsError = true
+                    resultMessage = "❌ \(error.localizedDescription)"
                 }
             }
         }

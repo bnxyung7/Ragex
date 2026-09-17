@@ -40,10 +40,16 @@ struct FeatureVisibility: Equatable {
 
     let developerModeEnabled: Bool
     let tabSettings: TabVisibilitySettings
+    let hasValidAccess: Bool
 
-    init(developerModeEnabled: Bool, adminSettings: AdminSettings = .shared) {
+    init(
+        developerModeEnabled: Bool,
+        adminSettings: AdminSettings = .shared,
+        hasValidAccess: Bool = KeyStore.shared.hasValidAccess()
+    ) {
         self.developerModeEnabled = developerModeEnabled
         self.tabSettings = adminSettings.tabSettings
+        self.hasValidAccess = hasValidAccess
     }
 
     var visibleSections: [AppSection] {
@@ -59,13 +65,15 @@ struct FeatureVisibility: Equatable {
         case .patches:
             return tabSettings.patchesEnabled
         case .freeFire:
-            return tabSettings.freeFireEnabled
+            // Ocultar si la key expiró o no tiene membresía activa
+            return tabSettings.freeFireEnabled && hasValidAccess
         case .freeFireMax:
-            return tabSettings.freeFireMaxEnabled
+            // Ocultar si la key expiró o no tiene membresía activa
+            return tabSettings.freeFireMaxEnabled && hasValidAccess
         case .profile:
-            return true // Always visible
+            return true // Siempre visible para ver estado, renovar y recibir avisos
         case .support:
-            return true // Always visible
+            return true // Siempre visible
         case .bundleExplorer:
             return tabSettings.bundleExplorerEnabled
         }

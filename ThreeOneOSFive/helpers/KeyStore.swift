@@ -260,6 +260,9 @@ class KeyStore: ObservableObject {
                     let session = UserSession(key: key, activatedAt: Date())
                     self.activeSession = session
                     self.saveSession()
+                    Task { @MainActor in
+                        NotificationService.shared.resetExpirationNotification()
+                    }
                     
                     print("[KeyStore] ✅ Session created with server duration: \(duration.rawValue)")
                     completion(.success(session))
@@ -534,12 +537,8 @@ class KeyStore: ObservableObject {
     private func loadSession() {
         if let data = UserDefaults.standard.data(forKey: sessionKey),
            let decoded = try? JSONDecoder().decode(UserSession.self, from: data) {
-            // Only load if still valid
-            if !decoded.key.isExpired {
-                activeSession = decoded
-            } else {
-                UserDefaults.standard.removeObject(forKey: sessionKey)
-            }
+            // Load session even if expired so user retains their key view and renewal option
+            activeSession = decoded
         }
     }
     
@@ -561,25 +560,25 @@ class KeyStore: ObservableObject {
         if let session = activeSession {
             let key = session.key
             
-            // Log time remaining for debugging
             if let expiresAt = key.expiresAt {
                 let timeLeft = expiresAt.timeIntervalSince(Date())
-                print("[KeyStore] ⏱ Key check: \(key.timeRemaining) remaining")
                 
                 // Warning when < 1 hour left
                 if timeLeft > 0 && timeLeft < 3600 {
-                    let hoursLeft = Int(timeLeft / 3600)
-                    if hoursLeft == 0 {
-                        let minutesLeft = Int(timeLeft / 60)
-                        print("[KeyStore] ⚠️ Key expiring soon: \(minutesLeft) minutes left")
+                    let minutesLeft = max(1, Int(timeLeft / 60))
+                    print("[KeyStore] ⚠️ Key expiring soon: \(minutesLeft) minutes left")
+                    Task { @MainActor in
+                        NotificationService.shared.notifyExpiringSoon(minutesLeft: minutesLeft)
                     }
                 }
             }
             
-            // Check if expired
+            // If expired, DO NOT deactivate session! Retain session and notify
             if key.isExpired {
-                deactivateSession()
-                print("[KeyStore] Session expired, deactivated")
+                print("[KeyStore] ⏱ Key expired. Retaining session for renewal.")
+                Task { @MainActor in
+                    NotificationService.shared.notifyExpired()
+                }
             }
         }
     }
@@ -662,11 +661,12 @@ class KeyStore: ObservableObject {
                             updatedKey.userName = name
                         }
                         
-                        // Check if it expired on server
+                        // Check if it expired on server - DO NOT DEACTIVATE
                         if updatedKey.isExpired {
-                            print("[KeyStore] ⏱ Key expired on server")
-                            self.deactivateSession()
-                            return
+                            print("[KeyStore] ⏱ Key expired on server. Retaining session for renewal.")
+                            Task { @MainActor in
+                                NotificationService.shared.notifyExpired()
+                            }
                         }
                     }
                     
