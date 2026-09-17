@@ -79,9 +79,18 @@ class FileEncryptionService {
     
     /// Derive AES-256 key from master key (hardcoded)
     /// MUST match Python encrypt_patches.py MASTER_KEY
+    /// Includes Bundle ID check for anti-theft protection
     /// - Parameter userKey: Not used - kept for API compatibility
     /// - Returns: SymmetricKey for AES-256
     private func deriveKey(from userKey: String) -> SymmetricKey {
+        // Anti-theft: Log bundle ID for monitoring
+        if let bundleId = Bundle.main.bundleIdentifier {
+            if bundleId != "com.threeOneoFive.ios" {
+                print("⚠️ [Security] Decryption from unauthorized bundle: \(bundleId)")
+                // Continue anyway to not break functionality, but log for monitoring
+            }
+        }
+        
         // Use MASTER_KEY (same as Python script)
         let masterKey = "RagexMasterEncryption2024"
         let keyData = (masterKey + salt).data(using: .utf8)!
