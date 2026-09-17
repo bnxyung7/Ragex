@@ -201,16 +201,21 @@ struct ProfileView: View {
                     .background(Color.white.opacity(0.08))
                 
                 // Key details
-                VStack(spacing: 10) {
+                VStack(spacing: 4) {
                     keyDetailRow(icon: "key.fill", label: "Clave", value: session.key.keyString, copyable: true)
+                    Divider().background(Color.white.opacity(0.05))
                     keyDetailRow(icon: "clock.fill", label: "Tiempo restante", value: session.key.timeRemaining)
+                    Divider().background(Color.white.opacity(0.05))
                     keyDetailRow(icon: "calendar", label: "Fecha expiración", value: session.key.expirationDateString)
+                    Divider().background(Color.white.opacity(0.05))
                     keyDetailRow(icon: "checkmark.shield.fill", label: "Estado", value: session.key.status.displayName)
                     
                     if let userName = session.key.userName {
+                        Divider().background(Color.white.opacity(0.05))
                         keyDetailRow(icon: "person.fill", label: "Usuario asignado", value: userName)
                     }
 
+                    Divider().background(Color.white.opacity(0.05))
                     // Push notification permission row
                     pushPermissionRow
                 }
@@ -411,11 +416,11 @@ struct ProfileView: View {
     // MARK: - Helper Views
     
     private func keyDetailRow(icon: String, label: String, value: String, copyable: Bool = false) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(AppTheme.accent)
-                .frame(width: 20)
+                .frame(width: 22)
             
             Text(label)
                 .font(.system(size: 13))
@@ -426,6 +431,7 @@ struct ProfileView: View {
             Text(value)
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
                 .foregroundStyle(.white)
+                .multilineTextAlignment(.trailing)
             
             if copyable {
                 Button {
@@ -440,7 +446,7 @@ struct ProfileView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 7)
     }
     
     private func colorForNotification(_ notification: KeyNotification) -> Color {

@@ -157,26 +157,26 @@ private struct CustomTabBarItem: View {
     var body: some View {
         VStack(spacing: 4) {
             ZStack(alignment: .topTrailing) {
-                // Selected pill background
+                // Selected pill background — más visible
                 if isSelected {
-                    Capsule()
-                        .fill(AppTheme.accent.opacity(0.18))
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(AppTheme.accent.opacity(0.22))
                         .overlay(
-                            Capsule()
-                                .stroke(AppTheme.accent.opacity(0.35), lineWidth: 0.8)
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(AppTheme.accent.opacity(0.55), lineWidth: 1)
                         )
-                        .frame(width: 52, height: 32)
-                        .shadow(color: AppTheme.accent.opacity(0.25), radius: 8, x: 0, y: 2)
+                        .frame(width: 54, height: 34)
+                        .shadow(color: AppTheme.accent.opacity(0.45), radius: 10, x: 0, y: 3)
                         .transition(.scale.combined(with: .opacity))
                 } else {
                     Color.clear
-                        .frame(width: 52, height: 32)
+                        .frame(width: 54, height: 34)
                 }
 
                 // Icon
                 iconView
-                    .frame(width: 52, height: 32)
-                    .scaleEffect(isPressed ? 0.88 : (isSelected ? 1.06 : 1.0))
+                    .frame(width: 54, height: 34)
+                    .scaleEffect(isPressed ? 0.88 : (isSelected ? 1.08 : 1.0))
                     .animation(.spring(response: 0.25, dampingFraction: 0.65), value: isPressed)
                     .animation(.spring(response: 0.3,  dampingFraction: 0.7),  value: isSelected)
 
@@ -196,9 +196,9 @@ private struct CustomTabBarItem: View {
             // Label
             Text(item.title)
                 .font(.system(size: 10, weight: isSelected ? .bold : .medium))
-                .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "6B7280"))
+                .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "5A5A72"))
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .minimumScaleFactor(0.75)
                 .animation(.easeInOut(duration: 0.18), value: isSelected)
         }
         .padding(.vertical, 4)
@@ -208,28 +208,25 @@ private struct CustomTabBarItem: View {
     private var iconView: some View {
         if let assetName = item.assetImage,
            let uiImage = UIImage(named: assetName) {
-            // ─── REAL PNG LOGO ────────────────────────────────────────
-            // .renderingMode(.original) keeps full color. No template.
-            // .interpolation(.high) keeps it sharp at any size.
             Image(uiImage: uiImage)
                 .renderingMode(.original)
                 .interpolation(.high)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 22, height: 22)
-                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-                .opacity(isSelected ? 1.0 : 0.65)
+                .frame(width: 24, height: 24)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .opacity(isSelected ? 1.0 : 0.55)
+                .saturation(isSelected ? 1.0 : 0.4)
         } else {
-            // ─── SF SYMBOL ───────────────────────────────────────────
             if #available(iOS 17, *) {
                 Image(systemName: item.systemImage)
-                    .font(.system(size: 17, weight: isSelected ? .bold : .regular))
-                    .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "6B7280"))
+                    .font(.system(size: 18, weight: isSelected ? .bold : .regular))
+                    .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "5A5A72"))
                     .symbolEffect(.bounce, value: isSelected)
             } else {
                 Image(systemName: item.systemImage)
-                    .font(.system(size: 17, weight: isSelected ? .bold : .regular))
-                    .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "6B7280"))
+                    .font(.system(size: 18, weight: isSelected ? .bold : .regular))
+                    .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "5A5A72"))
             }
         }
     }

@@ -217,19 +217,19 @@ struct FreeFireView: View {
             HStack(spacing: 12) {
                 gameLogoView
                 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 6) {
                         Text(mode.rawValue)
                             .font(.system(size: 16, weight: .heavy, design: .rounded))
                             .foregroundStyle(.white)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                            .minimumScaleFactor(0.85)
                         
                         Text(mode.badgeText)
                             .font(.system(size: 9, weight: .black))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
                             .background(
                                 LinearGradient(
                                     colors: mode.badgeGradient,
@@ -240,23 +240,26 @@ struct FreeFireView: View {
                             .clipShape(Capsule())
                     }
                     
-                    HStack(spacing: 6) {
+                    // Estado en 2 líneas para evitar compresión
+                    HStack(spacing: 8) {
                         HStack(spacing: 4) {
                             PulseStatusDot(color: Color(hex: "10B981"))
                             Text("Bypass Activo")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundStyle(Color(hex: "10B981"))
+                                .fixedSize()
                         }
 
-                        Text("•")
+                        Text("·")
                             .font(.caption2)
                             .foregroundStyle(Color(hex: "64748B"))
 
                         Text("120 FPS")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(AppTheme.accent)
+                            .fixedSize()
 
-                        Text("•")
+                        Text("·")
                             .font(.caption2)
                             .foregroundStyle(Color(hex: "64748B"))
 
@@ -280,8 +283,8 @@ struct FreeFireView: View {
                                     .font(.system(size: 9, weight: .black))
                                     .foregroundStyle(AppTheme.accent)
                             }
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
                             .background(AppTheme.accent.opacity(0.12))
                             .clipShape(Capsule())
                             .overlay(Capsule().stroke(AppTheme.accent.opacity(0.3), lineWidth: 0.6))
@@ -289,6 +292,7 @@ struct FreeFireView: View {
                         .buttonStyle(.plain)
                         .disabled(isRefreshing)
                     }
+                    .fixedSize(horizontal: false, vertical: true)
                 }
                 
                 Spacer()
@@ -301,7 +305,7 @@ struct FreeFireView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, 14)
         .background(Color(hex: "0C0D14"))
         .overlay(
             Rectangle()
