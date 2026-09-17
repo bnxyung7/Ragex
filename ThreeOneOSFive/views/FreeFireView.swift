@@ -63,6 +63,7 @@ struct FreeFireView: View {
     enum PatchCategory: String, CaseIterable, Identifiable {
         case aimbot = "AIMBOT"
         case holograma = "HOLOGRAMA"
+        case modSkin = "MOD SKIN"
         case others = "OTROS"
         
         var id: String { rawValue }
@@ -71,6 +72,7 @@ struct FreeFireView: View {
             switch self {
             case .aimbot: return "scope"
             case .holograma: return "cube.transparent"
+            case .modSkin: return "paintbrush.fill"
             case .others: return "ellipsis.circle"
             }
         }
@@ -950,8 +952,12 @@ struct BundlePatch: Identifiable {
         } else if folderName == "HOLOGRAMA" || folderName == "ARMA" || folderName == "PERSONAJE" ||
                   filename.contains("HOLOGRAMA") || filename.contains("ARMA") ||
                   filename.contains("WEAPON") || filename.contains("PERSONAJE") ||
-                  filename.contains("CHARACTER") || filename.contains("SKIN") {
+                  filename.contains("CHARACTER") {
             return .holograma
+        } else if folderName == "MOD_SKIN" || folderName == "TEXTURA" || folderName == "TEXTURE" ||
+                  filename.contains("TEXTURA") || filename.contains("TEXTURE") ||
+                  filename.contains("SKIN") || filename.contains("MOD") {
+            return .modSkin
         }
         
         return .others
