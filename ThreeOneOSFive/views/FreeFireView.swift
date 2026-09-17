@@ -518,37 +518,10 @@ struct FreeFireView: View {
             .padding(.top, 36)
             
             VStack(spacing: AppTheme.spacing8) {
-                Text("Categoría Vacía")
+                Text("Categoría vacía")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-                
-                Text("No hay parches precargados en esta sección para \(mode.rawValue).\nPuedes importar tus proyectos .3105 o solicitarlos al soporte oficial.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color(hex: "94A3B8"))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(3)
-                    .padding(.horizontal, AppTheme.spacing24)
             }
-            
-            Button {
-                showAnnouncementsSheet = true
-            } label: {
-                HStack(spacing: AppTheme.spacing6) {
-                    Image(systemName: "megaphone.fill")
-                        .font(.system(size: 12))
-                    Text("Ver Anuncios y Novedades")
-                        .font(.system(size: 13, weight: .bold))
-                }
-                .foregroundStyle(.white)
-                .padding(.horizontal, AppTheme.spacing16)
-                .padding(.vertical, 9)
-                .background(
-                    Capsule()
-                        .fill(AppTheme.accent)
-                )
-                .shadow(color: AppTheme.accent.opacity(0.4), radius: 6)
-            }
-            .padding(.top, AppTheme.spacing6)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 30)
@@ -628,7 +601,7 @@ struct FreeFireView: View {
         isRefreshing = true
         defer { isRefreshing = false }
 
-        // 1. Reload bundle patches from disk (picks up any newly added .3105 files)
+        // 1. Reload bundle patches from disk
         loadBundlePatches()
 
         // 2. Refresh patch store so toggle states are current
