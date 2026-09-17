@@ -291,9 +291,7 @@ struct FreeFireView: View {
                     }
                 }
                 
-                Spacer(minLength: 8)
-                
-                viewAnnouncementButton
+                Spacer()
             }
             .padding(.horizontal, AppTheme.pageInset)
             .padding(.vertical, AppTheme.spacing12)
@@ -335,31 +333,6 @@ struct FreeFireView: View {
                 .background(AppTheme.accent.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
-    }
-    
-    private var viewAnnouncementButton: some View {
-        Button {
-            showAnnouncementsSheet = true
-        } label: {
-            VStack(spacing: AppTheme.spacing2) {
-                Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(AppTheme.accent)
-                
-                Text("Anuncios")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 52)
-            .padding(.vertical, AppTheme.spacing8)
-            .background(Color(hex: "171827"))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(AppTheme.accent.opacity(0.30), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
     }
     
     private func marqueeBanner(_ latest: LiveAnnouncement) -> some View {
@@ -787,7 +760,7 @@ struct FreeFireView: View {
                     .font(.system(size: 22, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 
-                Text("Activa tu clave de acceso desde la pestaña Perfil para habilitar el motor de inyección.")
+                Text("Activa tu clave de acceso desde la pestaña Perfil para desbloquear todas las funciones.")
                     .font(.subheadline)
                     .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)

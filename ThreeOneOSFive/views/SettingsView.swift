@@ -35,7 +35,7 @@ struct SettingsView: View {
                                     CyberBadge(text: "v\(appVersion)", color: AppTheme.accent)
                                 }
                                 
-                                Text("Motor de Rendimiento y Parches iOS")
+                                Text("Project X")
                                     .font(.caption)
                                     .foregroundStyle(Color(hex: "94A3B8"))
                             }

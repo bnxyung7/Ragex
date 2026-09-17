@@ -35,7 +35,7 @@ struct RepositoryHomeView: View {
                                     CyberBadge(text: "iOS PRO", color: AppTheme.accent)
                                 }
                                 
-                                Text("Motor de Rendimiento y Parches para iOS")
+                                Text("Project X")
                                     .font(.subheadline)
                                     .foregroundStyle(Color(hex: "94A3B8"))
                             }

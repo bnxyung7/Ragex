@@ -158,7 +158,7 @@ private struct CustomTabBarItem: View {
     var body: some View {
         VStack(spacing: AppTheme.spacing4) {
             ZStack(alignment: .topTrailing) {
-                // Selected pill background - ALWAYS reactiva al isSelected
+                // Selected pill background
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(isSelected ? AppTheme.accent.opacity(0.20) : Color.clear)
                     .overlay(
@@ -197,6 +197,7 @@ private struct CustomTabBarItem: View {
                 .animation(.easeInOut(duration: 0.2), value: isSelected)
         }
         .padding(.vertical, AppTheme.spacing4)
+        .id("\(item.id)-\(isSelected)")
     }
 
     @ViewBuilder
