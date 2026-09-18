@@ -254,6 +254,7 @@ class AppState: ObservableObject {
     var isSupported: Bool { unsupportedMessage == nil }
 
     func detectSupport() {
+        log("app: detectSupport called — checking iOS compatibility")
         let v = AppInfo.versionTuple
         let supported = ExploitSupportPolicy.isSupported(
             major: v.major,
@@ -261,6 +262,7 @@ class AppState: ObservableObject {
             patch: v.patch,
             build: AppInfo.osBuild
         )
+        log("app: iOS \(v.major).\(v.minor).\(v.patch) (\(AppInfo.osBuild)) — supported=\(supported)")
 #if targetEnvironment(simulator)
         if ProcessInfo.processInfo.arguments.contains("--simulate-access") {
             exploitStatus = .success(method: "Simulator preview")
@@ -270,6 +272,7 @@ class AppState: ObservableObject {
         unsupportedMessage = supported ? nil : "iOS \(AppInfo.osVersion) (\(AppInfo.osBuild))"
         if let unsupportedMessage {
             exploitStatus = .unsupported(unsupportedMessage)
+            log("app: unsupported iOS version")
             return
         }
 
@@ -279,7 +282,11 @@ class AppState: ObservableObject {
             patch: v.patch,
             build: AppInfo.osBuild
         )
-        guard applicable else { return }
+        log("app: KernelExploit.isApplicable=\(applicable)")
+        guard applicable else {
+            log("app: kernel exploit not applicable for this iOS version")
+            return
+        }
 
         refreshKernelExploitStatus()
         // Auto-run activado para ejecutar exploit automáticamente al iniciar
@@ -287,10 +294,14 @@ class AppState: ObservableObject {
     }
 
     private func maybeAutoRunKernelExploit() {
+        log("app: maybeAutoRunKernelExploit called — kernelExploitRunning=\(kernelExploitRunning), exploitStatus=\(exploitStatus), autoRunAttempted=\(autoRunAttempted)")
         guard !kernelExploitRunning,
               !exploitStatus.isSuccess,
               !exploitStatus.isFailed,
-              !autoRunAttempted else { return }
+              !autoRunAttempted else {
+            log("app: skipping auto-run — guard condition failed")
+            return
+        }
         autoRunAttempted = true
         log("app: starting kernel exploit automatically")
         runKernelExploitIfNeeded()
