@@ -34,7 +34,8 @@ struct ChangelogView: View {
                 "A new IPA install no longer leaves leftover options marked Activado.",
                 "Settings Activación, language, exploit restart, and cache clear actually apply.",
                 "Bottom tabs switch immediately; selected tab is no longer stuck white on Home.",
-                "Deactivate still restores the original game file after the app is closed and reopened."
+                "Deactivate still restores the original game file after the app is closed and reopened.",
+                "Deactivate puts the real original file back instead of a cloned copy of the patch."
             ],
             compatibility: [
                 "iOS 17.0–26.x kernel apply. iOS 27 is not compatible."

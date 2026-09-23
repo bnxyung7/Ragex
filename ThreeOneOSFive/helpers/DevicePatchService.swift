@@ -145,6 +145,26 @@ enum DevicePatchService {
         log("patch: sidecar restore done name=\(project.name)")
     }
 
+    static func verifyUnpatched(project: PatchProject) throws {
+        let bundleIDs = orderedBundleIdentifiers(in: project)
+        try withResolvedContainers(bundleIDs: bundleIDs) { roots in
+            for rule in project.rules {
+                guard let root = roots[rule.bundleID] else { continue }
+                let target = try PatchPathValidator.resolveContainedTargetURL(
+                    relativePath: rule.relativePath,
+                    containerRoot: root
+                )
+                guard let onDisk = try? Data(contentsOf: target, options: [.mappedIfSafe]) else {
+                    continue
+                }
+                if onDisk == rule.replacementData {
+                    log("patch: still patched after restore \(rule.bundleID)/\(rule.relativePath)")
+                    throw PatchPackageError.restoreFailed
+                }
+            }
+        }
+    }
+
     static func verifyRestored(receipt: PatchTransactionReceipt) throws {
         let bundleIDs = try PatchTransaction.requiredBundleIdentifiers(for: receipt)
         try withResolvedContainers(bundleIDs: bundleIDs) { roots in

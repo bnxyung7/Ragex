@@ -658,6 +658,14 @@ struct FreeFireView: View {
                             log("freeFire: sidecar restore error \(error.localizedDescription)")
                         }
                     }
+                    if restored {
+                        do {
+                            try DevicePatchService.verifyUnpatched(project: resolvedProject)
+                        } catch {
+                            log("freeFire: file still patched after restore")
+                            restored = false
+                        }
+                    }
                     guard restored else {
                         throw NSError(domain: "FreeFire", code: 3, userInfo: [
                             NSLocalizedDescriptionKey: "No se pudo desactivar \(patch.displayName). Inténtalo de nuevo."

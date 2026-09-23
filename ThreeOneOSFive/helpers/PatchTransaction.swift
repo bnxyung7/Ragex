@@ -224,9 +224,11 @@ enum PatchTransaction {
                     let sidecarName = resolved.target.lastPathComponent + ".xorig"
                     let sidecarURL = resolved.target.deletingLastPathComponent()
                         .appendingPathComponent(sidecarName)
-                    if !fileManager.fileExists(atPath: sidecarURL.path) {
-                        try cloneOrCopy(from: resolved.target, to: sidecarURL, fileManager: fileManager)
-                    }
+                    try preserveOriginal(
+                        at: resolved.target,
+                        sidecar: sidecarURL,
+                        fileManager: fileManager
+                    )
                     backupFilename = "sidecar:" + sidecarName
                 }
                 records.append(Record(
@@ -385,7 +387,11 @@ enum PatchTransaction {
                             throw PatchPackageError.restoreFailed
                         }
                         log("patch: restoring original \(item.record.bundleID)/\(item.record.relativePath)")
-                        try forceCopy(backup, to: item.target, fileManager: fileManager)
+                        try restorePreservedOriginal(
+                            sidecar: backup,
+                            to: item.target,
+                            fileManager: fileManager
+                        )
                     } else if fileManager.fileExists(atPath: item.target.path) {
                         log("patch: removing patched file that had no original \(item.record.relativePath)")
                         try fileManager.removeItem(at: item.target)
@@ -565,7 +571,11 @@ enum PatchTransaction {
                 .appendingPathComponent(target.lastPathComponent + ".xorig")
             guard fileManager.fileExists(atPath: sidecar.path) else { continue }
             log("patch: restoring sidecar \(rule.bundleID)/\(rule.relativePath)")
-            try forceCopy(sidecar, to: target, fileManager: fileManager)
+            try restorePreservedOriginal(
+                sidecar: sidecar,
+                to: target,
+                fileManager: fileManager
+            )
             restored += 1
         }
         if restored == 0, !project.rules.isEmpty {
@@ -918,7 +928,11 @@ enum PatchTransaction {
                 ) else {
                     throw PatchPackageError.restoreFailed
                 }
-                try atomicCopy(backup, to: target, fileManager: fileManager)
+                try restorePreservedOriginal(
+                    sidecar: backup,
+                    to: target,
+                    fileManager: fileManager
+                )
             } else if fileManager.fileExists(atPath: target.path) {
                 try fileManager.removeItem(at: target)
             }
@@ -1028,13 +1042,68 @@ enum PatchTransaction {
         return transactionDirectory.appendingPathComponent(name)
     }
 
-    private static func cloneOrCopy(from source: URL, to destination: URL, fileManager: FileManager) throws {
-        if clonefile(source.path, destination.path, 0) == 0 {
-            log("patch: cloned backup \(destination.lastPathComponent)")
+    /// Keep the real original as its own inode. clonefile + in-place write shares extents
+    /// and leaves deactivate restoring the patched bytes.
+    private static func preserveOriginal(
+        at target: URL,
+        sidecar: URL,
+        fileManager: FileManager
+    ) throws {
+        if fileManager.fileExists(atPath: sidecar.path) {
+            if filesAreByteIdentical(target, sidecar, fileManager: fileManager) {
+                log("patch: discarding sidecar that matches the patched file \(sidecar.lastPathComponent)")
+                try? fileManager.removeItem(at: sidecar)
+                return
+            }
+            log("patch: keeping existing original sidecar \(sidecar.lastPathComponent)")
+            try? fileManager.removeItem(at: target)
             return
         }
-        log("patch: clone unavailable errno=\(errno), copying backup")
-        try fileManager.copyItem(at: source, to: destination)
+        do {
+            try fileManager.moveItem(at: target, to: sidecar)
+            log("patch: renamed original to \(sidecar.lastPathComponent)")
+            return
+        } catch {
+            log("patch: rename original failed \(error.localizedDescription)")
+        }
+        let original = try Data(contentsOf: target, options: [.mappedIfSafe])
+        try original.write(to: sidecar, options: .atomic)
+        log("patch: wrote independent original backup \(sidecar.lastPathComponent) bytes=\(original.count)")
+    }
+
+    private static func restorePreservedOriginal(
+        sidecar: URL,
+        to target: URL,
+        fileManager: FileManager
+    ) throws {
+        guard fileManager.fileExists(atPath: sidecar.path) else {
+            throw PatchPackageError.restoreFailed
+        }
+        if fileManager.fileExists(atPath: target.path) {
+            try fileManager.removeItem(at: target)
+        }
+        do {
+            try fileManager.moveItem(at: sidecar, to: target)
+            log("patch: renamed original back \(target.lastPathComponent)")
+            return
+        } catch {
+            log("patch: rename-back failed \(error.localizedDescription)")
+        }
+        let original = try Data(contentsOf: sidecar, options: [.mappedIfSafe])
+        try forceWrite(original, to: target, preservingExistingAttributes: true, fileManager: fileManager)
+        try? fileManager.removeItem(at: sidecar)
+        log("patch: copied original back \(target.lastPathComponent) bytes=\(original.count)")
+    }
+
+    private static func filesAreByteIdentical(_ a: URL, _ b: URL, fileManager: FileManager) -> Bool {
+        let sa = (try? fileManager.attributesOfItem(atPath: a.path)[.size] as? NSNumber)?.int64Value
+        let sb = (try? fileManager.attributesOfItem(atPath: b.path)[.size] as? NSNumber)?.int64Value
+        guard let sa, let sb, sa == sb else { return false }
+        guard let da = try? Data(contentsOf: a, options: [.mappedIfSafe]),
+              let db = try? Data(contentsOf: b, options: [.mappedIfSafe]) else {
+            return false
+        }
+        return da == db
     }
 
     private static func forceWrite(
