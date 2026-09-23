@@ -52,7 +52,7 @@ struct ContentView: View {
         .onAppear {
             reconcile()
             SoundPlayer.shared.playWelcome()
-            if !UserDefaults.standard.bool(forKey: "hasSeenWelcome") {
+            if !OnboardingStore.shouldShow(), !UserDefaults.standard.bool(forKey: "hasSeenWelcome") {
                 showWelcome = true
                 UserDefaults.standard.set(true, forKey: "hasSeenWelcome")
             }

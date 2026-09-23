@@ -36,6 +36,53 @@ struct SettingsView: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 12)
 
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(language.text("language.section"))
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color(hex: "475569"))
+                                .padding(.horizontal, 4)
+
+                            VStack(spacing: 0) {
+                                ForEach(Array(AppLanguage.allCases.enumerated()), id: \.element.id) { index, option in
+                                    Button {
+                                        UserDefaults.standard.set(option.rawValue, forKey: AppLanguage.storageKey)
+                                        UserDefaults.standard.set(true, forKey: "x.language.userChosen")
+                                    } label: {
+                                        HStack(spacing: 12) {
+                                            Text(option.flag)
+                                                .font(.system(size: 22))
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(option.nativeName.uppercased())
+                                                    .font(.system(size: 14, weight: .semibold))
+                                                    .foregroundStyle(.white)
+                                                Text(option.regionLabel)
+                                                    .font(.caption2)
+                                                    .foregroundStyle(Color(hex: "475569"))
+                                            }
+                                            Spacer()
+                                            if language.rawValue == option.rawValue {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundStyle(Color(hex: "10B981"))
+                                            }
+                                        }
+                                        .padding(.horizontal, 14).padding(.vertical, 12)
+                                    }
+                                    .buttonStyle(.plain)
+                                    if index < AppLanguage.allCases.count - 1 {
+                                        Divider().background(Color.white.opacity(0.05)).padding(.leading, 52)
+                                    }
+                                }
+                            }
+                            .background(Color(hex: "0A0A0A"), in: RoundedRectangle(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.06), lineWidth: 1))
+
+                            Text(language.text("language.footer"))
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(Color(hex: "475569"))
+                                .padding(.horizontal, 4)
+                        }
+                        .padding(.horizontal, 16)
+
                         // Herramientas
                         VStack(alignment: .leading, spacing: 10) {
                             Text("HERRAMIENTAS")

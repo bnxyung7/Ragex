@@ -3,19 +3,65 @@ import SwiftUI
 enum AppLanguage: String, CaseIterable, Identifiable {
     static let storageKey = "appLanguage"
 
+    case spanish = "es"
     case english = "en"
+    case portuguese = "pt"
 
     var id: String { rawValue }
-    var locale: Locale { Locale(identifier: rawValue) }
 
-    var displayName: String {
+    var locale: Locale {
         switch self {
-        case .english: return "English"
+        case .spanish: return Locale(identifier: "es")
+        case .english: return Locale(identifier: "en")
+        case .portuguese: return Locale(identifier: "pt-BR")
         }
     }
 
+    var nativeName: String {
+        switch self {
+        case .spanish: return "Español"
+        case .english: return "English"
+        case .portuguese: return "Português"
+        }
+    }
+
+    var regionLabel: String {
+        switch self {
+        case .spanish: return "ESPAÑA · LATINOAMÉRICA"
+        case .english: return "UNITED STATES · INTERNATIONAL"
+        case .portuguese: return "BRASIL · PORTUGAL"
+        }
+    }
+
+    var flag: String {
+        switch self {
+        case .spanish: return "🇪🇸"
+        case .english: return "🇺🇸"
+        case .portuguese: return "🇧🇷"
+        }
+    }
+
+    var displayName: String { nativeName }
+
+    static func recommended() -> AppLanguage {
+        let code = Locale.current.language.languageCode?.identifier.lowercased() ?? "en"
+        if code.hasPrefix("es") { return .spanish }
+        if code.hasPrefix("pt") { return .portuguese }
+        return .english
+    }
+
+    static var current: AppLanguage {
+        AppLanguage(rawValue: UserDefaults.standard.string(forKey: storageKey) ?? "") ?? recommended()
+    }
+
     func text(_ key: String) -> String {
-        localizedBundle.localizedString(forKey: key, value: key, table: nil)
+        let local = localizedBundle.localizedString(forKey: key, value: nil, table: nil)
+        if local != key { return local }
+        guard let enPath = Bundle.main.path(forResource: "en", ofType: "lproj"),
+              let english = Bundle(path: enPath) else {
+            return key
+        }
+        return english.localizedString(forKey: key, value: key, table: nil)
     }
 
     func text(_ key: String, _ arguments: CVarArg...) -> String {
@@ -32,7 +78,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 private struct AppLanguageEnvironmentKey: EnvironmentKey {
-    static let defaultValue = AppLanguage.english
+    static let defaultValue = AppLanguage.spanish
 }
 
 extension EnvironmentValues {

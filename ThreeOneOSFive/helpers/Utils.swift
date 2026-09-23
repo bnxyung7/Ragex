@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 import Darwin
 import Combine
+import Security
 
 // MARK: - Global logger
 class AppLog: ObservableObject {
@@ -206,5 +207,70 @@ enum AppUpdateChecker {
     private static func numericParts(_ version: String) -> [Int] {
         let core = version.split(separator: "-").first.map(String.init) ?? version
         return core.split(separator: ".").compactMap { Int($0.filter(\.isNumber)) }
+    }
+}
+
+// MARK: - Stable device identity (survives IPA reinstall)
+
+enum DeviceIdentity {
+    private static let service = "com.x.device-identity"
+    private static let account = "stable-device-id"
+    private static let defaultsKey = "com.x.deviceId"
+
+    /// Persistent ID stored in Keychain. Does not change when the user installs a new IPA.
+    static func stableId() -> String {
+        if let stored = readKeychain(), !stored.isEmpty {
+            UserDefaults.standard.set(stored, forKey: defaultsKey)
+            return stored
+        }
+        if let legacy = UserDefaults.standard.string(forKey: defaultsKey), !legacy.isEmpty {
+            saveKeychain(legacy)
+            return legacy
+        }
+        let generated = UUID().uuidString
+        saveKeychain(generated)
+        UserDefaults.standard.set(generated, forKey: defaultsKey)
+        return generated
+    }
+
+    static func vendorId() -> String? {
+        UIDevice.current.identifierForVendor?.uuidString
+    }
+
+    static func requestFields() -> [String: String] {
+        var fields = ["deviceId": stableId()]
+        if let vendor = vendorId() {
+            fields["vendorId"] = vendor
+            fields["identifierForVendor"] = vendor
+        }
+        return fields
+    }
+
+    private static func readKeychain() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        guard status == errSecSuccess, let data = item as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private static func saveKeychain(_ value: String) {
+        let payload = Data(value.utf8)
+        let base: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        ]
+        SecItemDelete(base as CFDictionary)
+        var add = base
+        add[kSecValueData as String] = payload
+        SecItemAdd(add as CFDictionary, nil)
     }
 }

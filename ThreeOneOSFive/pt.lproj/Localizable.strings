@@ -1,20 +1,20 @@
 ﻿"app.subtitle" = "MobileGestalt editor";
 "app.capability_editor" = "MobileGestalt capability editor";
-"common.close" = "Close";
-"common.done" = "Done";
+"common.close" = "Fechar";
+"common.done" = "Concluir";
 "common.ok" = "OK";
-"common.cancel" = "Cancel";
+"common.cancel" = "Cancelar";
 "common.delete" = "Delete";
 "common.clear" = "Clear search";
 "common.failed" = "Failed";
 "common.version" = "Version %@";
 "common.device" = "Device";
 "common.reboot" = "Reboot";
-"common.next" = "Next";
-"common.back" = "Back";
-"common.finish" = "Finish";
+"common.next" = "Seguinte";
+"common.back" = "Voltar";
+"common.finish" = "Concluir";
 
-"update.title" = "Update available";
+"update.title" = "Atualizacao disponivel";
 "update.message" = "X %@ is available on GitHub.";
 "update.agree" = "OK";
 "update.dismiss" = "Don't show again";
@@ -27,28 +27,28 @@
 "attribution.open" = "Open link";
 "attribution.share" = "Share link";
 
-"onboarding.step" = "STEP %@ OF %@";
-"onboarding.language_title" = "SELECT LANGUAGE";
-"onboarding.language_subtitle" = "The interface uses this language. You can change it later in Settings.";
+"onboarding.step" = "PASSO %@ DE %@";
+"onboarding.language_title" = "SELECIONAR IDIOMA";
+"onboarding.language_subtitle" = "A interface usara este idioma. Voce pode alterar depois em Ajustes.";
 "onboarding.language_hint" = "SELECTED: %@";
-"onboarding.welcome_title" = "WELCOME TO X";
-"onboarding.welcome_message" = "A professional iOS platform. Developed by Bnxyung7.";
-"onboarding.welcome_badge" = "OFFICIAL IDENTITY";
-"language.section" = "LANGUAGE";
-"language.footer" = "Applies to the entire interface.";
-"key.error.other_device" = "This key is already active on another device.";
-"onboarding.versions_title" = "Supported iOS versions";
-"onboarding.versions_subtitle" = "X is verified on the ranges below. Unsupported builds are blocked.";
-"onboarding.versions_footer" = "This device: iOS %@ (%@)";
+"onboarding.welcome_title" = "BEM-VINDO AO X";
+"onboarding.welcome_message" = "Plataforma profissional para iOS. Desenvolvido por Bnxyung7.";
+"onboarding.welcome_badge" = "IDENTIDADE OFICIAL";
+"language.section" = "IDIOMA";
+"language.footer" = "Aplica-se a toda a interface.";
+"key.error.other_device" = "Esta key ja esta ativa em outro dispositivo.";
+"onboarding.versions_title" = "Versoes de iOS suportadas";
+"onboarding.versions_subtitle" = "O X esta verificado nas faixas abaixo. Builds nao listadas ficam bloqueadas.";
+"onboarding.versions_footer" = "Este dispositivo: iOS %@ (%@)";
 "onboarding.beta" = "Beta";
 "onboarding.developer_beta" = "Developer Beta %@";
 "onboarding.public_beta" = "Public Beta %@";
-"onboarding.install_title" = "Certificate requirements";
-"onboarding.install_message" = "X requires a supported signing method to access device features.";
-"onboarding.install_ok" = "Works with enterprise certificates, including eSign and similar enterprise installs.";
-"onboarding.install_bad" = "Does not work with SideStore, AltStore, 3uTools or LiveContainer.";
-"onboarding.install_jailbreak" = "On iOS 17 through iOS 18.7.1, X will not work if the device is jailbroken.";
-"onboarding.install_footer" = "Use a supported certificate on a non-jailbroken device before continuing.";
+"onboarding.install_title" = "Requisitos de certificado";
+"onboarding.install_message" = "O X exige um metodo de assinatura compativel para acessar os recursos do dispositivo.";
+"onboarding.install_ok" = "Funciona com certificados enterprise, incluindo eSign e instalacoes enterprise semelhantes.";
+"onboarding.install_bad" = "Nao funciona com SideStore, AltStore, 3uTools ou LiveContainer.";
+"onboarding.install_jailbreak" = "Do iOS 17 ao iOS 18.7.1, o X nao funciona se o dispositivo estiver com jailbreak.";
+"onboarding.install_footer" = "Use um certificado compativel em um dispositivo sem jailbreak antes de continuar.";
 
 "dashboard.exploit_access" = "Exploit access";
 "dashboard.ready_to_edit" = "Ready to edit";
@@ -61,7 +61,7 @@
 "dashboard.run_exploit" = "Run Exploit";
 "dashboard.editor_locked" = "The editor unlocks after write access is granted.";
 "dashboard.device_name" = "Device name";
-"dashboard.hardware_model" = "Hardware model";
+"dashboard.hardware_model" = "Modelo de hardware";
 "dashboard.access_footer" = "Access is reported as successful only after the system file opens for reading and writing.";
 "dashboard.unsupported_footer" = "iOS %@ (%@) is outside the verified range. Supported: iOS 17.0–17.7.x, iOS 18.0–18.7.1, iOS 26.0–26.6.1, iOS 27.0 Developer Beta 1–4 and Public Beta 1–2.";
 "dashboard.app_browser" = "App Data Browser";
@@ -79,9 +79,9 @@
 "dashboard.enterprise_signing" = "X only works when signed with an enterprise certificate. Other installation methods are not supported.";
 "dashboard.features" = "Features";
 "dashboard.features_footer" = "Turn on Cleaner or Wallpapers to show it in the app navigation.";
-"tab.home" = "Home";
+"tab.home" = "Inicio";
 "tab.new" = "New";
-"tab.files" = "Files";
+"tab.files" = "Arquivos";
 "tab.patches" = "Patches";
 "tab.cleaner" = "Cleaner";
 
@@ -253,7 +253,7 @@
 "status.unsupported_reason" = "Unsupported: %@";
 "method.simulator_preview" = "Simulator preview";
 
-"settings.title" = "Settings";
+"settings.title" = "Ajustes";
 "settings.language" = "Language";
 "settings.ios_version" = "iOS Version";
 "settings.exploit_status" = "Exploit Status";
@@ -671,18 +671,18 @@
 "wallpaper.package_details" = "Package Details";
 "wallpaper.package_files" = "%lld files";
 
-"tab.home" = "Home";
-"tab.files" = "Files";
+"tab.home" = "Inicio";
+"tab.files" = "Arquivos";
 "tab.patches" = "Patches";
 
 "home.settings" = "Settings";
 "home.logs" = "Logs";
 
 "dashboard.device" = "Device";
-"dashboard.hardware_model" = "Hardware model";
-"dashboard.ios_version" = "iOS Version";
-"dashboard.compatibility" = "Compatibility";
-"dashboard.supported" = "Supported";
+"dashboard.hardware_model" = "Modelo de hardware";
+"dashboard.ios_version" = "Versao do iOS";
+"dashboard.compatibility" = "Compatibilidade";
+"dashboard.supported" = "Suportado";
 "dashboard.unsupported" = "Unsupported";
 "dashboard.verified_footer" = "Verified: iOS 26.0–26.6.1 and the four listed iOS 27.0 beta builds.";
 "dashboard.installation" = "Installation";

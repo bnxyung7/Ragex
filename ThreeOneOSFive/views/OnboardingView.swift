@@ -14,19 +14,19 @@ private enum OnboardingNavigationDirection {
 
 struct OnboardingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.english.rawValue
+    @AppStorage(AppLanguage.storageKey) private var languageCode = "es"
     @State private var step: OnboardingStep = .language
     @State private var navigationDirection: OnboardingNavigationDirection = .forward
     var onComplete: () -> Void
 
-    private var language: AppLanguage { AppLanguage(rawValue: languageCode) ?? .english }
+    private var language: AppLanguage { AppLanguage(rawValue: languageCode) ?? .spanish }
     private var motionAnimation: Animation? {
         reduceMotion ? nil : .easeInOut(duration: 0.24)
     }
 
     var body: some View {
         ZStack {
-            AppTheme.pageBackground
+            Color.black
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -37,7 +37,12 @@ struct OnboardingView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             controls
         }
-        .tint(AppTheme.accent)
+        .preferredColorScheme(.dark)
+        .onAppear {
+            if !UserDefaults.standard.bool(forKey: "x.language.userChosen") {
+                languageCode = AppLanguage.recommended().rawValue
+            }
+        }
     }
 
     private var header: some View {
@@ -56,14 +61,14 @@ struct OnboardingView: View {
             .padding(.horizontal, 20)
 
             Text(language.text("onboarding.step", "\(step.rawValue + 1)", "\(OnboardingStep.allCases.count)"))
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Color(hex: "64748B"))
                 .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         }
         .padding(.top, 16)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity)
-        .background(AppTheme.pageBackground)
+        .background(Color.black)
     }
 
     @ViewBuilder
@@ -109,66 +114,65 @@ struct OnboardingView: View {
     }
 
     private var languagePage: some View {
-        VStack(spacing: 24) {
-            AppLogo(size: 72)
+        VStack(spacing: 28) {
+            AppLogo(size: 64)
 
             VStack(spacing: 8) {
-                Text(language.text("onboarding.language_title"))
-                    .font(.title2.weight(.bold))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(language.text("onboarding.language_subtitle"))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                Text("LANGUAGE  ·  IDIOMA  ·  IDIOMA")
+                    .font(.system(size: 13, weight: .bold))
+                    .tracking(2)
+                    .foregroundStyle(Color(hex: "64748B"))
+                Text("SYSTEM LANGUAGE")
+                    .font(.system(size: 22, weight: .heavy))
+                    .foregroundStyle(.white)
+                Text("ESPAÑOL  ·  ENGLISH  ·  PORTUGUÊS")
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(Color(hex: "94A3B8"))
             }
 
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 ForEach(AppLanguage.allCases) { option in
                     let isSelected = languageCode == option.rawValue
                     Button {
                         languageCode = option.rawValue
+                        UserDefaults.standard.set(true, forKey: "x.language.userChosen")
                     } label: {
-                        HStack(spacing: 12) {
-                            Text(option.displayName)
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Spacer()
-                            if isSelected {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(AppTheme.accent)
-                                    .font(.title3)
-                                    .transition(.scale.combined(with: .opacity))
-                            } else {
-                                Image(systemName: "circle")
-                                    .foregroundStyle(.secondary.opacity(0.5))
+                        HStack(spacing: 14) {
+                            Text(option.flag)
+                                .font(.system(size: 28))
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(option.nativeName.uppercased())
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(.white)
+                                Text(option.regionLabel)
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(Color(hex: "64748B"))
                             }
+                            Spacer()
+                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                .font(.title3)
+                                .foregroundStyle(isSelected ? Color(hex: "10B981") : Color.white.opacity(0.18))
                         }
                         .padding(.horizontal, 16)
-                        .frame(minHeight: 56)
+                        .frame(minHeight: 72)
                         .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color(uiColor: .secondarySystemBackground))
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(Color(hex: "0A0A0A"))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(isSelected ? AppTheme.accent : Color.secondary.opacity(0.12), lineWidth: 1)
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .stroke(isSelected ? Color(hex: "10B981").opacity(0.55) : Color.white.opacity(0.08), lineWidth: 1)
                                 )
                         )
-                        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
-                    .animation(motionAnimation, value: languageCode)
                 }
             }
 
-            Text(language.text("onboarding.language_hint", language.displayName))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(language.text("onboarding.language_subtitle"))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Color(hex: "64748B"))
                 .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .top)
     }
@@ -346,9 +350,9 @@ struct OnboardingView: View {
         .padding(.top, 12)
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity)
-        .background(.bar)
+        .background(Color.black)
         .overlay(alignment: .top) {
-            Divider()
+            Divider().background(Color.white.opacity(0.08))
         }
     }
 
@@ -396,6 +400,7 @@ struct OnboardingView: View {
 }
 
 enum OnboardingStore {
+    static let languageSetupKey = "x.language.system.completed"
     static let completedVersionKey = "onboarding.completedVersion"
     static let completedFingerprintKey = "onboarding.completedFingerprint"
 
@@ -434,23 +439,14 @@ enum OnboardingStore {
         if ProcessInfo.processInfo.arguments.contains("--skip-onboarding") { return false }
         if ProcessInfo.processInfo.arguments.contains("--reset-onboarding") { return true }
 #endif
-        let fp = currentFingerprint
-        if let stored = completedFingerprint, !stored.isEmpty {
-            return stored != fp
-        }
-        // Migration: old installs only have completedVersion
-        if let completed = completedVersion, !completed.isEmpty {
-            if completed == currentVersion {
-                // Same version, migrate silently — next overwrite will be detected via fingerprint
-                UserDefaults.standard.set(fp, forKey: completedFingerprintKey)
-                return false
-            }
-            return true
-        }
+        if UserDefaults.standard.bool(forKey: languageSetupKey) { return false }
+        if UserDefaults.standard.bool(forKey: "hasSeenWelcome") { return false }
         return true
     }
 
     static func markCompleted() {
+        UserDefaults.standard.set(true, forKey: languageSetupKey)
+        UserDefaults.standard.set(true, forKey: "hasSeenWelcome")
         UserDefaults.standard.set(currentVersion, forKey: completedVersionKey)
         UserDefaults.standard.set(currentFingerprint, forKey: completedFingerprintKey)
     }

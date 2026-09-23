@@ -28,20 +28,9 @@ class KeyStore: ObservableObject {
         }
     }
     
-    /// Get unique device identifier
+    /// Get unique device identifier that survives IPA reinstalls
     private func getDeviceId() -> String {
-        // Use identifierForVendor as device ID
-        if let uuid = UIDevice.current.identifierForVendor {
-            return uuid.uuidString
-        }
-        // Fallback: generate and store a UUID
-        let key = "com.x.deviceId"
-        if let stored = UserDefaults.standard.string(forKey: key) {
-            return stored
-        }
-        let newId = UUID().uuidString
-        UserDefaults.standard.set(newId, forKey: key)
-        return newId
+        DeviceIdentity.stableId()
     }
     
     /// Generate a new key with format JUSTINRAGEX-XXX-XXX
@@ -785,7 +774,7 @@ enum KeyActivationError: LocalizedError {
         case .expired:
             return "Esta Key ha expirado."
         case .alreadyActivated:
-            return "Esta Key ya está activada en otro dispositivo."
+            return AppLanguage.current.text("key.error.other_device")
         case .banned(let reason):
             return "Esta Key ha sido BANEADA: \(reason ?? "Uso indebido")"
         case .updateRequired(let minVersion):

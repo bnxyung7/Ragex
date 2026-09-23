@@ -155,12 +155,12 @@ class KeyAPIService {
         request.timeoutInterval = 15
         
         let regionCode = Locale.current.region?.identifier ?? Locale.current.regionCode ?? ""
-        let body: [String: Any] = [
-            "deviceId": deviceId,
+        var body: [String: Any] = [
             "country": regionCode,
             "countryCode": regionCode,
             "appVersion": appVersion
         ]
+        DeviceIdentity.requestFields().forEach { body[$0.key] = $0.value }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -201,12 +201,12 @@ class KeyAPIService {
         request.timeoutInterval = 15
         
         let activateRegionCode = Locale.current.region?.identifier ?? Locale.current.regionCode ?? ""
-        let activateBody: [String: Any] = [
-            "deviceId": deviceId,
+        var activateBody: [String: Any] = [
             "country": activateRegionCode,
             "countryCode": activateRegionCode,
             "appVersion": appVersion
         ]
+        DeviceIdentity.requestFields().forEach { activateBody[$0.key] = $0.value }
         request.httpBody = try JSONSerialization.data(withJSONObject: activateBody)
         
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -242,9 +242,10 @@ class KeyAPIService {
             ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String 
             ?? "3.1.0"
         request.setValue(appVersion, forHTTPHeaderField: "X-App-Version")
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "appVersion": appVersion
         ]
+        DeviceIdentity.requestFields().forEach { body[$0.key] = $0.value }
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -587,9 +588,7 @@ class KeyAPIService {
             ?? "3.1.0"
         let iosVersion = "\(AppInfo.osVersion) (\(AppInfo.osBuild))"
         let deviceModel = AppInfo.hardwareDisplayName
-        let deviceId = UIDevice.current.identifierForVendor?.uuidString
-            ?? UserDefaults.standard.string(forKey: "com.x.deviceId")
-            ?? "unknown"
+        let deviceId = DeviceIdentity.stableId()
         
         let body: [String: Any] = [
             "keyString": keyString ?? "",
