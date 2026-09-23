@@ -182,7 +182,7 @@ struct NotificationsCenterView: View {
                     Circle()
                         .fill(accentCol)
                         .frame(width: 6, height: 6)
-                    Text("\(notif.icon) \(notif.type.uppercased())")
+                    Text(notif.type.uppercased())
                         .font(.system(size: 10, weight: .black))
                         .foregroundStyle(accentCol)
                 }

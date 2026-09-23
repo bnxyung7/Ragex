@@ -205,17 +205,9 @@ enum ProductTagStatus: String, Codable {
     
     var displayName: String {
         switch self {
-        case .test: return "Test Mode"
-        case .safe: return "Safe"
-        case .banned: return "Banned"
-        }
-    }
-    
-    var emoji: String {
-        switch self {
-        case .test: return "🧪"
-        case .safe: return "✅"
-        case .banned: return "❌"
+        case .test: return "TEST"
+        case .safe: return "SAFE"
+        case .banned: return "BANNED"
         }
     }
     

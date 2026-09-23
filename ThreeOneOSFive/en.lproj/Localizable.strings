@@ -12,7 +12,7 @@
 "common.reboot" = "Reboot";
 "common.next" = "Next";
 "common.back" = "Back";
-"common.finish" = "Finish";
+"common.finish" = "Finish"; 
 
 "update.title" = "Update available";
 "update.message" = "X %@ is available on GitHub.";
@@ -28,6 +28,7 @@
 "attribution.share" = "Share link";
 
 "onboarding.step" = "STEP %@ OF %@";
+"onboarding.language_kicker" = "SYSTEM LANGUAGE";
 "onboarding.language_title" = "SELECT LANGUAGE";
 "onboarding.language_subtitle" = "The interface uses this language. You can change it later in Settings.";
 "onboarding.language_hint" = "SELECTED: %@";

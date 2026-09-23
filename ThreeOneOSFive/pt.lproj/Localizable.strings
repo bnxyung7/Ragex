@@ -28,9 +28,10 @@
 "attribution.share" = "Share link";
 
 "onboarding.step" = "PASSO %@ DE %@";
+"onboarding.language_kicker" = "IDIOMA DO SISTEMA";
 "onboarding.language_title" = "SELECIONAR IDIOMA";
-"onboarding.language_subtitle" = "A interface usara este idioma. Voce pode alterar depois em Ajustes.";
-"onboarding.language_hint" = "SELECTED: %@";
+"onboarding.language_subtitle" = "A interface usará este idioma. Você pode alterar depois em Ajustes.";
+"onboarding.language_hint" = "SELECIONADO: %@";
 "onboarding.welcome_title" = "BEM-VINDO AO X";
 "onboarding.welcome_message" = "Plataforma profissional para iOS. Desenvolvido por Bnxyung7.";
 "onboarding.welcome_badge" = "IDENTIDADE OFICIAL";

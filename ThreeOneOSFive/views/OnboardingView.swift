@@ -115,65 +115,71 @@ struct OnboardingView: View {
 
     private var languagePage: some View {
         VStack(spacing: 28) {
-            AppLogo(size: 64)
-
-            VStack(spacing: 8) {
-                Text("LANGUAGE  ·  IDIOMA  ·  IDIOMA")
-                    .font(.system(size: 13, weight: .bold))
-                    .tracking(2)
-                    .foregroundStyle(Color(hex: "64748B"))
-                Text("SYSTEM LANGUAGE")
-                    .font(.system(size: 22, weight: .heavy))
-                    .foregroundStyle(.white)
-                Text("ESPAÑOL  ·  ENGLISH  ·  PORTUGUÊS")
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(Color(hex: "94A3B8"))
-            }
+            AppLogo(size: 56)
 
             VStack(spacing: 10) {
+                Text(language.text("onboarding.language_kicker"))
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(2.4)
+                    .foregroundStyle(Color(hex: "64748B"))
+                Text(language.text("onboarding.language_title"))
+                    .font(.system(size: 26, weight: .heavy))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                Text(language.text("onboarding.language_subtitle"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color(hex: "94A3B8"))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            VStack(spacing: 8) {
                 ForEach(AppLanguage.allCases) { option in
                     let isSelected = languageCode == option.rawValue
-        Button {
-            languageCode = option.rawValue
-            UserDefaults.standard.set(true, forKey: "x.language.userChosen")
-            UserDefaults.standard.set(option.rawValue, forKey: AppLanguage.storageKey)
-        } label: {
+                    Button {
+                        languageCode = option.rawValue
+                        UserDefaults.standard.set(true, forKey: "x.language.userChosen")
+                        UserDefaults.standard.set(option.rawValue, forKey: AppLanguage.storageKey)
+                    } label: {
                         HStack(spacing: 14) {
-                            Text(option.flag)
-                                .font(.system(size: 28))
+                            Text(option.codeLabel)
+                                .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                                .foregroundStyle(isSelected ? .black : .white)
+                                .frame(width: 44, height: 44)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(isSelected ? Color.white : Color.white.opacity(0.06))
+                                )
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(option.nativeName.uppercased())
                                     .font(.system(size: 15, weight: .bold))
                                     .foregroundStyle(.white)
                                 Text(option.regionLabel)
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .tracking(0.6)
                                     .foregroundStyle(Color(hex: "64748B"))
                             }
                             Spacer()
                             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                                 .font(.title3)
-                                .foregroundStyle(isSelected ? Color(hex: "10B981") : Color.white.opacity(0.18))
+                                .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.18))
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 14)
                         .frame(minHeight: 72)
                         .background(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
                                 .fill(Color(hex: "0A0A0A"))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .stroke(isSelected ? Color(hex: "10B981").opacity(0.55) : Color.white.opacity(0.08), lineWidth: 1)
+                                        .stroke(isSelected ? Color.white.opacity(0.28) : Color.white.opacity(0.08), lineWidth: 1)
                                 )
                         )
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
+                    .accessibilityLabel(option.nativeName)
                 }
             }
-
-            Text(language.text("onboarding.language_subtitle"))
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Color(hex: "64748B"))
-                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, alignment: .top)
     }

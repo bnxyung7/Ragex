@@ -126,7 +126,7 @@ public class AnnouncementService: ObservableObject {
         let defaults: [LiveAnnouncement] = [
             LiveAnnouncement(
                 id: "ann-ff-v2",
-                title: "🔥 Soporte Free Fire",
+                title: "Soporte Free Fire",
                 message: "Integración completada. Ahora puedes inyectar y gestionar parches para Free Fire con tasa de refresco ultra rápida.",
                 tag: "NUEVO",
                 tagColor: "purple",
@@ -137,7 +137,7 @@ public class AnnouncementService: ObservableObject {
             ),
             LiveAnnouncement(
                 id: "ann-bypass-security",
-                title: "🛡️ Bypass & Protección Anti-Ban Activa",
+                title: "Bypass y protección anti-ban activa",
                 message: "Los algoritmos de seguridad de X están actualizados para las últimas versiones del juego. Conserva tu clave activa para garantizar la protección en tiempo real.",
                 tag: "SEGURIDAD",
                 tagColor: "emerald",
@@ -148,7 +148,7 @@ public class AnnouncementService: ObservableObject {
             ),
             LiveAnnouncement(
                 id: "ann-whatsapp-support",
-                title: "💎 Renovaciones y Soporte Directo 24/7",
+                title: "Renovaciones y soporte directo 24/7",
                 message: "¿Necesitas soporte técnico, nuevas keys o renovaciones de tu membresía? Nuestro equipo oficial está disponible a través de WhatsApp.",
                 tag: "OFICIAL",
                 tagColor: "amber",
@@ -159,8 +159,8 @@ public class AnnouncementService: ObservableObject {
             ),
             LiveAnnouncement(
                 id: "ann-design-obsidian",
-                title: "⚡ Diseño Obsidian Black & Cyber Violet",
-                message: "La interfaz fue refinada con acabado Obsidian Glass, sin consumo excesivo de batería y navegación fluida entre pestañas.",
+                title: "Interfaz actualizada",
+                message: "La interfaz fue refinada para una navegación más clara, menor consumo y transiciones estables entre secciones.",
                 tag: "MEJORA",
                 tagColor: "blue",
                 timestamp: "Optimizado",

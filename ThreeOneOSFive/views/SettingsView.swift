@@ -49,8 +49,14 @@ struct SettingsView: View {
                                         UserDefaults.standard.set(true, forKey: "x.language.userChosen")
                                     } label: {
                                         HStack(spacing: 12) {
-                                            Text(option.flag)
-                                                .font(.system(size: 22))
+                                            Text(option.codeLabel)
+                                                .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                                                .foregroundStyle(language.rawValue == option.rawValue ? .black : .white)
+                                                .frame(width: 38, height: 38)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                                        .fill(language.rawValue == option.rawValue ? Color.white : Color.white.opacity(0.06))
+                                                )
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text(option.nativeName.uppercased())
                                                     .font(.system(size: 14, weight: .semibold))

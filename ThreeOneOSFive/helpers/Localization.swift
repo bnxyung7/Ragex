@@ -33,11 +33,11 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         }
     }
 
-    var flag: String {
+    var codeLabel: String {
         switch self {
-        case .spanish: return "🇪🇸"
-        case .english: return "🇺🇸"
-        case .portuguese: return "🇧🇷"
+        case .spanish: return "ES"
+        case .english: return "EN"
+        case .portuguese: return "PT"
         }
     }
 

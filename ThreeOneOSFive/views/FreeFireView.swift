@@ -938,21 +938,18 @@ struct PatchToggleRow: View {
                 
                 // Product Tag Badge
                 if let tag = productTagService.getTag(for: patch.productId) {
-                    HStack(spacing: 4) {
-                        Text(tag.tag.emoji)
-                            .font(.system(size: 10))
-                        Text(tag.tag.displayName.uppercased())
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(Color(hex: tag.hexColor))
-                    }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color(hex: tag.hexColor).opacity(0.15))
-                    .cornerRadius(6)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color(hex: tag.hexColor).opacity(0.3), lineWidth: 1)
-                    )
+                    Text(tag.tag.displayName)
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(0.6)
+                        .foregroundStyle(Color(hex: tag.hexColor))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color(hex: tag.hexColor).opacity(0.15))
+                        .cornerRadius(6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color(hex: tag.hexColor).opacity(0.3), lineWidth: 1)
+                        )
                 }
             }
             
