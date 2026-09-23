@@ -20,7 +20,8 @@ final class PatchActivationStore: ObservableObject {
         didSet {
             UserDefaults.standard.set(historyEnabled, forKey: historyEnabledKey)
             if !historyEnabled {
-                clearHistory()
+                history = []
+                persist()
             } else {
                 persist()
             }
@@ -29,6 +30,8 @@ final class PatchActivationStore: ObservableObject {
 
     private let defaultsKey = "x.patch.activation.v1"
     private let historyEnabledKey = "x.patch.activation.history.enabled"
+    private let resetTokenKey = "x.patch.activation.resetToken"
+    private let resetToken = "clean-on-launch-v1"
     private let historyLimit = 80
     private let keychainService = "x.patch.activation"
     private let keychainAccount = "snapshot.v1"
@@ -40,9 +43,19 @@ final class PatchActivationStore: ObservableObject {
 
     private init() {
         historyEnabled = UserDefaults.standard.object(forKey: historyEnabledKey) as? Bool ?? false
+        if UserDefaults.standard.string(forKey: resetTokenKey) != resetToken {
+            wipePersistedState()
+            UserDefaults.standard.set(resetToken, forKey: resetTokenKey)
+            DevicePatchService.clearApplyReceipts()
+            activeIDs = []
+            history = []
+            persist()
+            return
+        }
         load()
         if !historyEnabled, !history.isEmpty {
-            clearHistory()
+            history = []
+            persist()
         }
     }
 
@@ -79,11 +92,19 @@ final class PatchActivationStore: ObservableObject {
         persist()
     }
 
+    /// Turns every option off in the UI and drops leftover apply receipts so a new install starts clean.
+    func resetActivations() {
+        activeIDs = []
+        history = []
+        wipePersistedState()
+        DevicePatchService.clearApplyReceipts()
+        persist()
+    }
+
     private func persist() {
-        let snapshot = Snapshot(activeIDs: Array(activeIDs), history: history)
+        let snapshot = Snapshot(activeIDs: Array(activeIDs), history: historyEnabled ? history : [])
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         UserDefaults.standard.set(data, forKey: defaultsKey)
-        saveKeychain(data)
         guard let url = fileURL else { return }
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? data.write(to: url, options: .atomic)
@@ -96,9 +117,6 @@ final class PatchActivationStore: ObservableObject {
         }
         if data == nil {
             data = UserDefaults.standard.data(forKey: defaultsKey)
-        }
-        if data == nil {
-            data = readKeychain()
         }
         guard let data,
               let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data) else {
@@ -113,30 +131,16 @@ final class PatchActivationStore: ObservableObject {
             .map { $0.appendingPathComponent("x.patch.activation.json") }
     }
 
-    private func readKeychain() -> Data? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: keychainAccount,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne
-        ]
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status == errSecSuccess else { return nil }
-        return item as? Data
-    }
-
-    private func saveKeychain(_ data: Data) {
+    private func wipePersistedState() {
+        UserDefaults.standard.removeObject(forKey: defaultsKey)
+        if let url = fileURL {
+            try? FileManager.default.removeItem(at: url)
+        }
         let base: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: keychainAccount,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            kSecAttrAccount as String: keychainAccount
         ]
         SecItemDelete(base as CFDictionary)
-        var add = base
-        add[kSecValueData as String] = data
-        SecItemAdd(add as CFDictionary, nil)
     }
 }

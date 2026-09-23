@@ -125,7 +125,7 @@ struct SettingsView: View {
                                 Divider().background(Color.white.opacity(0.05)).padding(.leading, 52)
 
                                 Button {
-                                    activationStore.clearHistory()
+                                    activationStore.resetActivations()
                                     toastMessage = language.text("settings.history_cleared")
                                     withAnimation { showResetDone = true }
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -157,9 +157,15 @@ struct SettingsView: View {
 
                                 // Reiniciar Exploit
                                 Button {
-                                    dismiss()
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                                        appState.runKernelExploitIfNeeded()
+                                    appState.forceRestartExploit()
+                                    if KernelExploit.hasReadySession || appState.exploitStatus.isSuccess {
+                                        toastMessage = "Exploit listo ✓"
+                                    } else {
+                                        toastMessage = "Exploit en curso…"
+                                    }
+                                    withAnimation { showResetDone = true }
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                        withAnimation { showResetDone = false }
                                     }
                                 } label: {
                                     SettingsRow(icon: "bolt.fill", iconColor: Color(hex: "F59E0B"), title: "Reiniciar Exploit", subtitle: "Fuerza re-ejecución del exploit en el dispositivo")
@@ -178,7 +184,7 @@ struct SettingsView: View {
 
                                 // Forzar Actualización
                                 Button {
-                                    appState.detectSupport()
+                                    appState.forceRefreshStatus()
                                     toastMessage = "Estado actualizado ✓"
                                     withAnimation { showResetDone = true }
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -263,6 +269,7 @@ struct SettingsView: View {
             .confirmationDialog("¿Deseas limpiar la memoria caché temporal?", isPresented: $showClearConfirm, titleVisibility: .visible) {
                 Button("Limpiar Caché", role: .destructive) {
                     clearTemporaryCaches()
+                    activationStore.resetActivations()
                     toastMessage = "Caché liberado ✓"
                     withAnimation { showResetDone = true }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -291,6 +298,8 @@ struct SettingsView: View {
                 }
             }
         }
+        URLCache.shared.removeAllCachedResponses()
+        patchStore.reload()
     }
 
     private var appVersion: String {

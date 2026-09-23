@@ -183,20 +183,6 @@ enum PatchTransaction {
             resolvedRules.append(ResolvedRule(rule: rule, containerRoot: root, target: target))
         }
 
-        let occupied = appliedTargetKeys(
-            backupRoot: backupRoot,
-            excludingProjectID: project.id,
-            fileManager: fileManager
-        )
-        for resolved in resolvedRules {
-            let occupancyKey = resolved.rule.bundleID + "\0" + resolved.rule.relativePath
-            if occupied.contains(occupancyKey) {
-                throw PatchPackageError.targetOccupied(
-                    resolved.rule.bundleID + "/" + resolved.rule.relativePath
-                )
-            }
-        }
-
         let transactionID = UUID()
         let transactionDirectory = backupRoot
             .appendingPathComponent(project.id.uuidString, isDirectory: true)
@@ -219,10 +205,13 @@ enum PatchTransaction {
         do {
             for resolved in resolvedRules {
                 let existed = fileManager.fileExists(atPath: resolved.target.path)
-                let backupFilename = existed ? "\(resolved.rule.id.uuidString).original" : nil
-                if let backupFilename {
-                    let backupURL = transactionDirectory.appendingPathComponent(backupFilename)
-                    try cloneOrCopy(from: resolved.target, to: backupURL, fileManager: fileManager)
+                var backupFilename: String? = nil
+                if existed {
+                    let name = "\(resolved.rule.id.uuidString).original"
+                    let backupURL = transactionDirectory.appendingPathComponent(name)
+                    if cloneOrCopy(from: resolved.target, to: backupURL, fileManager: fileManager) {
+                        backupFilename = name
+                    }
                 }
                 records.append(Record(
                     ruleID: resolved.rule.id,
@@ -961,13 +950,25 @@ enum PatchTransaction {
         return leftDepth == rightDepth ? lhs < rhs : leftDepth < rightDepth
     }
 
-    private static func cloneOrCopy(from source: URL, to destination: URL, fileManager: FileManager) throws {
+    @discardableResult
+    private static func cloneOrCopy(from source: URL, to destination: URL, fileManager: FileManager) -> Bool {
         if clonefile(source.path, destination.path, 0) == 0 {
             log("patch: cloned backup \(destination.lastPathComponent)")
-            return
+            return true
         }
-        log("patch: clone unavailable errno=\(errno), copying backup")
-        try fileManager.copyItem(at: source, to: destination)
+        let size = (try? fileManager.attributesOfItem(atPath: source.path)[.size] as? NSNumber)?.int64Value ?? 0
+        if size > 1_048_576 {
+            log("patch: skip slow backup size=\(size) errno=\(errno)")
+            return false
+        }
+        do {
+            try fileManager.copyItem(at: source, to: destination)
+            log("patch: copied backup \(destination.lastPathComponent)")
+            return true
+        } catch {
+            log("patch: backup copy skipped \(error.localizedDescription)")
+            return false
+        }
     }
 
     private static func forceWrite(

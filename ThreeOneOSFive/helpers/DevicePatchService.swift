@@ -4,45 +4,20 @@ enum DevicePatchService {
     static func apply(project: PatchProject) throws -> PatchTransactionReceipt {
         let bundleIDs = orderedBundleIdentifiers(in: project)
         log("patch: apply begin name=\(project.name) rules=\(project.rules.count) bundles=\(bundleIDs.joined(separator: ","))")
-        ensureContainerWriteAccess()
         let backupRoot = try PatchProjectLibrary.backupRootURL()
-
-        let receipt: PatchTransactionReceipt
-        do {
-            receipt = try withResolvedContainers(bundleIDs: bundleIDs) { roots in
-                log("patch: containers resolved \(roots.map { "\($0.key)=\($0.value.path)" }.joined(separator: " | "))")
-                return try PatchTransaction.apply(
-                    project: project,
-                    backupRoot: backupRoot,
-                    containerResolver: { bundleID in
-                        guard let root = roots[bundleID] else {
-                            throw PatchPackageError.targetAppUnavailable(bundleID)
-                        }
-                        return root
+        let receipt = try withResolvedContainers(bundleIDs: bundleIDs) { roots in
+            log("patch: containers resolved \(roots.map { "\($0.key)=\($0.value.path)" }.joined(separator: " | "))")
+            return try PatchTransaction.apply(
+                project: project,
+                backupRoot: backupRoot,
+                containerResolver: { bundleID in
+                    guard let root = roots[bundleID] else {
+                        throw PatchPackageError.targetAppUnavailable(bundleID)
                     }
-                )
-            }
-        } catch PatchPackageError.targetOccupied(let target) {
-            log("patch: target occupied \(target) — resolving conflict")
-            let allItems = PatchProjectLibrary.load()
-            let conflicts = detectConflicts(project: project, allItems: allItems)
-            for conflict in conflicts {
-                try? restore(receipt: conflict.receipt)
-            }
-            receipt = try withResolvedContainers(bundleIDs: bundleIDs) { roots in
-                try PatchTransaction.apply(
-                    project: project,
-                    backupRoot: backupRoot,
-                    containerResolver: { bundleID in
-                        guard let root = roots[bundleID] else {
-                            throw PatchPackageError.targetAppUnavailable(bundleID)
-                        }
-                        return root
-                    }
-                )
-            }
+                    return root
+                }
+            )
         }
-
         log("patch: apply verified name=\(project.name) receipt=\(receipt.id.uuidString)")
         return receipt
     }
@@ -66,7 +41,6 @@ enum DevicePatchService {
         receipt: PatchTransactionReceipt,
         allowChangedTargets: Bool = true
     ) throws {
-        ensureContainerWriteAccess()
         let bundleIDs = try PatchTransaction.requiredBundleIdentifiers(for: receipt)
         log("patch: restore begin receipt=\(receipt.id.uuidString) bundles=\(bundleIDs.joined(separator: ","))")
         try withResolvedContainers(bundleIDs: bundleIDs) { roots in
@@ -174,16 +148,18 @@ enum DevicePatchService {
         }
     }
 
+    static func clearApplyReceipts() {
+        guard let backupRoot = try? PatchProjectLibrary.backupRootURL() else { return }
+        try? FileManager.default.removeItem(at: backupRoot)
+        try? FileManager.default.createDirectory(at: backupRoot, withIntermediateDirectories: true)
+        log("patch: apply receipts cleared")
+    }
+
     static func ensureContainerWriteAccess() {
         if KernelExploit.hasReadySession {
             return
         }
-        guard KernelExploit.isExploitSupported else {
-            log("patch: skipping kernel on unsupported iOS")
-            return
-        }
-        log("patch: requesting kernel write access")
-        _ = KernelExploit.run()
+        log("patch: writing without a second kernel run")
     }
 
     private static func orderedBundleIdentifiers(in project: PatchProject) -> [String] {
@@ -222,18 +198,6 @@ enum DevicePatchService {
             }
             if let path = ContainerStore.resolveAppContainerPathMatching(ContainerStore.isFreeFireBundle) {
                 log("patch: Free Fire container found by metadata for \(bundleID)")
-                return path
-            }
-        }
-
-        if !KernelExploit.hasSandboxAccess() {
-            log("patch: container missing — running kernel access then retrying \(bundleID)")
-            _ = KernelExploit.run()
-            if let path = ContainerStore.resolveAppContainerPath(bundleID: bundleID) {
-                return path
-            }
-            if ContainerStore.isFreeFireBundle(bundleID),
-               let path = ContainerStore.resolveAppContainerPathMatching(ContainerStore.isFreeFireBundle) {
                 return path
             }
         }

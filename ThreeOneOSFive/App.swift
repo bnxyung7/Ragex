@@ -277,6 +277,27 @@ class AppState: ObservableObject {
         }
     }
 
+    func forceRestartExploit() {
+        guard kernelExploitApplicable else {
+            exploitStatus = .unsupported("iOS 27+")
+            return
+        }
+        if KernelExploit.hasReadySession {
+            exploitStatus = .success(method: "kexploit")
+            log("app: exploit already active — no second kernel run")
+            return
+        }
+        autoRunAttempted = false
+        kernelExploitRunning = false
+        exploitStatus = .notStarted
+        runKernelExploitIfNeeded()
+    }
+
+    func forceRefreshStatus() {
+        detectSupport()
+        NotificationService.shared.fetchNotifications()
+    }
+
     func runKernelExploitIfNeeded() {
         guard kernelExploitApplicable else { return }
         refreshKernelExploitStatus()

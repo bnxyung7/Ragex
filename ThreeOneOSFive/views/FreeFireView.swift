@@ -719,7 +719,6 @@ struct FreeFireView: View {
         }
         
         bundlePatches = patches
-        syncActivationStoreFromReceipts()
         print("[FreeFireView:\(mode.rawValue)] Loaded \(patches.count) patches from \(modeFolder)")
         
         // Debug: Print all product IDs for tag matching
@@ -748,16 +747,6 @@ struct FreeFireView: View {
         return patchStore.items.first(where: {
             $0.packageURL.lastPathComponent == destFilename
         })?.project
-    }
-
-    private func syncActivationStoreFromReceipts() {
-        for patch in bundlePatches {
-            guard let project = project(for: patch),
-                  DevicePatchService.latestReceipt(projectID: project.id) != nil else { continue }
-            if !activationStore.isActive(patch) {
-                activationStore.record(patch: patch, activated: true, recordHistory: false)
-            }
-        }
     }
 
     private func restoreSavedActivationsIfNeeded() {
@@ -996,9 +985,7 @@ struct PatchToggleRow: View {
     }
     
     private var isActive: Bool {
-        if activationStore.isActive(patch) { return true }
-        guard let project = patchProject else { return false }
-        return DevicePatchService.receipt(for: project) != nil
+        activationStore.isActive(patch)
     }
     
     var body: some View {
