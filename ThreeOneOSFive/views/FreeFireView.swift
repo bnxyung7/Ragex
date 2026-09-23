@@ -744,7 +744,11 @@ struct FreeFireView: View {
                         let filename = fileURL.lastPathComponent
                         if !seenFilenames.contains(filename) {
                             seenFilenames.insert(filename)
-                            patches.append(BundlePatch(url: fileURL))
+                            let patch = BundlePatch(url: fileURL)
+                            if patch.category == .combo || patch.category == .others {
+                                continue
+                            }
+                            patches.append(patch)
                         }
                     }
                 }
@@ -1151,7 +1155,6 @@ struct BundlePatch: Identifiable {
             return .combo
         }
         
-        // Prioridad 2: Si no está en carpeta específica, detectar por nombre de archivo
         if filename.contains("AIMBOT") || filename.contains("AIM") || filename.contains("PECHO") {
             return .aimbot
         } else if filename.contains("HOLOGRAMA") || filename.contains("ARMA") ||
