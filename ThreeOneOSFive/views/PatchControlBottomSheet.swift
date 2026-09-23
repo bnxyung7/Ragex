@@ -305,7 +305,8 @@ struct PatchControlBottomSheet: View {
                     ])
                 }
                 
-                try DevicePatchService.restore(receipt: receipt)
+                try DevicePatchService.restore(receipt: receipt, allowChangedTargets: true)
+                log("patchControl: restore verified")
                 
                 await MainActor.run {
                     patchStore.reload()

@@ -65,7 +65,7 @@ enum DevicePatchService {
 
     static func restore(
         receipt: PatchTransactionReceipt,
-        allowChangedTargets: Bool = false
+        allowChangedTargets: Bool = true
     ) throws {
         ensureContainerWriteAccess()
         let bundleIDs = try PatchTransaction.requiredBundleIdentifiers(for: receipt)
@@ -79,9 +79,13 @@ enum DevicePatchService {
                         throw PatchPackageError.targetAppUnavailable(bundleID)
                     }
                     return root
-                }
+                },
+                strictContainerIdentity: false,
+                snapshotCurrentFiles: false
             )
         }
+        try verifyRestored(receipt: receipt)
+        log("patch: restore verified receipt=\(receipt.id.uuidString)")
     }
 
     static func resetToAppliedState(
@@ -106,6 +110,29 @@ enum DevicePatchService {
     static func latestReceipt(projectID: UUID) -> PatchTransactionReceipt? {
         guard let backupRoot = try? PatchProjectLibrary.backupRootURL() else { return nil }
         return PatchTransaction.latestReceipt(projectID: projectID, backupRoot: backupRoot)
+    }
+
+    static func receipt(for project: PatchProject) -> PatchTransactionReceipt? {
+        if let receipt = latestReceipt(projectID: project.id) {
+            return receipt
+        }
+        log("patch: no receipt for project \(project.id.uuidString), scanning overlapping applies")
+        return appliedReceipts().first { PatchTransaction.overlaps(receipt: $0, project: project) }
+    }
+
+    static func verifyRestored(receipt: PatchTransactionReceipt) throws {
+        let bundleIDs = try PatchTransaction.requiredBundleIdentifiers(for: receipt)
+        try withResolvedContainers(bundleIDs: bundleIDs) { roots in
+            try PatchTransaction.verifyRestored(
+                receipt: receipt,
+                containerResolver: { bundleID in
+                    guard let root = roots[bundleID] else {
+                        throw PatchPackageError.targetAppUnavailable(bundleID)
+                    }
+                    return root
+                }
+            )
+        }
     }
 
     static func appliedReceipts() -> [PatchTransactionReceipt] {

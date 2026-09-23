@@ -349,47 +349,59 @@ enum PatchTransaction {
         allowChangedTargets: Bool = false,
         containerResolver: (String) throws -> URL,
         beforeWrite: ((Int) throws -> Void)? = nil,
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        strictContainerIdentity: Bool = true,
+        snapshotCurrentFiles: Bool = true
     ) throws {
         do {
             var journal = try activeJournal(for: receipt)
             let transactionDirectory = receipt.journalURL.deletingLastPathComponent()
             let roots = try resolvedRoots(
                 journal: journal,
-                containerResolver: containerResolver
+                containerResolver: containerResolver,
+                strictContainerIdentity: strictContainerIdentity
             )
             let resolved = try resolvedRecords(
                 journal.records,
                 transactionDirectory: transactionDirectory,
                 roots: roots,
                 allowMissingParents: journal.status == .prepared,
-                fileManager: fileManager
+                fileManager: fileManager,
+                strictContainerIdentity: strictContainerIdentity
             )
             let changes = journal.status == .applied
                 ? try changedTargets(in: resolved, fileManager: fileManager)
                 : []
+            if !changes.isEmpty {
+                log("patch: restore target drift \(changes.map(\.displayPath).joined(separator: ","))")
+            }
             if !changes.isEmpty, !allowChangedTargets {
                 throw PatchPackageError.restoreTargetsChanged(changes.map(\.displayPath))
             }
             let createdDirectoryURLs = try resolvedCreatedDirectories(
                 journal.createdDirectories ?? [],
                 roots: roots,
-                fileManager: fileManager
+                fileManager: fileManager,
+                strictContainerIdentity: strictContainerIdentity
             )
 
-            try withCurrentStateRecovery(
-                resolved,
-                transactionDirectory: transactionDirectory,
-                fileManager: fileManager
-            ) {
+            func writeOriginals() throws {
                 for (index, item) in resolved.reversed().enumerated() {
                     try beforeWrite?(index)
                     if item.record.originalExisted {
                         let backup = transactionDirectory.appendingPathComponent(
                             item.record.backupFilename!
                         )
+                        log("patch: restoring original \(item.record.bundleID)/\(item.record.relativePath)")
                         try atomicCopy(backup, to: item.target, fileManager: fileManager)
+                        if let expected = item.record.originalDigest {
+                            guard try digestFile(item.target) == expected else {
+                                log("patch: restored file digest mismatch \(item.record.relativePath)")
+                                throw PatchPackageError.restoreFailed
+                            }
+                        }
                     } else if fileManager.fileExists(atPath: item.target.path) {
+                        log("patch: removing patched file that had no original \(item.record.relativePath)")
                         try fileManager.removeItem(at: item.target)
                     }
                 }
@@ -397,13 +409,68 @@ enum PatchTransaction {
                 try writeJournal(journal, to: receipt.journalURL)
             }
 
+            if snapshotCurrentFiles {
+                try withCurrentStateRecovery(
+                    resolved,
+                    transactionDirectory: transactionDirectory,
+                    fileManager: fileManager,
+                    operation: writeOriginals
+                )
+            } else {
+                try writeOriginals()
+            }
+
             removeEmptyCreatedDirectories(createdDirectoryURLs, fileManager: fileManager)
         } catch let error as PatchPackageError {
             if case .restoreTargetsChanged = error { throw error }
+            log("patch: restore failed \(error.localizedDescription)")
             throw PatchPackageError.restoreFailed
         } catch {
+            log("patch: restore failed \(error.localizedDescription)")
             throw PatchPackageError.restoreFailed
         }
+    }
+
+    static func verifyRestored(
+        receipt: PatchTransactionReceipt,
+        containerResolver: (String) throws -> URL,
+        fileManager: FileManager = .default
+    ) throws {
+        let journal = try readJournal(receipt.journalURL)
+        guard journal.status == .restored else {
+            throw PatchPackageError.restoreFailed
+        }
+        let roots = try resolvedRoots(
+            journal: journal,
+            containerResolver: containerResolver,
+            strictContainerIdentity: false
+        )
+        for record in journal.records {
+            guard let root = roots[record.bundleID] else {
+                throw PatchPackageError.restoreFailed
+            }
+            let target = try PatchPathValidator.resolveContainedTargetURL(
+                relativePath: record.relativePath,
+                containerRoot: root
+            )
+            if record.originalExisted {
+                guard fileManager.fileExists(atPath: target.path),
+                      let expected = record.originalDigest,
+                      try digestFile(target) == expected else {
+                    log("patch: original not present after restore \(record.relativePath)")
+                    throw PatchPackageError.restoreFailed
+                }
+            } else if fileManager.fileExists(atPath: target.path) {
+                log("patch: extra patched file still present \(record.relativePath)")
+                throw PatchPackageError.restoreFailed
+            }
+        }
+    }
+
+    static func overlaps(receipt: PatchTransactionReceipt, project: PatchProject) -> Bool {
+        guard let journal = try? readJournal(receipt.journalURL) else { return false }
+        let keys = Set(journal.records.map { $0.bundleID + "\0" + $0.relativePath })
+        return project.rules.contains { keys.contains($0.bundleID + "\0" + $0.relativePath) }
     }
 
     static func resetToAppliedState(
@@ -570,21 +637,28 @@ enum PatchTransaction {
 
     private static func resolvedRoots(
         journal: Journal,
-        containerResolver: (String) throws -> URL
+        containerResolver: (String) throws -> URL,
+        strictContainerIdentity: Bool = true
     ) throws -> [String: URL] {
         var roots: [String: URL] = [:]
         let identities = journal.records.map { ($0.bundleID, $0.containerFingerprint) }
             + (journal.createdDirectories ?? []).map { ($0.bundleID, $0.containerFingerprint) }
         for (bundleID, expectedFingerprint) in identities {
             if let root = roots[bundleID] {
-                guard containerFingerprint(root) == expectedFingerprint else {
-                    throw PatchPackageError.restoreFailed
+                if containerFingerprint(root) != expectedFingerprint {
+                    log("patch: container fingerprint drifted for \(bundleID)")
+                    if strictContainerIdentity {
+                        throw PatchPackageError.restoreFailed
+                    }
                 }
                 continue
             }
             let root = PatchPathValidator.canonicalFileURL(try containerResolver(bundleID))
-            guard containerFingerprint(root) == expectedFingerprint else {
-                throw PatchPackageError.restoreFailed
+            if containerFingerprint(root) != expectedFingerprint {
+                log("patch: container fingerprint drifted for \(bundleID) at \(root.path)")
+                if strictContainerIdentity {
+                    throw PatchPackageError.restoreFailed
+                }
             }
             roots[bundleID] = root
         }
@@ -596,12 +670,18 @@ enum PatchTransaction {
         transactionDirectory: URL,
         roots: [String: URL],
         allowMissingParents: Bool = false,
-        fileManager: FileManager
+        fileManager: FileManager,
+        strictContainerIdentity: Bool = true
     ) throws -> [ResolvedRecord] {
         try records.map { record in
-            guard let root = roots[record.bundleID],
-                  containerFingerprint(root) == record.containerFingerprint else {
+            guard let root = roots[record.bundleID] else {
                 throw PatchPackageError.restoreFailed
+            }
+            if containerFingerprint(root) != record.containerFingerprint {
+                log("patch: record fingerprint drifted \(record.bundleID)/\(record.relativePath)")
+                if strictContainerIdentity {
+                    throw PatchPackageError.restoreFailed
+                }
             }
             let target = try PatchPathValidator.resolveContainedTargetURL(
                 relativePath: record.relativePath,
@@ -655,12 +735,18 @@ enum PatchTransaction {
     private static func resolvedCreatedDirectories(
         _ directories: [DirectoryRecord],
         roots: [String: URL],
-        fileManager: FileManager
+        fileManager: FileManager,
+        strictContainerIdentity: Bool = true
     ) throws -> [URL] {
         try directories.map { directory in
-            guard let root = roots[directory.bundleID],
-                  containerFingerprint(root) == directory.containerFingerprint else {
+            guard let root = roots[directory.bundleID] else {
                 throw PatchPackageError.restoreFailed
+            }
+            if containerFingerprint(root) != directory.containerFingerprint {
+                log("patch: directory fingerprint drifted \(directory.bundleID)/\(directory.relativePath)")
+                if strictContainerIdentity {
+                    throw PatchPackageError.restoreFailed
+                }
             }
             let target = try PatchPathValidator.resolveContainedTargetURL(
                 relativePath: directory.relativePath,
