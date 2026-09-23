@@ -3,11 +3,15 @@ import Foundation
 enum DevicePatchService {
     static func apply(project: PatchProject) throws -> PatchTransactionReceipt {
         let bundleIDs = orderedBundleIdentifiers(in: project)
+        log("patch: apply begin name=\(project.name) rules=\(project.rules.count) bundles=\(bundleIDs.joined(separator: ","))")
+        ensureContainerWriteAccess()
         let backupRoot = try PatchProjectLibrary.backupRootURL()
-        
+
+        let receipt: PatchTransactionReceipt
         do {
-            return try withResolvedContainers(bundleIDs: bundleIDs) { roots in
-                try PatchTransaction.apply(
+            receipt = try withResolvedContainers(bundleIDs: bundleIDs) { roots in
+                log("patch: containers resolved \(roots.map { "\($0.key)=\($0.value.path)" }.joined(separator: " | "))")
+                return try PatchTransaction.apply(
                     project: project,
                     backupRoot: backupRoot,
                     containerResolver: { bundleID in
@@ -25,8 +29,7 @@ enum DevicePatchService {
             for conflict in conflicts {
                 try? restore(receipt: conflict.receipt)
             }
-            // Retry apply after resolving conflicts
-            return try withResolvedContainers(bundleIDs: bundleIDs) { roots in
+            receipt = try withResolvedContainers(bundleIDs: bundleIDs) { roots in
                 try PatchTransaction.apply(
                     project: project,
                     backupRoot: backupRoot,
@@ -39,6 +42,10 @@ enum DevicePatchService {
                 )
             }
         }
+
+        try verifyApplied(receipt: receipt)
+        log("patch: apply verified name=\(project.name) receipt=\(receipt.id.uuidString)")
+        return receipt
     }
 
     static func inspectRestore(receipt: PatchTransactionReceipt) throws -> PatchRestoreInspection {
@@ -60,7 +67,9 @@ enum DevicePatchService {
         receipt: PatchTransactionReceipt,
         allowChangedTargets: Bool = false
     ) throws {
+        ensureContainerWriteAccess()
         let bundleIDs = try PatchTransaction.requiredBundleIdentifiers(for: receipt)
+        log("patch: restore begin receipt=\(receipt.id.uuidString) bundles=\(bundleIDs.joined(separator: ","))")
         try withResolvedContainers(bundleIDs: bundleIDs) { roots in
             try PatchTransaction.restore(
                 receipt: receipt,
@@ -117,6 +126,37 @@ enum DevicePatchService {
         for receipt in appliedReceipts() {
             try? restore(receipt: receipt, allowChangedTargets: true)
         }
+    }
+
+    static func isCurrentlyApplied(receipt: PatchTransactionReceipt) -> Bool {
+        do {
+            let inspection = try inspectRestore(receipt: receipt)
+            if !inspection.changedTargets.isEmpty {
+                log("patch: files drifted \(inspection.changedTargets.map(\.displayPath).joined(separator: ","))")
+                return false
+            }
+            return true
+        } catch {
+            log("patch: verify failed \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    static func verifyApplied(receipt: PatchTransactionReceipt) throws {
+        guard isCurrentlyApplied(receipt: receipt) else {
+            log("patch: post-write verification rejected receipt=\(receipt.id.uuidString)")
+            throw PatchPackageError.applyFailed
+        }
+    }
+
+    static func ensureContainerWriteAccess() {
+        if KernelExploit.hasSandboxAccess() {
+            log("patch: write access already present")
+            return
+        }
+        log("patch: requesting kernel write access")
+        let ok = KernelExploit.run()
+        log("patch: kernel access \(ok && KernelExploit.hasSandboxAccess() ? "granted" : "unavailable")")
     }
 
     private static func orderedBundleIdentifiers(in project: PatchProject) -> [String] {

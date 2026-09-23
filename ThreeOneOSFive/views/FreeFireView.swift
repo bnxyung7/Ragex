@@ -656,7 +656,14 @@ struct FreeFireView: View {
                 }
                 
                 if activate {
-                    _ = try DevicePatchService.apply(project: resolvedProject)
+                    log("freeFire: applying \(patch.displayName) file=\(destFilename) project=\(resolvedProject.id.uuidString)")
+                    let receipt = try DevicePatchService.apply(project: resolvedProject)
+                    guard DevicePatchService.isCurrentlyApplied(receipt: receipt) else {
+                        throw NSError(domain: "FreeFire", code: 3, userInfo: [
+                            NSLocalizedDescriptionKey: "El cambio no quedó escrito en el juego. Revisa el acceso al contenedor e inténtalo de nuevo."
+                        ])
+                    }
+                    log("freeFire: apply verified \(patch.displayName) receipt=\(receipt.id.uuidString) — keep Free Fire closed until this finishes, then open it")
                     await MainActor.run {
                         PatchActivationStore.shared.record(patch: patch, activated: true, recordHistory: recordHistory)
                         patchStore.reload()
@@ -665,7 +672,10 @@ struct FreeFireView: View {
                     }
                 } else {
                     if let receipt = DevicePatchService.latestReceipt(projectID: resolvedProject.id) {
+                        log("freeFire: restoring \(patch.displayName) receipt=\(receipt.id.uuidString)")
                         try DevicePatchService.restore(receipt: receipt)
+                    } else {
+                        log("freeFire: deactivate with no receipt \(patch.displayName)")
                     }
                     await MainActor.run {
                         PatchActivationStore.shared.record(patch: patch, activated: false, recordHistory: recordHistory)
@@ -798,9 +808,11 @@ struct FreeFireView: View {
         didRestoreActivations = true
         for patch in bundlePatches where activationStore.isActive(patch) {
             if let project = project(for: patch),
-               DevicePatchService.latestReceipt(projectID: project.id) != nil {
+               let receipt = DevicePatchService.latestReceipt(projectID: project.id),
+               DevicePatchService.isCurrentlyApplied(receipt: receipt) {
                 continue
             }
+            log("freeFire: saved option not on disk, re-applying \(patch.displayName)")
             togglePatch(patch, activate: true, recordHistory: false)
         }
     }
@@ -997,7 +1009,6 @@ struct PatchToggleRow: View {
     let onToggle: (Bool) -> Void
     @EnvironmentObject private var patchStore: PatchProjectStore
     @EnvironmentObject private var productTagService: ProductTagService
-    @ObservedObject private var activationStore = PatchActivationStore.shared
     
     private var patchProject: PatchProject? {
         let items = patchStore.items
@@ -1020,9 +1031,11 @@ struct PatchToggleRow: View {
     }
     
     private var isActive: Bool {
-        if activationStore.isActive(patch) { return true }
-        guard let project = patchProject else { return false }
-        return DevicePatchService.latestReceipt(projectID: project.id) != nil
+        guard let project = patchProject,
+              let receipt = DevicePatchService.latestReceipt(projectID: project.id) else {
+            return false
+        }
+        return DevicePatchService.isCurrentlyApplied(receipt: receipt)
     }
     
     var body: some View {

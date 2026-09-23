@@ -1017,6 +1017,11 @@ private struct PatchProjectDetailView: View {
                     ? try PatchProjectLibrary.synchronizeWorkspace(item: item)
                     : baseProject
                 _ = try DevicePatchService.apply(project: project)
+                guard let receipt = DevicePatchService.latestReceipt(projectID: project.id),
+                      DevicePatchService.isCurrentlyApplied(receipt: receipt) else {
+                    throw PatchPackageError.applyFailed
+                }
+                log("patchProjects: apply verified \(project.name)")
                 await MainActor.run {
                     store.reload()
                     isWorking = false

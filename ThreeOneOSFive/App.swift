@@ -16,10 +16,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         return true
     }
 
-    func applicationWillTerminate(_ application: UIApplication) {
-        DevicePatchService.restoreAllOriginals()
-    }
-
     // Called when APNs successfully issues a device token.
     func application(
         _ application: UIApplication,
@@ -128,21 +124,6 @@ struct ThreeOneOSFiveApp: App {
         }
     }
 
-    private func restoreOriginalsOnLeave() {
-        var taskID = UIBackgroundTaskIdentifier.invalid
-        taskID = UIApplication.shared.beginBackgroundTask(withName: "restore-originals") {
-            if taskID != .invalid {
-                UIApplication.shared.endBackgroundTask(taskID)
-                taskID = .invalid
-            }
-        }
-        DevicePatchService.restoreAllOriginals()
-        if taskID != .invalid {
-            UIApplication.shared.endBackgroundTask(taskID)
-            taskID = .invalid
-        }
-    }
-
     var body: some Scene {
         WindowGroup {
             ZStack {
@@ -215,9 +196,6 @@ struct ThreeOneOSFiveApp: App {
                 }
             }
             .onChange(of: scenePhase) { phase in
-                if phase == .background {
-                    restoreOriginalsOnLeave()
-                }
                 guard phase == .active, !showOnboarding else { return }
                 checkVersionStatus()
                 appState.detectSupport()

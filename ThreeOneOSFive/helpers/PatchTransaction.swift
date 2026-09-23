@@ -915,6 +915,7 @@ enum PatchTransaction {
             if let protection = current[.protectionKey] { attributes[.protectionKey] = protection }
         }
         guard fileManager.createFile(atPath: staging.path, contents: data, attributes: attributes) else {
+            log("patch: staging write failed path=\(staging.path) errno=\(errno)")
             throw PatchPackageError.applyFailed
         }
         defer { try? fileManager.removeItem(at: staging) }
@@ -922,8 +923,10 @@ enum PatchTransaction {
         try handle.synchronize()
         try handle.close()
         guard rename(staging.path, target.path) == 0 else {
+            log("patch: rename failed from=\(staging.path) to=\(target.path) errno=\(errno)")
             throw PatchPackageError.applyFailed
         }
+        log("patch: wrote \(data.count) bytes to \(target.path)")
     }
 
     private static func atomicCopy(
