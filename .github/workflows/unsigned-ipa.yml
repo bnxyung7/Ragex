@@ -1,0 +1,69 @@
+# Unsigned device IPA. Sign afterward with ESign (same output as Codemagic x-release).
+name: Unsigned IPA
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  ipa:
+    name: X — unsigned IPA
+    runs-on: macos-14
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: Resolve Swift Packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project ThreeOneOSFive.xcodeproj \
+            -scheme X
+
+      - name: Build for iOS device (arm64, unsigned)
+        run: |
+          set -o pipefail
+          mkdir -p build
+          xcodebuild \
+            -project ThreeOneOSFive.xcodeproj \
+            -scheme X \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          APP_PATH=$(find build/DerivedData -path "*/Release-iphoneos/X.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            APP_PATH=$(find build/DerivedData -name "X.app" -type d \
+              -not -path "*Simulator*" -not -path "*iphonesimulator*" | head -1)
+          fi
+          test -n "$APP_PATH" || { echo "ERROR: X.app not found"; find build/DerivedData -name "*.app" -type d; exit 1; }
+          BINARY="$APP_PATH/X"
+          file "$BINARY"
+          file "$BINARY" | grep -i "arm64" || { echo "ERROR: not arm64"; exit 1; }
+          mkdir -p ipa/Payload
+          cp -R "$APP_PATH" ipa/Payload/X.app
+          (cd ipa && zip -qr "$GITHUB_WORKSPACE/X-v3.1.0.ipa" Payload/)
+          unzip -l "$GITHUB_WORKSPACE/X-v3.1.0.ipa" | head -40
+          unzip -l "$GITHUB_WORKSPACE/X-v3.1.0.ipa" | grep "Payload/X.app/" >/dev/null
+          ls -lh "$GITHUB_WORKSPACE/X-v3.1.0.ipa"
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: X-v3.1.0
+          path: X-v3.1.0.ipa
+          if-no-files-found: error
