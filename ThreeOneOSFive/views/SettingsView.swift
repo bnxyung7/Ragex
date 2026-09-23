@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appLanguage) private var language
+    @AppStorage(AppLanguage.storageKey) private var languageCode = ""
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var patchStore: PatchProjectStore
     @ObservedObject private var activationStore = PatchActivationStore.shared
@@ -46,17 +47,17 @@ struct SettingsView: View {
                             VStack(spacing: 0) {
                                 ForEach(Array(AppLanguage.allCases.enumerated()), id: \.element.id) { index, option in
                                     Button {
-                                        UserDefaults.standard.set(option.rawValue, forKey: AppLanguage.storageKey)
+                                        languageCode = option.rawValue
                                         UserDefaults.standard.set(true, forKey: "x.language.userChosen")
                                     } label: {
                                         HStack(spacing: 12) {
                                             Text(option.codeLabel)
                                                 .font(.system(size: 11, weight: .heavy, design: .monospaced))
-                                                .foregroundStyle(language.rawValue == option.rawValue ? .black : .white)
+                                                .foregroundStyle(selectedLanguage.rawValue == option.rawValue ? .black : .white)
                                                 .frame(width: 38, height: 38)
                                                 .background(
                                                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                                        .fill(language.rawValue == option.rawValue ? Color.white : Color.white.opacity(0.06))
+                                                        .fill(selectedLanguage.rawValue == option.rawValue ? Color.white : Color.white.opacity(0.06))
                                                 )
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text(option.nativeName.uppercased())
@@ -67,7 +68,7 @@ struct SettingsView: View {
                                                     .foregroundStyle(Color(hex: "475569"))
                                             }
                                             Spacer()
-                                            if language.rawValue == option.rawValue {
+                                            if selectedLanguage.rawValue == option.rawValue {
                                                 Image(systemName: "checkmark.circle.fill")
                                                     .foregroundStyle(Color(hex: "10B981"))
                                             }
@@ -125,7 +126,7 @@ struct SettingsView: View {
                                 Divider().background(Color.white.opacity(0.05)).padding(.leading, 52)
 
                                 Button {
-                                    activationStore.resetActivations()
+                                    activationStore.clearHistory()
                                     toastMessage = language.text("settings.history_cleared")
                                     withAnimation { showResetDone = true }
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -157,12 +158,8 @@ struct SettingsView: View {
 
                                 // Reiniciar Exploit
                                 Button {
-                                    appState.forceRestartExploit()
-                                    if KernelExploit.hasReadySession || appState.exploitStatus.isSuccess {
-                                        toastMessage = "Exploit listo ✓"
-                                    } else {
-                                        toastMessage = "Exploit en curso…"
-                                    }
+                                    appState.forceRerunKernelExploit()
+                                    toastMessage = "Exploit reiniciado ✓"
                                     withAnimation { showResetDone = true }
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                                         withAnimation { showResetDone = false }
@@ -184,7 +181,7 @@ struct SettingsView: View {
 
                                 // Forzar Actualización
                                 Button {
-                                    appState.forceRefreshStatus()
+                                    appState.detectSupport()
                                     toastMessage = "Estado actualizado ✓"
                                     withAnimation { showResetDone = true }
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -269,7 +266,6 @@ struct SettingsView: View {
             .confirmationDialog("¿Deseas limpiar la memoria caché temporal?", isPresented: $showClearConfirm, titleVisibility: .visible) {
                 Button("Limpiar Caché", role: .destructive) {
                     clearTemporaryCaches()
-                    activationStore.resetActivations()
                     toastMessage = "Caché liberado ✓"
                     withAnimation { showResetDone = true }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -279,6 +275,10 @@ struct SettingsView: View {
                 Button("Cancelar", role: .cancel) {}
             }
         }
+    }
+
+    private var selectedLanguage: AppLanguage {
+        AppLanguage(rawValue: languageCode) ?? language
     }
 
     private func clearTemporaryCaches() {
@@ -298,8 +298,8 @@ struct SettingsView: View {
                 }
             }
         }
+        PatchActivationStore.shared.resetAllActivations()
         URLCache.shared.removeAllCachedResponses()
-        patchStore.reload()
     }
 
     private var appVersion: String {

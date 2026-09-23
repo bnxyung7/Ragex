@@ -25,12 +25,15 @@ struct ChangelogView: View {
                 "Settings control to disable and clear activation history."
             ],
             changed: [
-                "Activation writes the game file immediately without a second kernel run or a full-file backup copy."
+                "Activation and deactivation write the game file directly and confirm size on disk.",
+                "Original game files are cloned beside the target instead of copied into the app sandbox."
             ],
             fixed: [
-                "New install no longer keeps leftover Activado toggles from Keychain or old receipts.",
-                "Activating another option no longer waits on occupancy restore or kernel.",
-                "Settings Activación and Herramientas now reset toggles, restart exploit, clear cache, and refresh status."
+                "Leaving the app no longer restores originals before you can open Free Fire.",
+                "Deactivate no longer relaunches the kernel exploit or copies huge snapshots.",
+                "A new IPA install no longer leaves leftover options marked Activado.",
+                "Settings Activación, language, exploit restart, and cache clear actually apply.",
+                "Bottom tabs switch immediately; selected tab is no longer stuck white on Home."
             ],
             compatibility: [
                 "iOS 17.0–26.x kernel apply. iOS 27 is not compatible."

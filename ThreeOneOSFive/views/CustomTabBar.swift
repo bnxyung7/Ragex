@@ -75,18 +75,20 @@ struct CustomTabBar: View {
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
             ForEach(items) { item in
-                CustomTabBarItem(
-                    item: item,
-                    isSelected: selectedTab == item.id,
-                    isPressed: pressedTab == item.id
-                )
-                .frame(maxWidth: .infinity)
-                .contentShape(Rectangle())
-                .onTapGesture {
+                Button {
                     selectTab(item.id)
+                } label: {
+                    CustomTabBarItem(
+                        item: item,
+                        isSelected: selectedTab == item.id,
+                        isPressed: pressedTab == item.id
+                    )
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 .simultaneousGesture(
-                    DragGesture(minimumDistance: 0)
+                    DragGesture(minimumDistance: 8)
                         .onChanged { _ in pressedTab = item.id }
                         .onEnded   { _ in pressedTab = nil    }
                 )
@@ -140,9 +142,7 @@ struct CustomTabBar: View {
 
     private func selectTab(_ id: Int) {
         guard id != selectedTab else { return }
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-            selectedTab = id
-        }
+        selectedTab = id
         let gen = UIImpactFeedbackGenerator(style: .medium)
         gen.impactOccurred(intensity: 0.7)
     }
@@ -155,18 +155,21 @@ private struct CustomTabBarItem: View {
     let isSelected: Bool
     let isPressed: Bool
 
+    private var selectedTint: Color { Color(hex: "60A5FA") }
+    private var idleTint: Color { Color(hex: "5A5A72") }
+
     var body: some View {
         VStack(spacing: AppTheme.spacing4) {
             ZStack(alignment: .topTrailing) {
                 // Selected pill background
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isSelected ? AppTheme.accent.opacity(0.20) : Color.clear)
+                    .fill(isSelected ? selectedTint.opacity(0.20) : Color.clear)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(isSelected ? AppTheme.accent.opacity(0.50) : Color.clear, lineWidth: 1)
+                            .stroke(isSelected ? selectedTint.opacity(0.50) : Color.clear, lineWidth: 1)
                     )
                     .frame(width: 54, height: 34)
-                    .shadow(color: isSelected ? AppTheme.accent.opacity(0.40) : Color.clear, radius: 8, x: 0, y: 2)
+                    .shadow(color: isSelected ? selectedTint.opacity(0.40) : Color.clear, radius: 8, x: 0, y: 2)
 
                 // Icon
                 iconView
@@ -191,7 +194,7 @@ private struct CustomTabBarItem: View {
             // Label
             Text(item.title)
                 .font(.system(size: 10, weight: isSelected ? .bold : .medium))
-                .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "5A5A72"))
+                .foregroundStyle(isSelected ? selectedTint : idleTint)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .animation(.easeInOut(duration: 0.2), value: isSelected)
@@ -215,17 +218,10 @@ private struct CustomTabBarItem: View {
                 .saturation(isSelected ? 1.0 : 0.4)
                 .animation(.easeInOut(duration: 0.2), value: isSelected)
         } else {
-            if #available(iOS 17, *) {
-                Image(systemName: item.systemImage)
-                    .font(.system(size: 18, weight: isSelected ? .bold : .regular))
-                    .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "5A5A72"))
-                    .symbolEffect(.bounce, value: isSelected)
-            } else {
-                Image(systemName: item.systemImage)
-                    .font(.system(size: 18, weight: isSelected ? .bold : .regular))
-                    .foregroundStyle(isSelected ? AppTheme.accent : Color(hex: "5A5A72"))
-                    .animation(.easeInOut(duration: 0.2), value: isSelected)
-            }
+            Image(systemName: item.systemImage)
+                .font(.system(size: 18, weight: isSelected ? .bold : .regular))
+                .foregroundStyle(isSelected ? selectedTint : idleTint)
+                .animation(.easeInOut(duration: 0.2), value: isSelected)
         }
     }
 }

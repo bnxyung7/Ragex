@@ -183,6 +183,20 @@ enum PatchTransaction {
             resolvedRules.append(ResolvedRule(rule: rule, containerRoot: root, target: target))
         }
 
+        let occupied = appliedTargetKeys(
+            backupRoot: backupRoot,
+            excludingProjectID: project.id,
+            fileManager: fileManager
+        )
+        for resolved in resolvedRules {
+            let occupancyKey = resolved.rule.bundleID + "\0" + resolved.rule.relativePath
+            if occupied.contains(occupancyKey) {
+                throw PatchPackageError.targetOccupied(
+                    resolved.rule.bundleID + "/" + resolved.rule.relativePath
+                )
+            }
+        }
+
         let transactionID = UUID()
         let transactionDirectory = backupRoot
             .appendingPathComponent(project.id.uuidString, isDirectory: true)
@@ -205,13 +219,15 @@ enum PatchTransaction {
         do {
             for resolved in resolvedRules {
                 let existed = fileManager.fileExists(atPath: resolved.target.path)
-                var backupFilename: String? = nil
+                var backupFilename: String?
                 if existed {
-                    let name = "\(resolved.rule.id.uuidString).original"
-                    let backupURL = transactionDirectory.appendingPathComponent(name)
-                    if cloneOrCopy(from: resolved.target, to: backupURL, fileManager: fileManager) {
-                        backupFilename = name
+                    let sidecarName = resolved.target.lastPathComponent + ".xorig"
+                    let sidecarURL = resolved.target.deletingLastPathComponent()
+                        .appendingPathComponent(sidecarName)
+                    if !fileManager.fileExists(atPath: sidecarURL.path) {
+                        try cloneOrCopy(from: resolved.target, to: sidecarURL, fileManager: fileManager)
                     }
+                    backupFilename = "sidecar:" + sidecarName
                 }
                 records.append(Record(
                     ruleID: resolved.rule.id,
@@ -361,9 +377,13 @@ enum PatchTransaction {
                 for (index, item) in resolved.reversed().enumerated() {
                     try beforeWrite?(index)
                     if item.record.originalExisted {
-                        let backup = transactionDirectory.appendingPathComponent(
-                            item.record.backupFilename!
-                        )
+                        guard let backup = originalBackupURL(
+                            record: item.record,
+                            target: item.target,
+                            transactionDirectory: transactionDirectory
+                        ) else {
+                            throw PatchPackageError.restoreFailed
+                        }
                         log("patch: restoring original \(item.record.bundleID)/\(item.record.relativePath)")
                         try forceCopy(backup, to: item.target, fileManager: fileManager)
                     } else if fileManager.fileExists(atPath: item.target.path) {
@@ -661,11 +681,11 @@ enum PatchTransaction {
                 fileManager: fileManager
             )
             if record.originalExisted {
-                guard let backupFilename = record.backupFilename else {
-                    throw PatchPackageError.restoreFailed
-                }
-                let backup = transactionDirectory.appendingPathComponent(backupFilename)
-                guard fileManager.fileExists(atPath: backup.path) else {
+                guard let backup = originalBackupURL(
+                    record: record,
+                    target: target,
+                    transactionDirectory: transactionDirectory
+                ), fileManager.fileExists(atPath: backup.path) else {
                     throw PatchPackageError.restoreFailed
                 }
             }
@@ -837,13 +857,15 @@ enum PatchTransaction {
                 }
             }
             if record.originalExisted {
-                guard let backupFilename = record.backupFilename,
-                      let expectedDigest = record.originalDigest else {
+                guard let backup = originalBackupURL(
+                    record: record,
+                    target: target,
+                    transactionDirectory: transactionDirectory
+                ), fileManager.fileExists(atPath: backup.path) else {
                     throw PatchPackageError.restoreFailed
                 }
-                let backup = transactionDirectory.appendingPathComponent(backupFilename)
-                guard fileManager.fileExists(atPath: backup.path),
-                      try digestFile(backup) == expectedDigest else {
+                if let expectedDigest = record.originalDigest,
+                   try digestFile(backup) != expectedDigest {
                     throw PatchPackageError.restoreFailed
                 }
             }
@@ -852,7 +874,13 @@ enum PatchTransaction {
 
         for (record, target) in resolvedTargets.reversed() {
             if record.originalExisted {
-                let backup = transactionDirectory.appendingPathComponent(record.backupFilename!)
+                guard let backup = originalBackupURL(
+                    record: record,
+                    target: target,
+                    transactionDirectory: transactionDirectory
+                ) else {
+                    throw PatchPackageError.restoreFailed
+                }
                 try atomicCopy(backup, to: target, fileManager: fileManager)
             } else if fileManager.fileExists(atPath: target.path) {
                 try fileManager.removeItem(at: target)
@@ -950,25 +978,26 @@ enum PatchTransaction {
         return leftDepth == rightDepth ? lhs < rhs : leftDepth < rightDepth
     }
 
-    @discardableResult
-    private static func cloneOrCopy(from source: URL, to destination: URL, fileManager: FileManager) -> Bool {
+    private static func originalBackupURL(
+        record: Record,
+        target: URL,
+        transactionDirectory: URL
+    ) -> URL? {
+        guard let name = record.backupFilename, !name.isEmpty else { return nil }
+        if name.hasPrefix("sidecar:") {
+            let file = String(name.dropFirst("sidecar:".count))
+            return target.deletingLastPathComponent().appendingPathComponent(file)
+        }
+        return transactionDirectory.appendingPathComponent(name)
+    }
+
+    private static func cloneOrCopy(from source: URL, to destination: URL, fileManager: FileManager) throws {
         if clonefile(source.path, destination.path, 0) == 0 {
             log("patch: cloned backup \(destination.lastPathComponent)")
-            return true
+            return
         }
-        let size = (try? fileManager.attributesOfItem(atPath: source.path)[.size] as? NSNumber)?.int64Value ?? 0
-        if size > 1_048_576 {
-            log("patch: skip slow backup size=\(size) errno=\(errno)")
-            return false
-        }
-        do {
-            try fileManager.copyItem(at: source, to: destination)
-            log("patch: copied backup \(destination.lastPathComponent)")
-            return true
-        } catch {
-            log("patch: backup copy skipped \(error.localizedDescription)")
-            return false
-        }
+        log("patch: clone unavailable errno=\(errno), copying backup")
+        try fileManager.copyItem(at: source, to: destination)
     }
 
     private static func forceWrite(

@@ -20,8 +20,7 @@ final class PatchActivationStore: ObservableObject {
         didSet {
             UserDefaults.standard.set(historyEnabled, forKey: historyEnabledKey)
             if !historyEnabled {
-                history = []
-                persist()
+                clearHistory()
             } else {
                 persist()
             }
@@ -30,8 +29,8 @@ final class PatchActivationStore: ObservableObject {
 
     private let defaultsKey = "x.patch.activation.v1"
     private let historyEnabledKey = "x.patch.activation.history.enabled"
-    private let resetTokenKey = "x.patch.activation.resetToken"
-    private let resetToken = "clean-on-launch-v1"
+    private let generationKey = "x.patch.activation.generation"
+    private let currentGeneration = "3.1.1-17"
     private let historyLimit = 80
     private let keychainService = "x.patch.activation"
     private let keychainAccount = "snapshot.v1"
@@ -43,19 +42,10 @@ final class PatchActivationStore: ObservableObject {
 
     private init() {
         historyEnabled = UserDefaults.standard.object(forKey: historyEnabledKey) as? Bool ?? false
-        if UserDefaults.standard.string(forKey: resetTokenKey) != resetToken {
-            wipePersistedState()
-            UserDefaults.standard.set(resetToken, forKey: resetTokenKey)
-            DevicePatchService.clearApplyReceipts()
-            activeIDs = []
-            history = []
-            persist()
-            return
-        }
         load()
+        resetIfNewInstall()
         if !historyEnabled, !history.isEmpty {
-            history = []
-            persist()
+            clearHistory()
         }
     }
 
@@ -92,19 +82,26 @@ final class PatchActivationStore: ObservableObject {
         persist()
     }
 
-    /// Turns every option off in the UI and drops leftover apply receipts so a new install starts clean.
-    func resetActivations() {
+    func resetAllActivations() {
         activeIDs = []
         history = []
-        wipePersistedState()
-        DevicePatchService.clearApplyReceipts()
         persist()
+        deleteKeychain()
+    }
+
+    private func resetIfNewInstall() {
+        let stored = UserDefaults.standard.string(forKey: generationKey)
+        if stored != currentGeneration {
+            resetAllActivations()
+            UserDefaults.standard.set(currentGeneration, forKey: generationKey)
+        }
     }
 
     private func persist() {
-        let snapshot = Snapshot(activeIDs: Array(activeIDs), history: historyEnabled ? history : [])
+        let snapshot = Snapshot(activeIDs: Array(activeIDs), history: history)
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         UserDefaults.standard.set(data, forKey: defaultsKey)
+        deleteKeychain()
         guard let url = fileURL else { return }
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? data.write(to: url, options: .atomic)
@@ -131,16 +128,12 @@ final class PatchActivationStore: ObservableObject {
             .map { $0.appendingPathComponent("x.patch.activation.json") }
     }
 
-    private func wipePersistedState() {
-        UserDefaults.standard.removeObject(forKey: defaultsKey)
-        if let url = fileURL {
-            try? FileManager.default.removeItem(at: url)
-        }
-        let base: [String: Any] = [
+    private func deleteKeychain() {
+        let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
             kSecAttrAccount as String: keychainAccount
         ]
-        SecItemDelete(base as CFDictionary)
+        SecItemDelete(query as CFDictionary)
     }
 }

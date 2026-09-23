@@ -277,33 +277,28 @@ class AppState: ObservableObject {
         }
     }
 
-    func forceRestartExploit() {
-        guard kernelExploitApplicable else {
-            exploitStatus = .unsupported("iOS 27+")
-            return
-        }
-        if KernelExploit.hasReadySession {
-            exploitStatus = .success(method: "kexploit")
-            log("app: exploit already active — no second kernel run")
-            return
-        }
-        autoRunAttempted = false
+    func forceRerunKernelExploit() {
         kernelExploitRunning = false
         exploitStatus = .notStarted
-        runKernelExploitIfNeeded()
-    }
-
-    func forceRefreshStatus() {
-        detectSupport()
-        NotificationService.shared.fetchNotifications()
+        autoRunAttempted = false
+        KernelExploit.resetSession()
+        startKernelExploit(force: true)
     }
 
     func runKernelExploitIfNeeded() {
+        startKernelExploit(force: false)
+    }
+
+    private func startKernelExploit(force: Bool) {
         guard kernelExploitApplicable else { return }
-        refreshKernelExploitStatus()
-        guard !kernelExploitRunning,
-              !exploitStatus.isSuccess,
-              !exploitStatus.isFailed else { return }
+        if !force {
+            refreshKernelExploitStatus()
+            guard !kernelExploitRunning,
+                  !exploitStatus.isSuccess,
+                  !exploitStatus.isFailed else { return }
+        } else {
+            guard !kernelExploitRunning else { return }
+        }
         kernelExploitRunning = true
         exploitStatus = .notStarted
         log("app: running kernel exploit on background...")
