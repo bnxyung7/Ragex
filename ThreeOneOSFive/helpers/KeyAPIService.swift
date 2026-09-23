@@ -156,7 +156,7 @@ class KeyAPIService {
         request.setValue(appVersion, forHTTPHeaderField: "X-App-Version")
         request.timeoutInterval = 15
         
-        let regionCode = Locale.current.region?.identifier ?? Locale.current.regionCode ?? ""
+        let regionCode = Locale.current.region?.identifier ?? ""
         var body: [String: Any] = [
             "country": regionCode,
             "countryCode": regionCode,
@@ -193,7 +193,7 @@ class KeyAPIService {
         }
         let url = URL(string: "\(baseURL)/keys/\(encodedKey)/activate")!
         
-        let request = URLRequest(url: url)
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let appVersion = Bundle.main.object(forInfoDictionaryKey: "AppReleaseDisplayVersion") as? String 
@@ -202,7 +202,7 @@ class KeyAPIService {
         request.setValue(appVersion, forHTTPHeaderField: "X-App-Version")
         request.timeoutInterval = 15
         
-        let activateRegionCode = Locale.current.region?.identifier ?? Locale.current.regionCode ?? ""
+        let activateRegionCode = Locale.current.region?.identifier ?? ""
         var activateBody: [String: Any] = [
             "country": activateRegionCode,
             "countryCode": activateRegionCode,
