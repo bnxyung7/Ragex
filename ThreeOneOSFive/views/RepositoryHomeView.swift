@@ -44,13 +44,13 @@ struct RepositoryHomeView: View {
                             VStack(spacing: 0) {
                                 DeviceInfoRow(
                                     icon: "iphone",
-                                    label: language.text("dashboard.hardware_model"),
-                                    value: AppInfo.hardwareDisplayName
+                                    label: language.text("dashboard.hardware_model").uppercased(),
+                                    value: AppInfo.hardwareDisplayName.uppercased()
                                 )
                                 Divider().background(Color.white.opacity(0.04)).padding(.leading, 48)
                                 DeviceInfoRow(
                                     icon: "gearshape.2",
-                                    label: language.text("dashboard.ios_version"),
+                                    label: language.text("dashboard.ios_version").uppercased(),
                                     value: "\(AppInfo.osVersion) (\(AppInfo.osBuild))"
                                 )
                                 Divider().background(Color.white.opacity(0.04)).padding(.leading, 48)
@@ -60,17 +60,14 @@ struct RepositoryHomeView: View {
                         }
                         .padding(.horizontal, 16)
 
-                        // Versiones Compatibles
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("VERSIONES COMPATIBLES")
+                            Text("PLATAFORMA")
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(Color(hex: "475569"))
                                 .padding(.horizontal, 4)
 
                             Button {
-                                withAnimation(.easeInOut(duration: 0.25)) {
-                                    showCompatibility.toggle()
-                                }
+                                showCompatibility = true
                             } label: {
                                 HStack(spacing: 14) {
                                     ZStack {
@@ -82,15 +79,15 @@ struct RepositoryHomeView: View {
                                             .foregroundStyle(Color(hex: "10B981"))
                                     }
                                     VStack(alignment: .leading, spacing: 3) {
-                                        Text("Versiones soportadas")
-                                            .font(.system(size: 14, weight: .semibold))
+                                        Text("VERSIONES SOPORTADAS")
+                                            .font(.system(size: 13, weight: .bold))
                                             .foregroundStyle(.white)
-                                        Text("iOS 15 – iOS 18 · iOS 26+")
-                                            .font(.caption2)
-                                            .foregroundStyle(Color(hex: "475569"))
+                                        Text("IOS 15 – 18  ·  IOS 26 – 27+")
+                                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                            .foregroundStyle(Color(hex: "64748B"))
                                     }
                                     Spacer()
-                                    Image(systemName: showCompatibility ? "chevron.up" : "chevron.down")
+                                    Image(systemName: "chevron.right")
                                         .font(.caption.weight(.semibold))
                                         .foregroundStyle(Color(hex: "475569"))
                                 }
@@ -98,17 +95,6 @@ struct RepositoryHomeView: View {
                             }
                             .buttonStyle(.plain)
                             .obsidianCard(cornerRadius: 14, borderColor: Color.white.opacity(0.06))
-
-                            if showCompatibility {
-                                VStack(spacing: 6) {
-                                    CompatVersionGroup(title: "iOS 15 – iOS 16", versions: "15.0 – 16.7.x", color: Color(hex: "94A3B8"))
-                                    CompatVersionGroup(title: "iOS 17", versions: "17.0 · 17.0.1 · 17.0.2 · 17.0.3 · 17.1 · 17.1.1 · 17.1.2 · 17.2 · 17.2.1 · 17.3 · 17.3.1 · 17.4 · 17.4.1 · 17.5 · 17.5.1 · 17.6 · 17.6.1 · 17.7.x", color: Color(hex: "94A3B8"))
-                                    CompatVersionGroup(title: "iOS 18", versions: "18.0 · 18.0.1 · 18.1 · 18.1.1 · 18.2 · 18.2.1 · 18.3 · 18.3.1 · 18.3.2 · 18.4 · 18.4.1 · 18.5 · 18.6 · 18.6.1 · 18.7.x", color: Color(hex: "94A3B8"))
-                                    CompatVersionGroup(title: "iOS 26", versions: "26.0 · 26.0.1 · 26.1 · 26.2 · 26.3 · 26.4 · 26.5 · 26.6 · 26.6.1 · 26.6.2", color: Color(hex: "94A3B8"))
-                                    CompatVersionGroup(title: "iOS 27+", versions: "27.0 · 27.1+ Soportado", color: Color(hex: "10B981"))
-                                }
-                                .transition(.opacity.combined(with: .move(edge: .top)))
-                            }
                         }
                         .padding(.horizontal, 16)
 
@@ -137,29 +123,103 @@ struct RepositoryHomeView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showCompatibility) {
+                SupportedVersionsSheet()
+            }
         }
     }
 }
 
-// MARK: - CompatVersionGroup
-private struct CompatVersionGroup: View {
-    let title: String
-    let versions: String
-    let color: Color
+// MARK: - Supported versions sheet (lightweight — no inline expand freeze)
+
+private struct SupportedPlatformRow: Identifiable {
+    let id: String
+    let family: String
+    let coverage: String
+    let status: String
+    let isCurrent: Bool
+}
+
+private struct SupportedVersionsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    private var rows: [SupportedPlatformRow] {
+        let major = Int(AppInfo.osVersion.split(separator: ".").first.map(String.init) ?? "") ?? 0
+        return [
+            SupportedPlatformRow(id: "15", family: "IOS 15 – 16", coverage: "15.0 – 16.7.X", status: "VERIFICADO", isCurrent: major == 15 || major == 16),
+            SupportedPlatformRow(id: "17", family: "IOS 17", coverage: ExploitSupportPolicy.verifiedIOS17Range.uppercased(), status: "VERIFICADO", isCurrent: major == 17),
+            SupportedPlatformRow(id: "18", family: "IOS 18", coverage: ExploitSupportPolicy.verifiedIOS18Range.uppercased(), status: "VERIFICADO", isCurrent: major == 18),
+            SupportedPlatformRow(id: "26", family: "IOS 26", coverage: ExploitSupportPolicy.verifiedIOS26Range.uppercased(), status: "VERIFICADO", isCurrent: major == 26),
+            SupportedPlatformRow(id: "27", family: "IOS 27+", coverage: "27.0+", status: "LISTO", isCurrent: major >= 27)
+        ]
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(title)
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(color)
-            Text(versions)
-                .font(.system(size: 11))
-                .foregroundStyle(Color(hex: "475569"))
-                .lineSpacing(2)
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+
+                List {
+                    Section {
+                        ForEach(rows) { row in
+                            HStack(alignment: .center, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 8) {
+                                        Text(row.family)
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundStyle(.white)
+                                        if row.isCurrent {
+                                            Text("ESTE DISPOSITIVO")
+                                                .font(.system(size: 9, weight: .bold))
+                                                .foregroundStyle(Color(hex: "10B981"))
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 3)
+                                                .background(Color(hex: "10B981").opacity(0.12), in: Capsule())
+                                        }
+                                    }
+                                    Text(row.coverage)
+                                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                        .foregroundStyle(Color(hex: "64748B"))
+                                }
+                                Spacer()
+                                Text(row.status)
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(Color(hex: "10B981"))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 5)
+                                    .background(Color(hex: "10B981").opacity(0.10), in: Capsule())
+                            }
+                            .listRowBackground(Color(hex: "0A0A0A"))
+                            .listRowSeparatorTint(Color.white.opacity(0.06))
+                            .padding(.vertical, 4)
+                        }
+                    } header: {
+                        Text("COBERTURA VERIFICADA")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color(hex: "64748B"))
+                    } footer: {
+                        Text("RANGOS OFICIALES DE KERNEL. ESTE DISPOSITIVO: IOS \(AppInfo.osVersion) (\(AppInfo.osBuild)).")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(Color(hex: "475569"))
+                            .textCase(.uppercase)
+                    }
+                }
+                .scrollContentBackground(.hidden)
+                .listStyle(.insetGrouped)
+            }
+            .navigationTitle("VERSIONES SOPORTADAS")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color.black, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("CERRAR") { dismiss() }
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Color(hex: "94A3B8"))
+                }
+            }
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.03)).overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.06), lineWidth: 1)))
+        .preferredColorScheme(.dark)
     }
 }
 
@@ -207,12 +267,12 @@ private struct CompatibilityRow: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color(hex: "10B981"))
             }
-            Text(language.text("dashboard.compatibility"))
+            Text(language.text("dashboard.compatibility").uppercased())
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Color(hex: "CBD5E1"))
             Spacer()
             CyberBadge(
-                text: language.text("dashboard.supported"),
+                text: language.text("dashboard.supported").uppercased(),
                 icon: "checkmark",
                 color: Color(hex: "10B981")
             )
