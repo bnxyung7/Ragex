@@ -150,7 +150,7 @@ class KeyAPIService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let appVersion = Bundle.main.object(forInfoDictionaryKey: "AppReleaseDisplayVersion") as? String 
             ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String 
-            ?? "2.2.2"
+            ?? "3.1.0"
         request.setValue(appVersion, forHTTPHeaderField: "X-App-Version")
         request.timeoutInterval = 15
         
@@ -196,7 +196,7 @@ class KeyAPIService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let appVersion = Bundle.main.object(forInfoDictionaryKey: "AppReleaseDisplayVersion") as? String 
             ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String 
-            ?? "2.2.2"
+            ?? "3.1.0"
         request.setValue(appVersion, forHTTPHeaderField: "X-App-Version")
         request.timeoutInterval = 15
         
@@ -240,7 +240,7 @@ class KeyAPIService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let appVersion = Bundle.main.object(forInfoDictionaryKey: "AppReleaseDisplayVersion") as? String 
             ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String 
-            ?? "2.2.2"
+            ?? "3.1.0"
         request.setValue(appVersion, forHTTPHeaderField: "X-App-Version")
         let body: [String: Any] = [
             "appVersion": appVersion
@@ -582,7 +582,7 @@ class KeyAPIService {
         
         let appVersion = Bundle.main.object(forInfoDictionaryKey: "AppReleaseDisplayVersion") as? String 
             ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String 
-            ?? "2.2.2"
+            ?? "3.1.0"
         let iosVersion = "\(AppInfo.osVersion) (\(AppInfo.osBuild))"
         let deviceModel = AppInfo.hardwareDisplayName
         let deviceId = UIDevice.current.identifierForVendor?.uuidString
