@@ -146,10 +146,10 @@ struct FreeFireView: View {
                 await performRefresh()
             }
         }
-        .alert("Error", isPresented: $showErrorAlert) {
+        .alert(language.text("ff.error"), isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text(errorMessage ?? "Ocurrió un error inesperado.")
+            Text(errorMessage ?? language.text("ff.unexpected"))
         }
     }
     
@@ -162,7 +162,7 @@ struct FreeFireView: View {
             HStack(spacing: AppTheme.spacing6) {
                 Image(systemName: "megaphone.fill")
                     .font(.system(size: 12, weight: .bold))
-                Text("Anuncios")
+                Text(language.text("ff.announcements"))
                     .font(.system(size: 12, weight: .bold))
                 if announcementService.hasUnreadAnnouncements {
                     Circle()
@@ -253,7 +253,7 @@ struct FreeFireView: View {
                     HStack(spacing: 6) {
                         HStack(spacing: AppTheme.spacing4) {
                             PulseStatusDot(color: Color(hex: "10B981"))
-                            Text("Activo")
+                            Text(language.text("ff.active"))
                                 .font(.system(size: 10, weight: .semibold))
                                 .foregroundStyle(Color(hex: "10B981"))
                         }
@@ -285,7 +285,7 @@ struct FreeFireView: View {
                                         .font(.system(size: 8, weight: .bold))
                                         .foregroundStyle(AppTheme.accent)
                                 }
-                                Text("EN VIVO")
+                                Text(language.text("ff.live"))
                                     .font(.system(size: 8, weight: .black))
                                     .foregroundStyle(AppTheme.accent)
                             }
@@ -483,14 +483,14 @@ struct FreeFireView: View {
 
     private var activationHistorySection: some View {
         VStack(alignment: .leading, spacing: AppTheme.spacing8) {
-            Text("Historial de activación")
+            Text(language.text("ff.history"))
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(Color(hex: "94A3B8"))
                 .textCase(.uppercase)
                 .tracking(0.6)
 
             if activationStore.history.isEmpty {
-                Text("Todavía no hay cambios registrados.")
+                Text(language.text("ff.history_empty"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Color(hex: "64748B"))
                     .padding(.vertical, 8)
@@ -505,7 +505,7 @@ struct FreeFireView: View {
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(.white)
                                 .lineLimit(1)
-                            Text("\(event.activated ? "Activado" : "Desactivado")  ·  \(formattedHistoryDate(event.date))")
+                            Text("\(event.activated ? language.text("ff.activated") : language.text("ff.deactivated"))  ·  \(formattedHistoryDate(event.date))")
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(Color(hex: "94A3B8"))
                         }
@@ -521,7 +521,7 @@ struct FreeFireView: View {
 
     private func formattedHistoryDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = language.locale
         formatter.dateStyle = .short
         formatter.timeStyle = .short
         return formatter.string(from: date)
@@ -547,7 +547,7 @@ struct FreeFireView: View {
             .padding(.top, 36)
             
             VStack(spacing: AppTheme.spacing8) {
-                Text("Categoría vacía")
+                Text(language.text("ff.empty"))
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
             }
@@ -824,11 +824,11 @@ struct FreeFireView: View {
                 .padding(.top, AppTheme.spacing10)
                 
                 VStack(spacing: AppTheme.spacing10) {
-                    Text("ACCESO BANEADO")
+                    Text(language.text("ff.banned_title"))
                         .font(.system(size: 22, weight: .heavy, design: .rounded))
                         .foregroundStyle(Color(hex: "EF4444"))
                     
-                    Text("Tu clave de acceso ha sido inhabilitada por la administración.")
+                    Text(language.text("ff.banned_body"))
                         .font(.subheadline)
                         .foregroundStyle(Color(hex: "94A3B8"))
                         .multilineTextAlignment(.center)
@@ -839,12 +839,12 @@ struct FreeFireView: View {
                     HStack {
                         Image(systemName: "shield.slash.fill")
                             .foregroundStyle(Color(hex: "EF4444"))
-                        Text("ESTADO DE LA SANCIÓN")
+                        Text(language.text("ff.ban_status"))
                             .font(.caption)
                             .fontWeight(.bold)
                             .foregroundStyle(Color(hex: "94A3B8"))
                         Spacer()
-                        Text("SUSPENDIDO")
+                        Text(language.text("ff.suspended"))
                             .font(.system(size: 10, weight: .black))
                             .padding(.horizontal, AppTheme.spacing8)
                             .padding(.vertical, 3)
@@ -858,7 +858,7 @@ struct FreeFireView: View {
                     
                     if let keyString = keyStore.activeSession?.key.keyString {
                         VStack(alignment: .leading, spacing: AppTheme.spacing6) {
-                            Text("Clave afectada:")
+                            Text(language.text("ff.affected_key"))
                                 .font(.caption2)
                                 .foregroundStyle(Color(hex: "94A3B8"))
                             Text(keyString)
@@ -869,10 +869,10 @@ struct FreeFireView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: AppTheme.spacing6) {
-                        Text("Motivo del bloqueo:")
+                        Text(language.text("ff.ban_reason"))
                             .font(.caption2)
                             .foregroundStyle(Color(hex: "94A3B8"))
-                        Text(keyStore.banReason ?? "Violación de términos del servicio o uso no autorizado.")
+                        Text(keyStore.banReason ?? language.text("ff.ban_reason_default"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundStyle(.white)
@@ -884,14 +884,14 @@ struct FreeFireView: View {
                 .padding(.horizontal, AppTheme.spacing24)
                 
                 VStack(spacing: AppTheme.itemSpacing) {
-                    Text("Comunícate con soporte para apelar tu clave:")
+                    Text(language.text("ff.appeal"))
                         .font(.caption)
                         .foregroundStyle(Color(hex: "94A3B8"))
                     
                     Link(destination: URL(string: "https://wa.me/18099289722?text=Hola,%20mi%20clave%20de%20Project%20X%20fue%20baneada:\(keyStore.activeSession?.key.keyString ?? "")")!) {
                         HStack {
                             Image(systemName: "bubble.left.and.bubble.right.fill")
-                            Text("Soporte Oficial WhatsApp")
+                            Text(language.text("ff.whatsapp"))
                                 .fontWeight(.bold)
                             Spacer()
                             Image(systemName: "arrow.up.right")
@@ -911,7 +911,7 @@ struct FreeFireView: View {
                     } label: {
                         HStack {
                             Image(systemName: "xmark.circle")
-                            Text("Cerrar Sesión")
+                            Text(language.text("ff.logout"))
                         }
                         .font(.caption)
                         .foregroundStyle(Color(hex: "94A3B8"))
@@ -944,11 +944,11 @@ struct FreeFireView: View {
             }
             
             VStack(spacing: AppTheme.spacing8) {
-                Text("\(mode.rawValue) Bloqueado")
+                Text(language.text("ff.locked_title", mode.rawValue))
                     .font(.system(size: 22, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 
-                Text("Activa tu clave de acceso desde la pestaña Perfil para desbloquear todas las funciones.")
+                Text(language.text("ff.locked_body"))
                     .font(.subheadline)
                     .foregroundStyle(Color(hex: "94A3B8"))
                     .multilineTextAlignment(.center)
@@ -962,10 +962,10 @@ struct FreeFireView: View {
                         .foregroundStyle(AppTheme.accent)
                     
                     VStack(alignment: .leading, spacing: AppTheme.spacing4) {
-                        Text("¿Cómo activar?")
+                        Text(language.text("ff.how_activate"))
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.white)
-                        Text("Dirígete a Perfil e ingresa tu clave asignada")
+                        Text(language.text("ff.how_activate_body"))
                             .font(.caption)
                             .foregroundStyle(Color(hex: "94A3B8"))
                     }

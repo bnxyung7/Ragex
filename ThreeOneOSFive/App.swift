@@ -81,7 +81,7 @@ struct ThreeOneOSFiveApp: App {
     @StateObject private var fileOperationCoordinator = FileOperationCoordinator()
     @StateObject private var patchStore = PatchProjectStore()
     @StateObject private var repositoryStore = PackageRepositoryStore()
-    @AppStorage(AppLanguage.storageKey) private var languageCode = "es"
+    @AppStorage(AppLanguage.storageKey) private var languageCode = ""
     @State private var showOnboarding = OnboardingStore.shouldShow()
     @State private var showAttribution = false
     @State private var updateOffer: AppUpdateChecker.Offer?
@@ -98,7 +98,7 @@ struct ThreeOneOSFiveApp: App {
     }
 
     private var language: AppLanguage {
-        AppLanguage(rawValue: languageCode) ?? .spanish
+        AppLanguage(rawValue: languageCode) ?? .recommended()
     }
 
     private func checkForUpdate() {

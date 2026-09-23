@@ -5,10 +5,6 @@ struct SupportView: View {
     @StateObject private var themeManager = ThemeManager.shared
     @State private var showCopiedAlert = false
     
-    private var isSpanish: Bool {
-        Locale.current.language.languageCode?.identifier == "es"
-    }
-    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -31,11 +27,11 @@ struct SupportView: View {
                             .padding(.top, 16)
                             
                             VStack(spacing: 4) {
-                                Text(isSpanish ? "Centro de Soporte" : "Support Center")
+                                Text(language.text("support.center_title"))
                                     .font(.system(size: 26, weight: .heavy, design: .rounded))
                                     .foregroundStyle(.white)
                                 
-                                Text(isSpanish ? "Atención directa y soporte para X iOS" : "Direct help & support for X iOS")
+                                Text(language.text("support.center_subtitle"))
                                     .font(.subheadline)
                                     .foregroundStyle(Color(hex: "94A3B8"))
                                     .multilineTextAlignment(.center)
@@ -45,9 +41,9 @@ struct SupportView: View {
                         // WhatsApp Official Card
                         SupportCard(
                             icon: "bubble.left.and.bubble.right.fill",
-                            badge: "OFICIAL",
-                            title: "WhatsApp Oficial",
-                            subtitle: isSpanish ? "Atención rápida personalizada" : "Fast personal assistance",
+                            badge: language.text("support.badge_official"),
+                            title: language.text("support.whatsapp_official"),
+                            subtitle: language.text("support.whatsapp_fast"),
                             color: Color(hex: "10B981"),
                             detail: SupportContact.whatsappNumber
                         ) {
@@ -57,11 +53,11 @@ struct SupportView: View {
                         // WhatsApp Channel Card
                         SupportCard(
                             icon: "megaphone.fill",
-                            badge: "CANAL",
-                            title: "Canal de Novedades",
-                            subtitle: isSpanish ? "Actualizaciones, avisos y nuevas versiones" : "News, updates & releases",
+                            badge: language.text("support.badge_channel"),
+                            title: language.text("support.news_channel"),
+                            subtitle: language.text("support.news_channel_desc"),
                             color: AppTheme.accent,
-                            detail: "Seguir en WhatsApp"
+                            detail: language.text("support.follow_whatsapp")
                         ) {
                             openChannel()
                         }
@@ -86,7 +82,7 @@ struct SupportView: View {
                                         CyberBadge(text: "DEV", color: Color(hex: "8B5CF6"))
                                     }
                                     
-                                    Text("Desarrollador Oficial de X")
+                                    Text(language.text("support.official_developer"))
                                         .font(.caption)
                                         .foregroundStyle(Color(hex: "94A3B8"))
                                 }
@@ -98,7 +94,7 @@ struct SupportView: View {
                                 .background(Color.white.opacity(0.08))
                             
                             HStack {
-                                Text("Contacto:")
+                                Text(language.text("support.contact_label"))
                                     .font(.caption)
                                     .foregroundStyle(Color(hex: "94A3B8"))
                                 
@@ -136,7 +132,7 @@ struct SupportView: View {
                     .padding(.horizontal, 16)
                 }
             }
-            .navigationTitle("Soporte")
+            .navigationTitle(language.supportTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color.black, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
@@ -151,7 +147,7 @@ struct SupportView: View {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(Color(hex: "10B981"))
                             
-                            Text(isSpanish ? "¡Número copiado al portapapeles!" : "Number copied to clipboard!")
+                            Text(language.supportCopiedMessage)
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(.white)
                         }
@@ -178,7 +174,7 @@ struct SupportView: View {
     // MARK: - Actions
     private func openWhatsApp() {
         let number = SupportContact.whatsappNumber.replacingOccurrences(of: "+", with: "")
-        let message = isSpanish ? "Hola, necesito soporte con X iOS" : "Hello, I need help with X iOS"
+        let message = language.text("support.whatsapp_prefill")
         let urlString = "https://wa.me/\(number)?text=\(message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
         
         if let url = URL(string: urlString) {

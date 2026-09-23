@@ -229,6 +229,12 @@
 		3105A121 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105A122 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105A123 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		3105A124 /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/Localizable.strings; sourceTree = "<group>"; };
+		3105A125 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		3105A126 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/Localizable.strings; sourceTree = "<group>"; };
+		3105A127 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
+		3105A128 /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = th; path = th.lproj/Localizable.strings; sourceTree = "<group>"; };
+		3105A129 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105P100 /* PreinstalledPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PreinstalledPatches; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -458,7 +464,14 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				es,
 				pt,
+				id,
+				fr,
+				ar,
+				ru,
+				th,
+				vi,
 				Base,
 			);
 			mainGroup = 3105A400;
@@ -587,6 +600,12 @@
 				3105A123 /* es */,
 				3105A121 /* en */,
 				3105A122 /* pt */,
+				3105A124 /* id */,
+				3105A125 /* fr */,
+				3105A126 /* ar */,
+				3105A127 /* ru */,
+				3105A128 /* th */,
+				3105A129 /* vi */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";

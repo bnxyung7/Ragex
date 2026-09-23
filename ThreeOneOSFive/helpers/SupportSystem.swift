@@ -60,99 +60,16 @@ extension Color {
 
 // MARK: - Support Localizations
 extension AppLanguage {
-    var supportTitle: String {
-        switch self {
-        case .spanish: return "Soporte"
-        case .english: return "Support"
-        case .portuguese: return "Suporte"
-        }
-    }
-
-    var supportSubtitle: String {
-        switch self {
-        case .spanish: return "Estamos aquí para ayudarte"
-        case .english: return "We're here to help you"
-        case .portuguese: return "Estamos aqui para ajudar você"
-        }
-    }
-
-    var supportWhatsAppTitle: String {
-        switch self {
-        case .spanish: return "Soporte WhatsApp"
-        case .english: return "WhatsApp Support"
-        case .portuguese: return "Suporte WhatsApp"
-        }
-    }
-
-    var supportWhatsAppDesc: String {
-        switch self {
-        case .spanish: return "Habla con nosotros directamente"
-        case .english: return "Chat with us directly"
-        case .portuguese: return "Fale conosco diretamente"
-        }
-    }
-
-    var supportTelegramTitle: String {
-        switch self {
-        case .spanish: return "Soporte Telegram"
-        case .english: return "Telegram Support"
-        case .portuguese: return "Suporte Telegram"
-        }
-    }
-
-    var supportTelegramDesc: String {
-        switch self {
-        case .spanish: return "Respuestas rápidas en Telegram"
-        case .english: return "Fast responses on Telegram"
-        case .portuguese: return "Respostas rápidas no Telegram"
-        }
-    }
-
-    var supportEmailTitle: String {
-        switch self {
-        case .spanish: return "Soporte por correo"
-        case .english: return "Email Support"
-        case .portuguese: return "Suporte por e-mail"
-        }
-    }
-
-    var supportEmailDesc: String {
-        switch self {
-        case .spanish: return "Envíanos un correo"
-        case .english: return "Send us an email"
-        case .portuguese: return "Envie-nos um e-mail"
-        }
-    }
-
-    var supportDeveloperTitle: String {
-        switch self {
-        case .spanish: return "Información del desarrollador"
-        case .english: return "Developer Info"
-        case .portuguese: return "Informações do desenvolvedor"
-        }
-    }
-
-    var supportDeveloperDesc: String {
-        switch self {
-        case .spanish: return "Creado por Bnxyung7"
-        case .english: return "Created by Bnxyung7"
-        case .portuguese: return "Criado por Bnxyung7"
-        }
-    }
-
-    var supportOpenButton: String {
-        switch self {
-        case .spanish: return "Abrir"
-        case .english: return "Open"
-        case .portuguese: return "Abrir"
-        }
-    }
-
-    var supportCopiedMessage: String {
-        switch self {
-        case .spanish: return "Copiado al portapapeles"
-        case .english: return "Copied to clipboard!"
-        case .portuguese: return "Copiado para a área de transferência"
-        }
-    }
+    var supportTitle: String { text("support.title") }
+    var supportSubtitle: String { text("support.subtitle") }
+    var supportWhatsAppTitle: String { text("support.whatsapp_title") }
+    var supportWhatsAppDesc: String { text("support.whatsapp_desc") }
+    var supportTelegramTitle: String { text("support.telegram_title") }
+    var supportTelegramDesc: String { text("support.telegram_desc") }
+    var supportEmailTitle: String { text("support.email_title") }
+    var supportEmailDesc: String { text("support.email_desc") }
+    var supportDeveloperTitle: String { text("support.developer_title") }
+    var supportDeveloperDesc: String { text("support.developer_desc") }
+    var supportOpenButton: String { text("support.open") }
+    var supportCopiedMessage: String { text("support.copied") }
 }

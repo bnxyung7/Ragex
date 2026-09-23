@@ -6,6 +6,12 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     case spanish = "es"
     case english = "en"
     case portuguese = "pt"
+    case indonesian = "id"
+    case french = "fr"
+    case arabic = "ar"
+    case russian = "ru"
+    case thai = "th"
+    case vietnamese = "vi"
 
     var id: String { rawValue }
 
@@ -14,6 +20,12 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         case .spanish: return Locale(identifier: "es")
         case .english: return Locale(identifier: "en")
         case .portuguese: return Locale(identifier: "pt-BR")
+        case .indonesian: return Locale(identifier: "id")
+        case .french: return Locale(identifier: "fr")
+        case .arabic: return Locale(identifier: "ar")
+        case .russian: return Locale(identifier: "ru")
+        case .thai: return Locale(identifier: "th")
+        case .vietnamese: return Locale(identifier: "vi")
         }
     }
 
@@ -22,6 +34,12 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         case .spanish: return "Español"
         case .english: return "English"
         case .portuguese: return "Português"
+        case .indonesian: return "Bahasa Indonesia"
+        case .french: return "Français"
+        case .arabic: return "العربية"
+        case .russian: return "Русский"
+        case .thai: return "ไทย"
+        case .vietnamese: return "Tiếng Việt"
         }
     }
 
@@ -30,15 +48,17 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         case .spanish: return "ESPAÑA · LATINOAMÉRICA"
         case .english: return "UNITED STATES · INTERNATIONAL"
         case .portuguese: return "BRASIL · PORTUGAL"
+        case .indonesian: return "INDONESIA"
+        case .french: return "FRANCE · AFRIQUE"
+        case .arabic: return "MENA"
+        case .russian: return "RUSSIA · CIS"
+        case .thai: return "THAILAND"
+        case .vietnamese: return "VIETNAM"
         }
     }
 
     var codeLabel: String {
-        switch self {
-        case .spanish: return "ES"
-        case .english: return "EN"
-        case .portuguese: return "PT"
-        }
+        rawValue.uppercased()
     }
 
     var displayName: String { nativeName }
@@ -47,6 +67,12 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         let code = Locale.current.language.languageCode?.identifier.lowercased() ?? "en"
         if code.hasPrefix("es") { return .spanish }
         if code.hasPrefix("pt") { return .portuguese }
+        if code.hasPrefix("id") || code == "in" { return .indonesian }
+        if code.hasPrefix("fr") { return .french }
+        if code.hasPrefix("ar") { return .arabic }
+        if code.hasPrefix("ru") { return .russian }
+        if code.hasPrefix("th") { return .thai }
+        if code.hasPrefix("vi") { return .vietnamese }
         return .english
     }
 
@@ -78,7 +104,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 private struct AppLanguageEnvironmentKey: EnvironmentKey {
-    static let defaultValue = AppLanguage.spanish
+    static let defaultValue = AppLanguage.recommended()
 }
 
 extension EnvironmentValues {
