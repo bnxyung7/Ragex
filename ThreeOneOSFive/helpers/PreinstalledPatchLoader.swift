@@ -2,21 +2,20 @@ import Foundation
 
 /// Loads preinstalled patches from the app bundle on first launch
 enum PreinstalledPatchLoader {
-    private static let hasInstalledKey = "PreinstalledPatchLoader.hasInstalled"
-    
-    /// Install preinstalled patches from bundle if not already done
+    private static let installedGenerationKey = "PreinstalledPatchLoader.generation"
+    private static let generation = "3.1.1-24"
+
+    /// Copy bundled patches once per build. An empty bundle does not lock the flag,
+    /// so a later IPA that adds products still installs them.
     static func installIfNeeded() {
-        print("[PreinstalledPatches] Checking if installation needed...")
-        
-        guard !UserDefaults.standard.bool(forKey: hasInstalledKey) else {
-            print("[PreinstalledPatches] Already installed, skipping")
-            return // Already installed
+        if UserDefaults.standard.string(forKey: installedGenerationKey) == generation {
+            return
         }
-        
-        print("[PreinstalledPatches] First launch detected, installing patches...")
-        installPreinstalledPatches()
-        UserDefaults.standard.set(true, forKey: hasInstalledKey)
-        print("[PreinstalledPatches] Installation complete")
+        if installPreinstalledPatches() {
+            UserDefaults.standard.set(generation, forKey: installedGenerationKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: installedGenerationKey)
+        }
     }
     
     /// Force reinstall preinstalled patches (bypasses the "already installed" check)
@@ -26,7 +25,8 @@ enum PreinstalledPatchLoader {
         print("[PreinstalledPatches] Force reinstall complete")
     }
     
-    private static func installPreinstalledPatches() {
+    @discardableResult
+    private static func installPreinstalledPatches() -> Bool {
         let fileManager = FileManager.default
         
         print("[PreinstalledPatches] Looking for patch file in bundle...")
@@ -34,7 +34,7 @@ enum PreinstalledPatchLoader {
         // Try to find the .3105 file directly in the bundle
         guard let bundleURL = Bundle.main.resourceURL else {
             print("[PreinstalledPatches] ERROR: Could not get bundle resource URL")
-            return
+            return false
         }
         
         print("[PreinstalledPatches] Bundle resource URL: \(bundleURL.path)")
@@ -46,10 +46,10 @@ enum PreinstalledPatchLoader {
             options: [.skipsSubdirectoryDescendants, .skipsHiddenFiles]
         ) else {
             print("[PreinstalledPatches] ERROR: Could not list bundle contents")
-            return
+            return false
         }
         
-        let patchFiles = allFiles.filter { $0.pathExtension.lowercased() == "3105" }
+        let patchFiles = allFiles.filter { ["3105", "3105e"].contains($0.pathExtension.lowercased()) }
         print("[PreinstalledPatches] Found \(patchFiles.count) .3105 files in bundle root")
         
         // Also check PreinstalledPatches subfolder recursively
@@ -61,7 +61,7 @@ enum PreinstalledPatchLoader {
             // Use enumerator to search recursively in subdirectories
             if let enumerator = fileManager.enumerator(at: preinstalledFolder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
                 for case let fileURL as URL in enumerator {
-                    if fileURL.pathExtension.lowercased() == "3105" {
+                    if ["3105", "3105e"].contains(fileURL.pathExtension.lowercased()) {
                         additionalPatches.append(fileURL)
                     }
                 }
@@ -74,8 +74,8 @@ enum PreinstalledPatchLoader {
         let allPatchFiles = patchFiles + additionalPatches
         
         guard !allPatchFiles.isEmpty else {
-            print("[PreinstalledPatches] No .3105 files found in bundle")
-            return
+            print("[PreinstalledPatches] No patch files found in bundle")
+            return false
         }
         
         // Get destination directory
@@ -83,7 +83,7 @@ enum PreinstalledPatchLoader {
             fileManager: fileManager
         ) else {
             print("[PreinstalledPatches] ERROR: Could not get patch library destination")
-            return
+            return false
         }
         
         print("[PreinstalledPatches] Destination: \(destinationRoot.path)")
@@ -111,10 +111,11 @@ enum PreinstalledPatchLoader {
                 print("[PreinstalledPatches] ❌ Failed to install \(sourceURL.lastPathComponent): \(error)")
             }
         }
+        return true
     }
     
     /// Reset the flag (for testing)
     static func resetInstallationFlag() {
-        UserDefaults.standard.removeObject(forKey: hasInstalledKey)
+        UserDefaults.standard.removeObject(forKey: installedGenerationKey)
     }
 }

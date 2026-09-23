@@ -191,14 +191,15 @@ struct ThreeOneOSFiveApp: App {
                     Task { @MainActor in
                         PushNotificationService.shared.requestPermissionIfNeeded()
                     }
-                    // Cargar notificaciones del panel admin
                     NotificationService.shared.fetchNotifications()
+                    PreinstalledPatchLoader.installIfNeeded()
                 }
             }
             .onChange(of: scenePhase) { phase in
                 guard phase == .active, !showOnboarding else { return }
                 checkVersionStatus()
                 appState.detectSupport()
+                NotificationService.shared.fetchNotifications()
             }
             .onOpenURL { url in
                 patchDraftCoordinator.presentImport(url)
@@ -303,7 +304,7 @@ class AppState: ObservableObject {
         exploitStatus = .notStarted
         log("app: running kernel exploit on background...")
         
-        let maxAttempts = 3
+        let maxAttempts = 1
         var currentAttempt = 0
         
         DispatchQueue.global(qos: .userInitiated).async {

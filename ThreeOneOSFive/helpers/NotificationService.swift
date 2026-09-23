@@ -89,11 +89,107 @@ struct ServerNotification: Codable, Identifiable {
         case viewCount, clickCount
     }
 
-    var date: Date { 
-        if let timestamp = Double(createdAt.replacingOccurrences(of: "T", with: " ").replacingOccurrences(of: "Z", with: "").prefix(19)) {
-            return Date(timeIntervalSince1970: timestamp)
+    var date: Date {
+        let trimmed = createdAt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return Date() }
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let parsed = iso.date(from: trimmed) { return parsed }
+        iso.formatOptions = [.withInternetDateTime]
+        if let parsed = iso.date(from: trimmed) { return parsed }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        for format in [
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX",
+            "yyyy-MM-dd'T'HH:mm:ssXXXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        ] {
+            formatter.dateFormat = format
+            if let parsed = formatter.date(from: trimmed) { return parsed }
         }
         return Date()
+    }
+
+    init(
+        id: Int,
+        title: String,
+        message: String,
+        type: String,
+        priority: String,
+        link: String,
+        imageUrl: String,
+        actionButton: String,
+        actionUrl: String,
+        targetAudience: String,
+        targetDevices: String,
+        isActive: Bool,
+        expiresAt: String?,
+        createdAt: String,
+        createdBy: String,
+        viewCount: Int,
+        clickCount: Int
+    ) {
+        self.id = id
+        self.title = title
+        self.message = message
+        self.type = type
+        self.priority = priority
+        self.link = link
+        self.imageUrl = imageUrl
+        self.actionButton = actionButton
+        self.actionUrl = actionUrl
+        self.targetAudience = targetAudience
+        self.targetDevices = targetDevices
+        self.isActive = isActive
+        self.expiresAt = expiresAt
+        self.createdAt = createdAt
+        self.createdBy = createdBy
+        self.viewCount = viewCount
+        self.clickCount = clickCount
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        message = try container.decodeIfPresent(String.self, forKey: .message) ?? ""
+        type = try container.decodeIfPresent(String.self, forKey: .type) ?? "info"
+        priority = try container.decodeIfPresent(String.self, forKey: .priority) ?? "normal"
+        link = try container.decodeIfPresent(String.self, forKey: .link) ?? ""
+        imageUrl = try container.decodeIfPresent(String.self, forKey: .imageUrl) ?? ""
+        actionButton = try container.decodeIfPresent(String.self, forKey: .actionButton) ?? ""
+        actionUrl = try container.decodeIfPresent(String.self, forKey: .actionUrl) ?? ""
+        targetAudience = try container.decodeIfPresent(String.self, forKey: .targetAudience) ?? "all"
+        targetDevices = try container.decodeIfPresent(String.self, forKey: .targetDevices) ?? ""
+        isActive = try container.decodeIfPresent(Bool.self, forKey: .isActive) ?? true
+        expiresAt = try container.decodeIfPresent(String.self, forKey: .expiresAt)
+        createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt) ?? ""
+        createdBy = try container.decodeIfPresent(String.self, forKey: .createdBy) ?? ""
+        viewCount = try container.decodeIfPresent(Int.self, forKey: .viewCount) ?? 0
+        clickCount = try container.decodeIfPresent(Int.self, forKey: .clickCount) ?? 0
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(message, forKey: .message)
+        try container.encode(type, forKey: .type)
+        try container.encode(priority, forKey: .priority)
+        try container.encode(link, forKey: .link)
+        try container.encode(imageUrl, forKey: .imageUrl)
+        try container.encode(actionButton, forKey: .actionButton)
+        try container.encode(actionUrl, forKey: .actionUrl)
+        try container.encode(targetAudience, forKey: .targetAudience)
+        try container.encode(targetDevices, forKey: .targetDevices)
+        try container.encode(isActive, forKey: .isActive)
+        try container.encodeIfPresent(expiresAt, forKey: .expiresAt)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(createdBy, forKey: .createdBy)
+        try container.encode(viewCount, forKey: .viewCount)
+        try container.encode(clickCount, forKey: .clickCount)
     }
 
     var icon: String {
@@ -156,21 +252,32 @@ class NotificationService: ObservableObject {
     func fetchNotifications() {
         // Get device ID (hardware ID)
         let deviceId = DeviceIdentity.stableId()
-        
-        let urlString = deviceId.isEmpty 
-            ? "\(baseURL)/notifications/active"
-            : "\(baseURL)/notifications/active?deviceId=\(deviceId)"
-        
-        guard let url = URL(string: urlString) else { return }
+        var components = URLComponents(string: "\(baseURL)/notifications/active")
+        if !deviceId.isEmpty {
+            components?.queryItems = [URLQueryItem(name: "deviceId", value: deviceId)]
+        }
+        guard let url = components?.url else { return }
         isLoading = true
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
             DispatchQueue.main.async {
                 self?.isLoading = false
-                guard let data = data,
-                      let resp = try? JSONDecoder().decode(NotificationResponse.self, from: data),
-                      resp.success else { return }
-                self?.notifications = resp.notifications
-                self?.recalcUnread()
+                if let error {
+                    log("notifications: fetch failed \(error.localizedDescription)")
+                    return
+                }
+                let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                guard let data, status == 200 else {
+                    log("notifications: fetch HTTP \(status)")
+                    return
+                }
+                do {
+                    let resp = try JSONDecoder().decode(NotificationResponse.self, from: data)
+                    guard resp.success else { return }
+                    self?.notifications = resp.notifications
+                    self?.recalcUnread()
+                } catch {
+                    log("notifications: decode failed \(error.localizedDescription)")
+                }
             }
         }.resume()
     }
@@ -183,6 +290,7 @@ class NotificationService: ObservableObject {
     // MARK: - Track notification view
     
     func trackNotificationView(_ notificationId: Int) {
+        guard notificationId > 0 else { return }
         guard let url = URL(string: "\(baseURL)/notifications/\(notificationId)/view") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -193,6 +301,7 @@ class NotificationService: ObservableObject {
     // MARK: - Track notification click
     
     func trackNotificationClick(_ notificationId: Int) {
+        guard notificationId > 0 else { return }
         guard let url = URL(string: "\(baseURL)/notifications/\(notificationId)/click") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

@@ -378,6 +378,7 @@ class KeyAPIService {
         let body: [String: Any] = [
             "token": token,
             "keyString": keyString,
+            "deviceId": DeviceIdentity.stableId(),
             "platform": "apns"
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)

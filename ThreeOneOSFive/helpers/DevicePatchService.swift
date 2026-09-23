@@ -1,7 +1,27 @@
 import Foundation
 
 enum DevicePatchService {
+    private static let flightLock = NSLock()
+    private static var inFlightProjects = Set<UUID>()
+
+    private static func beginExclusive(_ projectID: UUID) throws {
+        flightLock.lock()
+        defer { flightLock.unlock() }
+        if inFlightProjects.contains(projectID) {
+            throw PatchPackageError.projectAlreadyApplied
+        }
+        inFlightProjects.insert(projectID)
+    }
+
+    private static func endExclusive(_ projectID: UUID) {
+        flightLock.lock()
+        inFlightProjects.remove(projectID)
+        flightLock.unlock()
+    }
+
     static func apply(project: PatchProject) throws -> PatchTransactionReceipt {
+        try beginExclusive(project.id)
+        defer { endExclusive(project.id) }
         let bundleIDs = orderedBundleIdentifiers(in: project)
         log("patch: apply begin name=\(project.name) rules=\(project.rules.count) bundles=\(bundleIDs.joined(separator: ","))")
         ensureContainerWriteAccess(forRestore: false)
@@ -106,6 +126,8 @@ enum DevicePatchService {
     }
 
     static func restoreOriginals(project: PatchProject) throws {
+        try beginExclusive(project.id)
+        defer { endExclusive(project.id) }
         ensureContainerWriteAccess(forRestore: true)
         let bundleIDs = orderedBundleIdentifiers(in: project)
         log("patch: sidecar restore begin name=\(project.name)")

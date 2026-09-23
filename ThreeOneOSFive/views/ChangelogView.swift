@@ -25,6 +25,7 @@ struct ChangelogView: View {
                 "Settings control to disable and clear activation history."
             ],
             changed: [
+                "Notifications refresh when the app returns to the foreground, and the device token registers with the panel.",
                 "Activation and deactivation write the game file directly and confirm size on disk.",
                 "Original game files are cloned beside the target instead of copied into the app sandbox.",
                 "Removed Wallpaper Lab, Cleaner, and unused Combo/Otros packages so the IPA stays lighter.",

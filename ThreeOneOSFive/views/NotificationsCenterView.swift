@@ -277,7 +277,10 @@ struct NotificationsCenterView: View {
                 Divider()
                     .background(Color.white.opacity(0.08))
 
-                Link(destination: url) {
+                Button {
+                    service.trackNotificationClick(notif.id)
+                    UIApplication.shared.open(url)
+                } label: {
                     HStack {
                         Image(systemName: "link")
                             .font(.system(size: 13))
@@ -290,6 +293,7 @@ struct NotificationsCenterView: View {
                     .foregroundStyle(accentCol)
                     .padding(.vertical, 4)
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding(16)
