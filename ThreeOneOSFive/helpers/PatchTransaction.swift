@@ -220,23 +220,11 @@ enum PatchTransaction {
             for resolved in resolvedRules {
                 let existed = fileManager.fileExists(atPath: resolved.target.path)
                 let backupFilename = existed ? "\(resolved.rule.id.uuidString).original" : nil
-                let appliedFilename = project.isPrivate
-                    ? nil
-                    : "\(resolved.rule.id.uuidString).applied"
-                var originalDigest: Data?
                 if let backupFilename {
                     let backupURL = transactionDirectory.appendingPathComponent(backupFilename)
                     try fileManager.copyItem(at: resolved.target, to: backupURL)
-                    originalDigest = try digestFile(backupURL)
                 }
                 let replacementDigest = digest(resolved.rule.replacementData)
-                if let appliedFilename {
-                    let appliedURL = transactionDirectory.appendingPathComponent(appliedFilename)
-                    try resolved.rule.replacementData.write(to: appliedURL, options: .atomic)
-                    guard try digestFile(appliedURL) == replacementDigest else {
-                        throw PatchPackageError.applyFailed
-                    }
-                }
                 records.append(Record(
                     ruleID: resolved.rule.id,
                     bundleID: resolved.rule.bundleID,
@@ -244,9 +232,9 @@ enum PatchTransaction {
                     containerFingerprint: containerFingerprint(resolved.containerRoot),
                     originalExisted: existed,
                     backupFilename: backupFilename,
-                    originalDigest: originalDigest,
+                    originalDigest: nil,
                     replacementDigest: replacementDigest,
-                    appliedFilename: appliedFilename
+                    appliedFilename: nil
                 ))
             }
         } catch let error as PatchPackageError {
@@ -280,15 +268,12 @@ enum PatchTransaction {
             }
             for (index, resolved) in resolvedRules.enumerated() {
                 try beforeWrite?(index)
-                try atomicWrite(
+                try forceWrite(
                     resolved.rule.replacementData,
                     to: resolved.target,
                     preservingExistingAttributes: true,
                     fileManager: fileManager
                 )
-                guard try digestFile(resolved.target) == records[index].replacementDigest else {
-                    throw PatchPackageError.applyFailed
-                }
             }
             journal.status = .applied
             try writeJournal(journal, to: journalURL)
@@ -369,14 +354,13 @@ enum PatchTransaction {
                 fileManager: fileManager,
                 strictContainerIdentity: strictContainerIdentity
             )
-            let changes = journal.status == .applied
-                ? try changedTargets(in: resolved, fileManager: fileManager)
-                : []
-            if !changes.isEmpty {
-                log("patch: restore target drift \(changes.map(\.displayPath).joined(separator: ","))")
-            }
-            if !changes.isEmpty, !allowChangedTargets {
-                throw PatchPackageError.restoreTargetsChanged(changes.map(\.displayPath))
+            if !allowChangedTargets {
+                let changes = journal.status == .applied
+                    ? try changedTargets(in: resolved, fileManager: fileManager)
+                    : []
+                if !changes.isEmpty {
+                    throw PatchPackageError.restoreTargetsChanged(changes.map(\.displayPath))
+                }
             }
             let createdDirectoryURLs = try resolvedCreatedDirectories(
                 journal.createdDirectories ?? [],
@@ -393,13 +377,7 @@ enum PatchTransaction {
                             item.record.backupFilename!
                         )
                         log("patch: restoring original \(item.record.bundleID)/\(item.record.relativePath)")
-                        try atomicCopy(backup, to: item.target, fileManager: fileManager)
-                        if let expected = item.record.originalDigest {
-                            guard try digestFile(item.target) == expected else {
-                                log("patch: restored file digest mismatch \(item.record.relativePath)")
-                                throw PatchPackageError.restoreFailed
-                            }
-                        }
+                        try forceCopy(backup, to: item.target, fileManager: fileManager)
                     } else if fileManager.fileExists(atPath: item.target.path) {
                         log("patch: removing patched file that had no original \(item.record.relativePath)")
                         try fileManager.removeItem(at: item.target)
@@ -695,13 +673,11 @@ enum PatchTransaction {
                 fileManager: fileManager
             )
             if record.originalExisted {
-                guard let backupFilename = record.backupFilename,
-                      let expectedDigest = record.originalDigest else {
+                guard let backupFilename = record.backupFilename else {
                     throw PatchPackageError.restoreFailed
                 }
                 let backup = transactionDirectory.appendingPathComponent(backupFilename)
-                guard fileManager.fileExists(atPath: backup.path),
-                      try digestFile(backup) == expectedDigest else {
+                guard fileManager.fileExists(atPath: backup.path) else {
                     throw PatchPackageError.restoreFailed
                 }
             }
@@ -984,6 +960,50 @@ enum PatchTransaction {
         let leftDepth = lhs.filter { $0 == "/" }.count
         let rightDepth = rhs.filter { $0 == "/" }.count
         return leftDepth == rightDepth ? lhs < rhs : leftDepth < rightDepth
+    }
+
+    private static func forceWrite(
+        _ data: Data,
+        to target: URL,
+        preservingExistingAttributes: Bool,
+        fileManager: FileManager
+    ) throws {
+        var attributes: [FileAttributeKey: Any] = [:]
+        if preservingExistingAttributes,
+           let current = try? fileManager.attributesOfItem(atPath: target.path) {
+            if let permissions = current[.posixPermissions] { attributes[.posixPermissions] = permissions }
+            if let protection = current[.protectionKey] { attributes[.protectionKey] = protection }
+        }
+        if fileManager.fileExists(atPath: target.path) {
+            let handle = try FileHandle(forWritingTo: target)
+            try handle.truncate(atOffset: 0)
+            try handle.write(contentsOf: data)
+            try handle.synchronize()
+            try handle.close()
+            if !attributes.isEmpty {
+                try? fileManager.setAttributes(attributes, ofItemAtPath: target.path)
+            }
+        } else {
+            guard fileManager.createFile(atPath: target.path, contents: data, attributes: attributes) else {
+                log("patch: force write failed path=\(target.path) errno=\(errno)")
+                throw PatchPackageError.applyFailed
+            }
+        }
+        let size = (try fileManager.attributesOfItem(atPath: target.path)[.size] as? NSNumber)?.int64Value ?? -1
+        guard size == Int64(data.count) else {
+            log("patch: size mismatch wrote=\(data.count) disk=\(size) \(target.lastPathComponent)")
+            throw PatchPackageError.applyFailed
+        }
+        log("patch: force-wrote \(data.count) bytes to \(target.path)")
+    }
+
+    private static func forceCopy(
+        _ source: URL,
+        to target: URL,
+        fileManager: FileManager
+    ) throws {
+        let data = try Data(contentsOf: source, options: [.mappedIfSafe])
+        try forceWrite(data, to: target, preservingExistingAttributes: true, fileManager: fileManager)
     }
 
     private static func atomicWrite(

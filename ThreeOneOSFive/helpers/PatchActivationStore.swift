@@ -16,8 +16,19 @@ final class PatchActivationStore: ObservableObject {
 
     @Published private(set) var activeIDs: Set<String> = []
     @Published private(set) var history: [PatchActivationEvent] = []
+    @Published var historyEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(historyEnabled, forKey: historyEnabledKey)
+            if !historyEnabled {
+                clearHistory()
+            } else {
+                persist()
+            }
+        }
+    }
 
     private let defaultsKey = "x.patch.activation.v1"
+    private let historyEnabledKey = "x.patch.activation.history.enabled"
     private let historyLimit = 80
     private let keychainService = "x.patch.activation"
     private let keychainAccount = "snapshot.v1"
@@ -28,7 +39,11 @@ final class PatchActivationStore: ObservableObject {
     }
 
     private init() {
+        historyEnabled = UserDefaults.standard.object(forKey: historyEnabledKey) as? Bool ?? false
         load()
+        if !historyEnabled, !history.isEmpty {
+            clearHistory()
+        }
     }
 
     func isActive(_ patch: BundlePatch) -> Bool {
@@ -41,7 +56,7 @@ final class PatchActivationStore: ObservableObject {
         } else {
             activeIDs.remove(patch.productId)
         }
-        if recordHistory {
+        if recordHistory, historyEnabled {
             history.insert(
                 PatchActivationEvent(
                     id: UUID(),
@@ -56,6 +71,11 @@ final class PatchActivationStore: ObservableObject {
                 history = Array(history.prefix(historyLimit))
             }
         }
+        persist()
+    }
+
+    func clearHistory() {
+        history = []
         persist()
     }
 

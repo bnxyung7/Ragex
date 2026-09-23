@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(\.appLanguage) private var language
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var patchStore: PatchProjectStore
+    @ObservedObject private var activationStore = PatchActivationStore.shared
     @State private var showClearConfirm = false
     @State private var showResetDone = false
     @State private var toastMessage = ""
@@ -86,6 +87,62 @@ struct SettingsView: View {
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundStyle(Color(hex: "475569"))
                                 .padding(.horizontal, 4)
+                        }
+                        .padding(.horizontal, 16)
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(language.text("settings.activation"))
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color(hex: "475569"))
+                                .padding(.horizontal, 4)
+
+                            VStack(spacing: 0) {
+                                HStack(spacing: 12) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color(hex: "64748B").opacity(0.10))
+                                            .frame(width: 34, height: 34)
+                                        Image(systemName: "clock.arrow.circlepath")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundStyle(Color(hex: "64748B"))
+                                    }
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(language.text("settings.history_toggle"))
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundStyle(.white)
+                                        Text(language.text("settings.history_toggle_sub"))
+                                            .font(.caption2)
+                                            .foregroundStyle(Color(hex: "475569"))
+                                    }
+                                    Spacer()
+                                    Toggle("", isOn: $activationStore.historyEnabled)
+                                        .labelsHidden()
+                                        .tint(Color(hex: "10B981"))
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 12)
+
+                                Divider().background(Color.white.opacity(0.05)).padding(.leading, 52)
+
+                                Button {
+                                    activationStore.clearHistory()
+                                    toastMessage = language.text("settings.history_cleared")
+                                    withAnimation { showResetDone = true }
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                        withAnimation { showResetDone = false }
+                                    }
+                                } label: {
+                                    SettingsRow(
+                                        icon: "trash",
+                                        iconColor: Color(hex: "EF4444"),
+                                        title: language.text("settings.history_clear"),
+                                        subtitle: language.text("settings.history_clear_sub")
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .background(Color(hex: "0A0A0A"), in: RoundedRectangle(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.06), lineWidth: 1))
                         }
                         .padding(.horizontal, 16)
 

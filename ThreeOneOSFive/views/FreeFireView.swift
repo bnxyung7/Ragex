@@ -209,7 +209,9 @@ struct FreeFireView: View {
                             .environmentObject(productTagService)
                         }
                     }
-                    activationHistorySection
+                    if activationStore.historyEnabled {
+                        activationHistorySection
+                    }
                 }
                 .padding(.horizontal, AppTheme.pageInset)
                 .padding(.top, AppTheme.itemSpacing)

@@ -255,6 +255,12 @@
 "method.simulator_preview" = "Simulator preview";
 
 "settings.title" = "Settings";
+"settings.activation" = "ACTIVATION";
+"settings.history_toggle" = "Activation log";
+"settings.history_toggle_sub" = "List of options you turn on. Off by default.";
+"settings.history_clear" = "Clear log";
+"settings.history_clear_sub" = "Delete this device activation history.";
+"settings.history_cleared" = "Log deleted";
 "settings.language" = "Language";
 "settings.ios_version" = "iOS Version";
 "settings.exploit_status" = "Exploit Status";

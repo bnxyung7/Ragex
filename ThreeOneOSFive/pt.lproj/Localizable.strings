@@ -255,6 +255,12 @@
 "method.simulator_preview" = "Simulator preview";
 
 "settings.title" = "Ajustes";
+"settings.activation" = "ATIVACAO";
+"settings.history_toggle" = "Registro de ativacao";
+"settings.history_toggle_sub" = "Lista de opcoes ativadas. Desligado por padrao.";
+"settings.history_clear" = "Apagar registro";
+"settings.history_clear_sub" = "Remove o historico deste dispositivo.";
+"settings.history_cleared" = "Registro apagado";
 "settings.language" = "Language";
 "settings.ios_version" = "iOS Version";
 "settings.exploit_status" = "Exploit Status";
