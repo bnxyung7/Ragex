@@ -58,19 +58,6 @@ struct ContentView: View {
             }
             // Hide the native UITabBar completely — we use our own
             UITabBar.appearance().isHidden = true
-            
-            // Listen for quick access navigation
-            NotificationCenter.default.addObserver(
-                forName: NSNotification.Name("NavigateToTab"),
-                object: nil,
-                queue: .main
-            ) { notification in
-                if let tabValue = notification.userInfo?["tab"] as? Int {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        selectedTab = tabValue
-                    }
-                }
-            }
         }
         // Patch coordinator deep-links
         .onChange(of: patchDraftCoordinator.request?.id) { id in

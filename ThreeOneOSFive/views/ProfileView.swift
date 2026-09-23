@@ -11,7 +11,6 @@ struct ProfileView: View {
     @State private var showAdminPanel = false
     @State private var showKeyActivation = false
     @State private var showNotificationsSheet = false
-    @State private var showQuickAccessMenu = false
     @State private var keyInput = ""
     @State private var activationError: String?
     @State private var isLoading = false
@@ -33,9 +32,6 @@ struct ProfileView: View {
                         
                         // Admin Access Section
                         adminCard
-                        
-                        // Quick Access Menu (3-dot menu for activated tabs)
-                        quickAccessMenu
                     }
                     .padding(.horizontal, AppTheme.pageInset)
                     .padding(.top, AppTheme.spacing16)
@@ -418,56 +414,6 @@ struct ProfileView: View {
         }
     }
     
-    // MARK: - Quick Access Menu
-    
-    private var quickAccessMenu: some View {
-        Group {
-            if hasActivatedTabs {
-                Button {
-                    showQuickAccessMenu = true
-                } label: {
-                    HStack(spacing: AppTheme.spacing12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(hex: "3B82F6").opacity(0.15))
-                                .frame(width: 40, height: 40)
-                            Image(systemName: "ellipsis.circle.fill")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-                        }
-                        
-                        VStack(alignment: .leading, spacing: AppTheme.spacing4) {
-                            Text("Acceso Rápido")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.white)
-                            Text("Tabs activadas disponibles")
-                                .font(.caption2)
-                                .foregroundStyle(Color(hex: "94A3B8"))
-                        }
-                        
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(Color(hex: "94A3B8"))
-                    }
-                    .padding(14)
-                    .obsidianCard(cornerRadius: 14, borderColor: Color(hex: "3B82F6").opacity(0.2))
-                }
-                .buttonStyle(.plain)
-                .sheet(isPresented: $showQuickAccessMenu) {
-                    QuickAccessMenuView(isPresented: $showQuickAccessMenu, adminSettings: adminSettings)
-                }
-            }
-        }
-    }
-    
-    private var hasActivatedTabs: Bool {
-        adminSettings.tabSettings.patchesEnabled ||
-        adminSettings.tabSettings.filesEnabled ||
-        adminSettings.tabSettings.bundleExplorerEnabled
-    }
-    
     // MARK: - Helper Views
     
     private func keyDetailRow(icon: String, label: String, value: String, copyable: Bool = false) -> some View {
@@ -797,122 +743,5 @@ struct AdminLoginView: View {
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.error)
         }
-    }
-}
-
-
-// MARK: - Quick Access Menu View
-
-struct QuickAccessMenuView: View {
-    @Binding var isPresented: Bool
-    @ObservedObject var adminSettings: AdminSettings
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationView {
-            List {
-                Section {
-                    if adminSettings.tabSettings.patchesEnabled {
-                        quickAccessRow(
-                            icon: "shippingbox.fill",
-                            title: "Patches",
-                            subtitle: "Gestión de parches",
-                            color: "10B981",
-                            action: {
-                                // Navigate to patches tab
-                                NotificationCenter.default.post(
-                                    name: NSNotification.Name("NavigateToTab"),
-                                    object: nil,
-                                    userInfo: ["tab": AppSection.patches.rawValue]
-                                )
-                                dismiss()
-                            }
-                        )
-                    }
-                    
-                    if adminSettings.tabSettings.filesEnabled {
-                        quickAccessRow(
-                            icon: "folder.fill",
-                            title: "Files (App Data)",
-                            subtitle: "Explorador de archivos",
-                            color: "F59E0B",
-                            action: {
-                                // Navigate to files tab
-                                NotificationCenter.default.post(
-                                    name: NSNotification.Name("NavigateToTab"),
-                                    object: nil,
-                                    userInfo: ["tab": AppSection.files.rawValue]
-                                )
-                                dismiss()
-                            }
-                        )
-                    }
-                    
-                    if adminSettings.tabSettings.bundleExplorerEnabled {
-                        quickAccessRow(
-                            icon: "folder.badge.gearshape",
-                            title: "Bundle Explorer",
-                            subtitle: "Explorador de paquetes",
-                            color: "8B5CF6",
-                            action: {
-                                // Navigate to bundle explorer tab
-                                NotificationCenter.default.post(
-                                    name: NSNotification.Name("NavigateToTab"),
-                                    object: nil,
-                                    userInfo: ["tab": AppSection.bundleExplorer.rawValue]
-                                )
-                                dismiss()
-                            }
-                        )
-                    }
-                } header: {
-                    Text("Tabs Activadas")
-                } footer: {
-                    Text("Toca cualquier opción para navegar directamente a esa sección")
-                }
-            }
-            .navigationTitle("Acceso Rápido")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cerrar") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-    
-    private func quickAccessRow(icon: String, title: String, subtitle: String, color: String, action: @escaping () -> Void) -> some View {
-        Button {
-            action()
-        } label: {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(hex: color).opacity(0.15))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: icon)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color(hex: color))
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.primary)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.tertiary)
-            }
-        }
-        .buttonStyle(.plain)
     }
 }

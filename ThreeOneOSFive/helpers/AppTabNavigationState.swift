@@ -12,8 +12,6 @@ enum AppSection: Int, CaseIterable, Identifiable {
     var id: Int { rawValue }
 }
 
-}
-
 struct OneShotPresentationGate: Equatable {
     private(set) var hasClaimed = false
 
@@ -53,21 +51,17 @@ struct FeatureVisibility: Equatable {
         case .home:
             return true
         case .files:
-            // OCULTO: No mostrar tab de archivos
-            return false
+            return tabSettings.filesEnabled
         case .patches:
-            // OCULTO: No mostrar tab de patches
-            return false
+            return tabSettings.patchesEnabled
         case .freeFire:
-            // Visible si está habilitada EN admin settings Y (demo mode O key válida)
             return tabSettings.freeFireEnabled && (demoModeEnabled || hasValidAccess)
         case .profile:
-            return true // Siempre visible
+            return true
         case .support:
-            return true // Siempre visible
+            return true
         case .bundleExplorer:
-            // OCULTO: No mostrar bundle explorer
-            return false
+            return tabSettings.bundleExplorerEnabled
         }
     }
 }
