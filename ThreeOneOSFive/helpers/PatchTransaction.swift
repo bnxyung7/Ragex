@@ -536,6 +536,43 @@ enum PatchTransaction {
         }
     }
 
+    static func receipt(at journalURL: URL) -> PatchTransactionReceipt? {
+        guard let journal = try? readJournal(journalURL),
+              (minimumSchemaVersion...schemaVersion).contains(journal.schemaVersion),
+              journal.status == .applied || journal.status == .prepared else {
+            return nil
+        }
+        return PatchTransactionReceipt(
+            id: journal.transactionID,
+            projectID: journal.projectID,
+            journalURL: journalURL
+        )
+    }
+
+    static func restoreSidecars(
+        project: PatchProject,
+        containerResolver: (String) throws -> URL,
+        fileManager: FileManager = .default
+    ) throws {
+        var restored = 0
+        for rule in project.rules {
+            let root = PatchPathValidator.canonicalFileURL(try containerResolver(rule.bundleID))
+            let target = try PatchPathValidator.resolveContainedTargetURL(
+                relativePath: rule.relativePath,
+                containerRoot: root
+            )
+            let sidecar = target.deletingLastPathComponent()
+                .appendingPathComponent(target.lastPathComponent + ".xorig")
+            guard fileManager.fileExists(atPath: sidecar.path) else { continue }
+            log("patch: restoring sidecar \(rule.bundleID)/\(rule.relativePath)")
+            try forceCopy(sidecar, to: target, fileManager: fileManager)
+            restored += 1
+        }
+        if restored == 0, !project.rules.isEmpty {
+            throw PatchPackageError.restoreFailed
+        }
+    }
+
     static func latestReceipt(
         projectID: UUID,
         backupRoot: URL,

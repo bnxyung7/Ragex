@@ -4,7 +4,7 @@ enum DevicePatchService {
     static func apply(project: PatchProject) throws -> PatchTransactionReceipt {
         let bundleIDs = orderedBundleIdentifiers(in: project)
         log("patch: apply begin name=\(project.name) rules=\(project.rules.count) bundles=\(bundleIDs.joined(separator: ","))")
-        ensureContainerWriteAccess()
+        ensureContainerWriteAccess(forRestore: false)
         let backupRoot = try PatchProjectLibrary.backupRootURL()
 
         let receipt: PatchTransactionReceipt
@@ -66,7 +66,7 @@ enum DevicePatchService {
         receipt: PatchTransactionReceipt,
         allowChangedTargets: Bool = true
     ) throws {
-        ensureContainerWriteAccess()
+        ensureContainerWriteAccess(forRestore: true)
         let bundleIDs = try PatchTransaction.requiredBundleIdentifiers(for: receipt)
         log("patch: restore begin receipt=\(receipt.id.uuidString) bundles=\(bundleIDs.joined(separator: ","))")
         try withResolvedContainers(bundleIDs: bundleIDs) { roots in
@@ -116,6 +116,33 @@ enum DevicePatchService {
         }
         log("patch: no receipt for project \(project.id.uuidString), scanning overlapping applies")
         return appliedReceipts().first { PatchTransaction.overlaps(receipt: $0, project: project) }
+    }
+
+    static func receipt(fromStored ref: AppliedPatchRef?) -> PatchTransactionReceipt? {
+        guard let ref else { return nil }
+        let url = URL(fileURLWithPath: ref.journalPath)
+        if let receipt = PatchTransaction.receipt(at: url) {
+            return receipt
+        }
+        return latestReceipt(projectID: ref.projectID)
+    }
+
+    static func restoreOriginals(project: PatchProject) throws {
+        ensureContainerWriteAccess(forRestore: true)
+        let bundleIDs = orderedBundleIdentifiers(in: project)
+        log("patch: sidecar restore begin name=\(project.name)")
+        try withResolvedContainers(bundleIDs: bundleIDs) { roots in
+            try PatchTransaction.restoreSidecars(
+                project: project,
+                containerResolver: { bundleID in
+                    guard let root = roots[bundleID] else {
+                        throw PatchPackageError.targetAppUnavailable(bundleID)
+                    }
+                    return root
+                }
+            )
+        }
+        log("patch: sidecar restore done name=\(project.name)")
     }
 
     static func verifyRestored(receipt: PatchTransactionReceipt) throws {
@@ -174,8 +201,13 @@ enum DevicePatchService {
         }
     }
 
-    static func ensureContainerWriteAccess() {
+    static func ensureContainerWriteAccess(forRestore: Bool = false) {
         if KernelExploit.hasReadySession {
+            return
+        }
+        if forRestore, KernelExploit.isExploitSupported {
+            log("patch: restore needs kernel write access")
+            _ = KernelExploit.run()
             return
         }
         log("patch: applying without blocking on kernel wait")

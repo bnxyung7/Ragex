@@ -10,11 +10,19 @@ struct PatchActivationEvent: Codable, Identifiable {
     let date: Date
 }
 
+struct AppliedPatchRef: Codable {
+    let productId: String
+    let projectID: UUID
+    let transactionID: UUID
+    let journalPath: String
+}
+
 @MainActor
 final class PatchActivationStore: ObservableObject {
     static let shared = PatchActivationStore()
 
     @Published private(set) var activeIDs: Set<String> = []
+    @Published private(set) var applied: [String: AppliedPatchRef] = [:]
     @Published private(set) var history: [PatchActivationEvent] = []
     @Published var historyEnabled: Bool {
         didSet {
@@ -38,6 +46,7 @@ final class PatchActivationStore: ObservableObject {
     private struct Snapshot: Codable {
         var activeIDs: [String]
         var history: [PatchActivationEvent]
+        var applied: [AppliedPatchRef]?
     }
 
     private init() {
@@ -53,11 +62,29 @@ final class PatchActivationStore: ObservableObject {
         activeIDs.contains(patch.productId)
     }
 
-    func record(patch: BundlePatch, activated: Bool, recordHistory: Bool = true) {
+    func appliedRef(for productId: String) -> AppliedPatchRef? {
+        applied[productId]
+    }
+
+    func record(
+        patch: BundlePatch,
+        activated: Bool,
+        recordHistory: Bool = true,
+        receipt: PatchTransactionReceipt? = nil
+    ) {
         if activated {
             activeIDs.insert(patch.productId)
+            if let receipt {
+                applied[patch.productId] = AppliedPatchRef(
+                    productId: patch.productId,
+                    projectID: receipt.projectID,
+                    transactionID: receipt.id,
+                    journalPath: receipt.journalURL.path
+                )
+            }
         } else {
             activeIDs.remove(patch.productId)
+            applied.removeValue(forKey: patch.productId)
         }
         if recordHistory, historyEnabled {
             history.insert(
@@ -84,6 +111,7 @@ final class PatchActivationStore: ObservableObject {
 
     func resetAllActivations() {
         activeIDs = []
+        applied = [:]
         history = []
         persist()
         deleteKeychain()
@@ -98,7 +126,11 @@ final class PatchActivationStore: ObservableObject {
     }
 
     private func persist() {
-        let snapshot = Snapshot(activeIDs: Array(activeIDs), history: history)
+        let snapshot = Snapshot(
+            activeIDs: Array(activeIDs),
+            history: history,
+            applied: Array(applied.values)
+        )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         UserDefaults.standard.set(data, forKey: defaultsKey)
         deleteKeychain()
@@ -121,6 +153,9 @@ final class PatchActivationStore: ObservableObject {
         }
         activeIDs = Set(snapshot.activeIDs)
         history = snapshot.history
+        applied = Dictionary(
+            uniqueKeysWithValues: (snapshot.applied ?? []).map { ($0.productId, $0) }
+        )
     }
 
     private var fileURL: URL? {

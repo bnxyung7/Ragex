@@ -580,7 +580,7 @@ struct FreeFireView: View {
                     }
                     let destinationURL = destinationRoot.appendingPathComponent(destFilename)
                     let missing = !fileManager.fileExists(atPath: destinationURL.path)
-                    if activate, missing {
+                    if missing {
                         if patch.isEncrypted {
                             let userKey = await MainActor.run {
                                 KeyStore.shared.activeSession?.key.keyString
@@ -604,6 +604,12 @@ struct FreeFireView: View {
                         resolvedProject = decoded.project
                         BundlePatchProjectCache.store(decoded.project, filename: destFilename)
                     }
+                    if resolvedProject == nil,
+                       let pkgData = try? Data(contentsOf: patch.url),
+                       let decoded = try? PatchPackageCodec.decode(pkgData, password: nil) {
+                        resolvedProject = decoded.project
+                        BundlePatchProjectCache.store(decoded.project, filename: destFilename)
+                    }
                 }
 
                 guard let resolvedProject else {
@@ -614,23 +620,48 @@ struct FreeFireView: View {
 
                 if activate {
                     log("freeFire: applying \(patch.displayName) project=\(resolvedProject.id.uuidString)")
-                    _ = try DevicePatchService.apply(project: resolvedProject)
+                    let receipt = try DevicePatchService.apply(project: resolvedProject)
                     log("freeFire: apply done \(patch.displayName)")
                     await MainActor.run {
-                        PatchActivationStore.shared.record(patch: patch, activated: true, recordHistory: recordHistory)
+                        PatchActivationStore.shared.record(
+                            patch: patch,
+                            activated: true,
+                            recordHistory: recordHistory,
+                            receipt: receipt
+                        )
                         SoundPlayer.shared.playActivate()
                         processingPatchIDs.remove(patch.id)
                     }
                 } else {
-                    if let receipt = DevicePatchService.receipt(for: resolvedProject) {
+                    var restored = false
+                    let stored = await MainActor.run {
+                        DevicePatchService.receipt(fromStored:
+                            PatchActivationStore.shared.appliedRef(for: patch.productId)
+                        )
+                    }
+                    if let receipt = DevicePatchService.receipt(for: resolvedProject) ?? stored {
                         log("freeFire: restoring \(patch.displayName) receipt=\(receipt.id.uuidString)")
                         do {
                             try DevicePatchService.restore(receipt: receipt, allowChangedTargets: true)
+                            restored = true
                         } catch {
                             log("freeFire: restore error \(error.localizedDescription)")
                         }
                     } else {
-                        log("freeFire: no receipt, clearing toggle for \(patch.displayName)")
+                        log("freeFire: no receipt, restoring originals for \(patch.displayName)")
+                    }
+                    if !restored {
+                        do {
+                            try DevicePatchService.restoreOriginals(project: resolvedProject)
+                            restored = true
+                        } catch {
+                            log("freeFire: sidecar restore error \(error.localizedDescription)")
+                        }
+                    }
+                    guard restored else {
+                        throw NSError(domain: "FreeFire", code: 3, userInfo: [
+                            NSLocalizedDescriptionKey: "No se pudo desactivar \(patch.displayName). Inténtalo de nuevo."
+                        ])
                     }
                     await MainActor.run {
                         PatchActivationStore.shared.record(patch: patch, activated: false, recordHistory: recordHistory)
