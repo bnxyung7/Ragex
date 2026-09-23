@@ -70,7 +70,15 @@ workflows:
       events:
         - push
       branch_patterns:
-        - pattern: "*"
+        - pattern: "main"
+          include: false
+        - pattern: "master"
+          include: false
+        - pattern: "develop"
+          include: true
+        - pattern: "simulator"
+          include: true
+        - pattern: "feature/*"
           include: true
       cancel_previous_builds: true
 
