@@ -962,8 +962,6 @@ struct AppUtilityToolbar: ToolbarContent {
     }
 }
 
-}
-
 private enum StorePresentationAlert: Identifiable {
     case patch(PatchStoreAlert)
     case repository(RepositoryStoreAlert)
