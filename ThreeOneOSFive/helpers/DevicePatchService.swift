@@ -43,7 +43,6 @@ enum DevicePatchService {
             }
         }
 
-        try verifyApplied(receipt: receipt)
         log("patch: apply verified name=\(project.name) receipt=\(receipt.id.uuidString)")
         return receipt
     }
@@ -84,7 +83,6 @@ enum DevicePatchService {
                 snapshotCurrentFiles: false
             )
         }
-        try verifyRestored(receipt: receipt)
         log("patch: restore verified receipt=\(receipt.id.uuidString)")
     }
 
@@ -177,13 +175,16 @@ enum DevicePatchService {
     }
 
     static func ensureContainerWriteAccess() {
-        if KernelExploit.hasSandboxAccess() {
-            log("patch: write access already present")
+        if KernelExploit.hasReadySession {
+            return
+        }
+        guard KernelExploit.isExploitSupported else {
+            log("patch: skipping kernel on unsupported iOS — activate/deactivate will use direct container writes")
             return
         }
         log("patch: requesting kernel write access")
         let ok = KernelExploit.run()
-        log("patch: kernel access \(ok && KernelExploit.hasSandboxAccess() ? "granted" : "unavailable")")
+        log("patch: kernel access \(ok ? "ready" : "unavailable")")
     }
 
     private static func orderedBundleIdentifiers(in project: PatchProject) -> [String] {

@@ -138,6 +138,7 @@ private struct SupportedPlatformRow: Identifiable {
     let coverage: String
     let status: String
     let isCurrent: Bool
+    var compatible: Bool = true
 }
 
 private struct SupportedVersionsSheet: View {
@@ -149,8 +150,8 @@ private struct SupportedVersionsSheet: View {
             SupportedPlatformRow(id: "15", family: "IOS 15 – 16", coverage: "15.0 – 16.7.X", status: "VERIFICADO", isCurrent: major == 15 || major == 16),
             SupportedPlatformRow(id: "17", family: "IOS 17", coverage: ExploitSupportPolicy.verifiedIOS17Range.uppercased(), status: "VERIFICADO", isCurrent: major == 17),
             SupportedPlatformRow(id: "18", family: "IOS 18", coverage: ExploitSupportPolicy.verifiedIOS18Range.uppercased(), status: "VERIFICADO", isCurrent: major == 18),
-            SupportedPlatformRow(id: "26", family: "IOS 26", coverage: ExploitSupportPolicy.verifiedIOS26Range.uppercased(), status: "VERIFICADO", isCurrent: major == 26),
-            SupportedPlatformRow(id: "27", family: "IOS 27+", coverage: "27.0+", status: "LISTO", isCurrent: major >= 27)
+            SupportedPlatformRow(id: "26", family: "IOS 26", coverage: ExploitSupportPolicy.verifiedIOS26Range.uppercased(), status: "VERIFICADO", isCurrent: major == 26, compatible: true),
+            SupportedPlatformRow(id: "27", family: "IOS 27+", coverage: "27.0+", status: "NO COMPATIBLE", isCurrent: major >= 27, compatible: false)
         ]
     }
 
@@ -184,10 +185,10 @@ private struct SupportedVersionsSheet: View {
                                 Spacer()
                                 Text(row.status)
                                     .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(Color(hex: "10B981"))
+                                    .foregroundStyle(row.compatible ? Color(hex: "10B981") : Color(hex: "EF4444"))
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 5)
-                                    .background(Color(hex: "10B981").opacity(0.10), in: Capsule())
+                                    .background((row.compatible ? Color(hex: "10B981") : Color(hex: "EF4444")).opacity(0.10), in: Capsule())
                             }
                             .listRowBackground(Color(hex: "0A0A0A"))
                             .listRowSeparatorTint(Color.white.opacity(0.06))

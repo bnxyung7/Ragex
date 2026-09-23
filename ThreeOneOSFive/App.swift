@@ -222,7 +222,7 @@ class AppState: ObservableObject {
     }
 
     var kernelExploitApplicable: Bool {
-        true
+        KernelExploit.isExploitSupported
     }
 
     var isSupported: Bool { true }
@@ -236,6 +236,12 @@ class AppState: ObservableObject {
 
     private func maybeAutoRunKernelExploit() {
         log("app: maybeAutoRunKernelExploit called — kernelExploitRunning=\(kernelExploitRunning), exploitStatus=\(exploitStatus), autoRunAttempted=\(autoRunAttempted)")
+        guard kernelExploitApplicable else {
+            log("app: skipping kernel — iOS \(AppInfo.osVersion) is outside 17.0–26.x")
+            exploitStatus = .unsupported("iOS 27+")
+            autoRunAttempted = true
+            return
+        }
         guard !kernelExploitRunning,
               !exploitStatus.isSuccess,
               !exploitStatus.isFailed,
@@ -250,6 +256,13 @@ class AppState: ObservableObject {
 
     private func refreshKernelExploitStatus() {
         guard !kernelExploitRunning else { return }
+        guard KernelExploit.isExploitSupported else { return }
+        if KernelExploit.hasReadySession {
+            if !exploitStatus.isSuccess {
+                exploitStatus = .success(method: "kexploit")
+            }
+            return
+        }
 
         if KernelExploit.requiresSandboxEscape {
             if KernelExploit.hasSandboxAccess() {
@@ -265,6 +278,7 @@ class AppState: ObservableObject {
     }
 
     func runKernelExploitIfNeeded() {
+        guard kernelExploitApplicable else { return }
         refreshKernelExploitStatus()
         guard !kernelExploitRunning,
               !exploitStatus.isSuccess,

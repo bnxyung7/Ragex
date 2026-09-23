@@ -565,108 +565,57 @@ struct FreeFireView: View {
         processingPatchIDs.insert(patch.id)
 
         Task.detached(priority: .userInitiated) {
-            // Timeout safety: always clear spinner after 15s max
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 60_000_000_000)
-                processingPatchIDs.remove(patch.id)
-            }
             do {
-                let fileManager = FileManager.default
-                guard let destinationRoot = try? PatchProjectLibrary.packageRootURL(
-                    fileManager: fileManager
-                ) else {
-                    throw NSError(domain: "FreeFire", code: 1, userInfo: [
-                        NSLocalizedDescriptionKey: "No se pudo acceder a la librería de parches"
-                    ])
-                }
-                
-                // Determine destination filename (always .3105, never .3105e)
-                var destFilename = patch.url.lastPathComponent
-                if patch.isEncrypted {
-                    // Remove .3105e extension, add .3105
-                    destFilename = patch.url.deletingPathExtension().lastPathComponent
-                    if !destFilename.hasSuffix(".3105") {
-                        destFilename += ".3105"
+                let destFilename = Self.packageFilename(for: patch)
+                var resolvedProject = BundlePatchProjectCache.project(for: destFilename)
+
+                if resolvedProject == nil {
+                    let fileManager = FileManager.default
+                    guard let destinationRoot = try? PatchProjectLibrary.packageRootURL(fileManager: fileManager) else {
+                        throw NSError(domain: "FreeFire", code: 1, userInfo: [
+                            NSLocalizedDescriptionKey: "No se pudo acceder a la librería de parches"
+                        ])
                     }
-                    print("[FreeFire] 🔓 Encrypted file: \(patch.url.lastPathComponent) → \(destFilename)")
-                }
-                
-                let destinationURL = destinationRoot.appendingPathComponent(destFilename)
-                print("[FreeFire] 📍 Destination: \(destinationURL.path)")
-                
-                var fileNeedsWriting = !fileManager.fileExists(atPath: destinationURL.path)
-                if !fileNeedsWriting {
-                    let attr = try? fileManager.attributesOfItem(atPath: destinationURL.path)
-                    let size = (attr?[.size] as? Int64) ?? 0
-                    if size == 0 {
-                        fileNeedsWriting = true
-                        try? fileManager.removeItem(at: destinationURL)
+                    let destinationURL = destinationRoot.appendingPathComponent(destFilename)
+                    let missing = !fileManager.fileExists(atPath: destinationURL.path)
+                    if activate, missing {
+                        if patch.isEncrypted {
+                            let userKey = await MainActor.run {
+                                KeyStore.shared.activeSession?.key.keyString
+                                    ?? KeyStore.shared.allKeys.first?.keyString
+                                    ?? "RagexMasterKey"
+                            }
+                            let encryptionService = await MainActor.run { FileEncryptionService.shared }
+                            do {
+                                let decryptedData = try await encryptionService.decryptFile(at: patch.url, userKey: userKey)
+                                try decryptedData.write(to: destinationURL)
+                            } catch {
+                                try? fileManager.removeItem(at: destinationURL)
+                                try fileManager.copyItem(at: patch.url, to: destinationURL)
+                            }
+                        } else {
+                            try fileManager.copyItem(at: patch.url, to: destinationURL)
+                        }
+                    }
+                    if let pkgData = try? Data(contentsOf: destinationURL),
+                       let decoded = try? PatchPackageCodec.decode(pkgData, password: nil) {
+                        resolvedProject = decoded.project
+                        BundlePatchProjectCache.store(decoded.project, filename: destFilename)
                     }
                 }
 
-                if fileNeedsWriting {
-                    // Handle encrypted files
-                    if patch.isEncrypted {
-                        let userKey = await MainActor.run {
-                            KeyStore.shared.activeSession?.key.keyString
-                                ?? KeyStore.shared.allKeys.first?.keyString
-                                ?? "RagexMasterKey"
-                        }
-                        
-                        let encryptionService = await MainActor.run { FileEncryptionService.shared }
-                        do {
-                            let decryptedData = try await encryptionService.decryptFile(at: patch.url, userKey: userKey)
-                            try decryptedData.write(to: destinationURL)
-                            print("[FreeFire] ✅ Decrypted and copied to: \(destinationURL.path) (\(decryptedData.count) bytes)")
-                        } catch {
-                            print("[FreeFire] ⚠️ Decryption failed (\(error.localizedDescription)), attempting raw copy fallback...")
-                            try? fileManager.removeItem(at: destinationURL)
-                            try fileManager.copyItem(at: patch.url, to: destinationURL)
-                        }
-                    } else {
-                        // Copy plain file directly
-                        try? fileManager.removeItem(at: destinationURL)
-                        try fileManager.copyItem(at: patch.url, to: destinationURL)
-                        print("[FreeFire] ✅ Copied: \(destFilename)")
-                    }
-                } else {
-                    print("[FreeFire] ℹ️ File already exists: \(destFilename)")
-                }
-                
-                await MainActor.run {
-                    patchStore.reload()
-                }
-                
-                let items = await MainActor.run { patchStore.items }
-                var project = items.first(where: {
-                    $0.packageURL.lastPathComponent == destFilename
-                })?.project
-                
-                // Fallback: decode directly if store hasn't populated yet
-                if project == nil, let pkgData = try? Data(contentsOf: destinationURL) {
-                    if let decoded = try? PatchPackageCodec.decode(pkgData, password: nil) {
-                        project = decoded.project
-                    }
-                }
-                
-                guard let resolvedProject = project else {
+                guard let resolvedProject else {
                     throw NSError(domain: "FreeFire", code: 2, userInfo: [
                         NSLocalizedDescriptionKey: "No se pudo preparar el proyecto para \(patch.displayName)"
                     ])
                 }
-                
+
                 if activate {
-                    log("freeFire: applying \(patch.displayName) file=\(destFilename) project=\(resolvedProject.id.uuidString)")
-                    let receipt = try DevicePatchService.apply(project: resolvedProject)
-                    guard DevicePatchService.isCurrentlyApplied(receipt: receipt) else {
-                        throw NSError(domain: "FreeFire", code: 3, userInfo: [
-                            NSLocalizedDescriptionKey: "El cambio no quedó escrito en el juego. Revisa el acceso al contenedor e inténtalo de nuevo."
-                        ])
-                    }
-                    log("freeFire: apply verified \(patch.displayName) receipt=\(receipt.id.uuidString) — keep Free Fire closed until this finishes, then open it")
+                    log("freeFire: applying \(patch.displayName) project=\(resolvedProject.id.uuidString)")
+                    _ = try DevicePatchService.apply(project: resolvedProject)
+                    log("freeFire: apply done \(patch.displayName)")
                     await MainActor.run {
                         PatchActivationStore.shared.record(patch: patch, activated: true, recordHistory: recordHistory)
-                        patchStore.reload()
                         SoundPlayer.shared.playActivate()
                         processingPatchIDs.remove(patch.id)
                     }
@@ -678,10 +627,9 @@ struct FreeFireView: View {
                     }
                     log("freeFire: restoring \(patch.displayName) receipt=\(receipt.id.uuidString)")
                     try DevicePatchService.restore(receipt: receipt, allowChangedTargets: true)
-                    log("freeFire: restore verified \(patch.displayName)")
+                    log("freeFire: restore done \(patch.displayName)")
                     await MainActor.run {
                         PatchActivationStore.shared.record(patch: patch, activated: false, recordHistory: recordHistory)
-                        patchStore.reload()
                         SoundPlayer.shared.playDeactivate()
                         processingPatchIDs.remove(patch.id)
                     }
@@ -692,7 +640,6 @@ struct FreeFireView: View {
                     errorMessage = errText
                     showErrorAlert = true
                     processingPatchIDs.remove(patch.id)
-                    patchStore.reload()
                 }
                 log("freeFire: toggle error — \(errText)")
                 
@@ -778,6 +725,10 @@ struct FreeFireView: View {
     }
 
     private func destinationFilename(for patch: BundlePatch) -> String {
+        Self.packageFilename(for: patch)
+    }
+
+    fileprivate static func packageFilename(for patch: BundlePatch) -> String {
         var destFilename = patch.url.lastPathComponent
         if patch.isEncrypted {
             destFilename = patch.url.deletingPathExtension().lastPathComponent
@@ -999,6 +950,23 @@ struct FreeFireView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(hex: "08080C"))
+    }
+}
+
+private enum BundlePatchProjectCache {
+    private static let lock = NSLock()
+    private static var map: [String: PatchProject] = [:]
+
+    static func project(for filename: String) -> PatchProject? {
+        lock.lock()
+        defer { lock.unlock() }
+        return map[filename]
+    }
+
+    static func store(_ project: PatchProject, filename: String) {
+        lock.lock()
+        map[filename] = project
+        lock.unlock()
     }
 }
 

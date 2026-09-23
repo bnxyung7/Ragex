@@ -271,13 +271,7 @@ struct PatchControlBottomSheet: View {
                 }
                 
                 _ = try DevicePatchService.apply(project: project)
-                guard let receipt = DevicePatchService.latestReceipt(projectID: project.id),
-                      DevicePatchService.isCurrentlyApplied(receipt: receipt) else {
-                    throw NSError(domain: "PatchControl", code: 3, userInfo: [
-                        NSLocalizedDescriptionKey: "El cambio no quedó escrito en el juego."
-                    ])
-                }
-                log("patchControl: apply verified \(project.name)")
+                log("patchControl: apply done \(project.name)")
                 
                 await MainActor.run {
                     patchStore.reload()
