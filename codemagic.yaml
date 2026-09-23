@@ -160,10 +160,10 @@ workflows:
 
   # ── Release: unsigned IPA for iOS device — sign later with ESign ─────────
   # No Apple signing required.
-  # Output: X-v3.1.1.ipa  (Payload/X.app)
+  # Output: X-v<version>.ipa  (Payload/X.app)
   # Sign afterward with ESign, Sideloadly, AltStore, or any IPA signer.
   x-release:
-    name: X — v3.1.1 IPA
+    name: X — release IPA
     instance_type: mac_mini_m2
     max_build_duration: 60
 
@@ -251,18 +251,21 @@ workflows:
             || { echo "ERROR: Binary does not contain arm64 — not a device build"; exit 1; }
 
           # Package into unsigned IPA: Payload/X.app inside a ZIP
+          VERSION=$(plutil -extract CFBundleShortVersionString raw -o - "$APP_PATH/Info.plist")
+          IPA_PATH="$CM_BUILD_DIR/X-v${VERSION}.ipa"
+          echo "IPA_PATH=$IPA_PATH" >> "$CM_ENV"
           mkdir -p "$IPA_DIR/Payload"
           cp -r "$APP_PATH" "$IPA_DIR/Payload/X.app"
           cd "$IPA_DIR"
-          zip -qr "$CM_BUILD_DIR/X-v3.1.1.ipa" Payload/
+          zip -qr "$IPA_PATH" Payload/
           cd "$CM_BUILD_DIR"
 
           echo "=== IPA created ==="
-          ls -lh "$CM_BUILD_DIR/X-v3.1.1.ipa"
+          ls -lh "$IPA_PATH"
 
       - name: Verify IPA structure
         script: |
-          IPA="$CM_BUILD_DIR/X-v3.1.1.ipa"
+          IPA="$IPA_PATH"
           test -f "$IPA" || { echo "ERROR: IPA not found"; exit 1; }
 
           echo "=== IPA contents (first 40 lines) ==="
@@ -285,5 +288,5 @@ workflows:
           echo "Signing: UNSIGNED — sign with ESign before installing"
 
     artifacts:
-      - $CM_BUILD_DIR/X-v3.1.1.ipa
+      - $CM_BUILD_DIR/X-v*.ipa
       - $CM_BUILD_DIR/**/*.dSYM.zip

@@ -7,8 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  actions: write
+  contents: write
 
 jobs:
   ipa:
@@ -69,16 +68,31 @@ jobs:
           BINARY="$APP_PATH/X"
           file "$BINARY"
           file "$BINARY" | grep -i "arm64" || { echo "ERROR: not arm64"; exit 1; }
+          VERSION=$(plutil -extract CFBundleShortVersionString raw -o - "$APP_PATH/Info.plist")
+          IPA_NAME="X-v${VERSION}.ipa"
+          echo "IPA_NAME=$IPA_NAME" >> "$GITHUB_ENV"
+          echo "IPA_TAG=v${VERSION}" >> "$GITHUB_ENV"
           mkdir -p ipa/Payload
           cp -R "$APP_PATH" ipa/Payload/X.app
-          (cd ipa && zip -qr "$GITHUB_WORKSPACE/X-v3.1.1.ipa" Payload/)
-          unzip -l "$GITHUB_WORKSPACE/X-v3.1.1.ipa" | head -40
-          unzip -l "$GITHUB_WORKSPACE/X-v3.1.1.ipa" | grep "Payload/X.app/" >/dev/null
-          ls -lh "$GITHUB_WORKSPACE/X-v3.1.1.ipa"
+          (cd ipa && zip -qr "$GITHUB_WORKSPACE/$IPA_NAME" Payload/)
+          unzip -l "$GITHUB_WORKSPACE/$IPA_NAME" | head -40
+          unzip -l "$GITHUB_WORKSPACE/$IPA_NAME" | grep "Payload/X.app/" >/dev/null
+          ls -lh "$GITHUB_WORKSPACE/$IPA_NAME"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: X-v3.1.1
-          path: X-v3.1.1.ipa
+          name: X-unsigned-ipa
+          path: X-v*.ipa
           if-no-files-found: error
+
+      - name: Publish IPA release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.IPA_TAG }}
+          name: X ${{ env.IPA_TAG }}
+          files: X-v*.ipa
+          make_latest: true
+          overwrite_files: true
+          generate_release_notes: false
+          body: Unsigned IPA. Sign with ESign before installing.
