@@ -234,7 +234,7 @@
 		3105A126 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105A127 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105A128 /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = th; path = th.lproj/Localizable.strings; sourceTree = "<group>"; };
-		3105A129 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
+		3105L129 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3105P100 /* PreinstalledPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PreinstalledPatches; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -605,7 +605,7 @@
 				3105A126 /* ar */,
 				3105A127 /* ru */,
 				3105A128 /* th */,
-				3105A129 /* vi */,
+				3105L129 /* vi */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
