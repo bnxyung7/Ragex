@@ -30,6 +30,7 @@ struct FreeFireView: View {
     }
     
     @Environment(\.appLanguage) private var language
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var patchStore: PatchProjectStore
     @StateObject private var keyStore = KeyStore.shared
     @StateObject private var announcementService = AnnouncementService.shared
@@ -125,6 +126,13 @@ struct FreeFireView: View {
             Task { 
                 await announcementService.fetchAnnouncements()
                 await productTagService.fetchTags()
+            }
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase == .background {
+                didRestoreActivations = false
+            } else if phase == .active {
+                restoreSavedActivationsIfNeeded()
             }
         }
         .onDisappear {

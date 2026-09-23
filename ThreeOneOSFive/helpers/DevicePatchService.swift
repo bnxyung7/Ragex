@@ -99,6 +99,26 @@ enum DevicePatchService {
         return PatchTransaction.latestReceipt(projectID: projectID, backupRoot: backupRoot)
     }
 
+    static func appliedReceipts() -> [PatchTransactionReceipt] {
+        guard let backupRoot = try? PatchProjectLibrary.backupRootURL(),
+              let directories = try? FileManager.default.contentsOfDirectory(
+                at: backupRoot,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+              ) else { return [] }
+        return directories.compactMap { directory in
+            guard let projectID = UUID(uuidString: directory.lastPathComponent) else { return nil }
+            return latestReceipt(projectID: projectID)
+        }
+    }
+
+    /// Puts original game files back without clearing saved toggle history.
+    static func restoreAllOriginals() {
+        for receipt in appliedReceipts() {
+            try? restore(receipt: receipt, allowChangedTargets: true)
+        }
+    }
+
     private static func orderedBundleIdentifiers(in project: PatchProject) -> [String] {
         project.allBundleIdentifiers
     }
