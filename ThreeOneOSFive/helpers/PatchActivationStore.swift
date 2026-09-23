@@ -38,7 +38,7 @@ final class PatchActivationStore: ObservableObject {
     private let defaultsKey = "x.patch.activation.v1"
     private let historyEnabledKey = "x.patch.activation.history.enabled"
     private let generationKey = "x.patch.activation.generation"
-    private let currentGeneration = "3.1.2-25"
+    private let currentGeneration = "3.1.3-26"
     private let historyLimit = 80
     private let keychainService = "x.patch.activation"
     private let keychainAccount = "snapshot.v1"

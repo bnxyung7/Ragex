@@ -17,9 +17,24 @@ struct ChangelogView: View {
     
     private let versions: [ChangelogVersion] = [
         ChangelogVersion(
-            version: "3.1.2",
+            version: "3.1.3",
             date: "2026-09-23",
             isLatest: true,
+            added: [],
+            changed: [
+                "The bottom bar is thinner so more tabs fit and stay easy to tap."
+            ],
+            fixed: [
+                "Switching tabs no longer rebuilds the screen, which was making movement heavy and unstable."
+            ],
+            compatibility: [
+                "iOS 17.0–26.x kernel apply. iOS 27 is not compatible."
+            ]
+        ),
+        ChangelogVersion(
+            version: "3.1.2",
+            date: "2026-09-23",
+            isLatest: false,
             added: [
                 "Older IPAs are turned off on the server until this version is installed."
             ],

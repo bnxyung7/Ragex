@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var showLogs = false
     @State private var showWelcome = false
     @State private var filesSession = FilesTabSession()
+    private static var didPlayWelcome = false
 
     // MARK: - Init (simulator flags)
 
@@ -51,7 +52,10 @@ struct ContentView: View {
         .onChange(of: keyStore.activeSession?.key.status) { _ in reconcile() }
         .onAppear {
             reconcile()
-            SoundPlayer.shared.playWelcome()
+            if !Self.didPlayWelcome {
+                Self.didPlayWelcome = true
+                SoundPlayer.shared.playWelcome()
+            }
             if !OnboardingStore.shouldShow(), !UserDefaults.standard.bool(forKey: "hasSeenWelcome") {
                 showWelcome = true
                 UserDefaults.standard.set(true, forKey: "hasSeenWelcome")
@@ -80,7 +84,7 @@ struct ContentView: View {
             selectedTab: $selectedTab,
             items: tabItems
         ) { section in
-            AnyView(sectionContent(section))
+            sectionContent(section)
         }
     }
 
