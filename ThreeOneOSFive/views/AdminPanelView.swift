@@ -45,7 +45,7 @@ struct AdminPanelView: View {
     private var tabControlsView: some View {
         List {
             Section {
-                Toggle(isOn: $adminSettings.tabSettings.patchesEnabled) {
+                Toggle(isOn: patchesBinding) {
                     HStack {
                         Image(systemName: "shippingbox.fill")
                             .foregroundStyle(adminSettings.tabSettings.patchesEnabled ? .green : .gray)
@@ -53,11 +53,8 @@ struct AdminPanelView: View {
                             .fontWeight(.medium)
                     }
                 }
-                .onChange(of: adminSettings.tabSettings.patchesEnabled) { _ in
-                    adminSettings.saveTabSettings()
-                }
-                
-                Toggle(isOn: $adminSettings.tabSettings.filesEnabled) {
+
+                Toggle(isOn: filesBinding) {
                     HStack {
                         Image(systemName: "folder.fill")
                             .foregroundStyle(adminSettings.tabSettings.filesEnabled ? .green : .gray)
@@ -65,11 +62,8 @@ struct AdminPanelView: View {
                             .fontWeight(.medium)
                     }
                 }
-                .onChange(of: adminSettings.tabSettings.filesEnabled) { _ in
-                    adminSettings.saveTabSettings()
-                }
-                
-                Toggle(isOn: $adminSettings.tabSettings.freeFireEnabled) {
+
+                Toggle(isOn: freeFireBinding) {
                     HStack {
                         Image(systemName: "flame.fill")
                             .foregroundStyle(adminSettings.tabSettings.freeFireEnabled ? .green : .gray)
@@ -77,20 +71,14 @@ struct AdminPanelView: View {
                             .fontWeight(.medium)
                     }
                 }
-                .onChange(of: adminSettings.tabSettings.freeFireEnabled) { _ in
-                    adminSettings.saveTabSettings()
-                }
-                
-                Toggle(isOn: $adminSettings.tabSettings.bundleExplorerEnabled) {
+
+                Toggle(isOn: bundleBinding) {
                     HStack {
                         Image(systemName: "folder.badge.gearshape")
                             .foregroundStyle(adminSettings.tabSettings.bundleExplorerEnabled ? .green : .gray)
                         Text("Bundle Explorer")
                             .fontWeight(.medium)
                     }
-                }
-                .onChange(of: adminSettings.tabSettings.bundleExplorerEnabled) { _ in
-                    adminSettings.saveTabSettings()
                 }
                 
             } header: {
@@ -100,70 +88,73 @@ struct AdminPanelView: View {
             }
             
             Section {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Patches")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text(adminSettings.tabSettings.patchesEnabled ? "Visible" : "Oculto")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(adminSettings.tabSettings.patchesEnabled ? .green : .red)
-                    }
-                    Spacer()
-                    Image(systemName: adminSettings.tabSettings.patchesEnabled ? "eye.fill" : "eye.slash.fill")
-                        .foregroundStyle(adminSettings.tabSettings.patchesEnabled ? .green : .red)
+                visibilityRow("Patches", enabled: adminSettings.tabSettings.patchesEnabled) {
+                    adminSettings.setPatchesEnabled(!adminSettings.tabSettings.patchesEnabled)
                 }
-                
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Files")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text(adminSettings.tabSettings.filesEnabled ? "Visible" : "Oculto")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(adminSettings.tabSettings.filesEnabled ? .green : .red)
-                    }
-                    Spacer()
-                    Image(systemName: adminSettings.tabSettings.filesEnabled ? "eye.fill" : "eye.slash.fill")
-                        .foregroundStyle(adminSettings.tabSettings.filesEnabled ? .green : .red)
+                visibilityRow("Files", enabled: adminSettings.tabSettings.filesEnabled) {
+                    adminSettings.setFilesEnabled(!adminSettings.tabSettings.filesEnabled)
                 }
-                
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Free Fire")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text(adminSettings.tabSettings.freeFireEnabled ? "Visible" : "Oculto")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(adminSettings.tabSettings.freeFireEnabled ? .green : .red)
-                    }
-                    Spacer()
-                    Image(systemName: adminSettings.tabSettings.freeFireEnabled ? "eye.fill" : "eye.slash.fill")
-                        .foregroundStyle(adminSettings.tabSettings.freeFireEnabled ? .green : .red)
+                visibilityRow("Free Fire", enabled: adminSettings.tabSettings.freeFireEnabled) {
+                    adminSettings.setFreeFireEnabled(!adminSettings.tabSettings.freeFireEnabled)
                 }
-                
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Bundle Explorer")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text(adminSettings.tabSettings.bundleExplorerEnabled ? "Visible" : "Oculto")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(adminSettings.tabSettings.bundleExplorerEnabled ? .green : .red)
-                    }
-                    Spacer()
-                    Image(systemName: adminSettings.tabSettings.bundleExplorerEnabled ? "eye.fill" : "eye.slash.fill")
-                        .foregroundStyle(adminSettings.tabSettings.bundleExplorerEnabled ? .green : .red)
+                visibilityRow("Bundle Explorer", enabled: adminSettings.tabSettings.bundleExplorerEnabled) {
+                    adminSettings.setBundleExplorerEnabled(!adminSettings.tabSettings.bundleExplorerEnabled)
                 }
             } header: {
                 Text("Estado Actual")
+            } footer: {
+                Text("Toca el ojo para mostrar u ocultar esa pestaña en la barra de abajo.")
             }
         }
         .listStyle(.insetGrouped)
+    }
+
+    private var patchesBinding: Binding<Bool> {
+        Binding(
+            get: { adminSettings.tabSettings.patchesEnabled },
+            set: { adminSettings.setPatchesEnabled($0) }
+        )
+    }
+
+    private var filesBinding: Binding<Bool> {
+        Binding(
+            get: { adminSettings.tabSettings.filesEnabled },
+            set: { adminSettings.setFilesEnabled($0) }
+        )
+    }
+
+    private var freeFireBinding: Binding<Bool> {
+        Binding(
+            get: { adminSettings.tabSettings.freeFireEnabled },
+            set: { adminSettings.setFreeFireEnabled($0) }
+        )
+    }
+
+    private var bundleBinding: Binding<Bool> {
+        Binding(
+            get: { adminSettings.tabSettings.bundleExplorerEnabled },
+            set: { adminSettings.setBundleExplorerEnabled($0) }
+        )
+    }
+
+    private func visibilityRow(_ title: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                    Text(enabled ? "Visible" : "Oculto")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(enabled ? .green : .red)
+                }
+                Spacer()
+                Image(systemName: enabled ? "eye.fill" : "eye.slash.fill")
+                    .foregroundStyle(enabled ? .green : .red)
+            }
+        }
+        .buttonStyle(.plain)
     }
     
     // MARK: - Key Management View

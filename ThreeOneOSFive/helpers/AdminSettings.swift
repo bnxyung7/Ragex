@@ -112,24 +112,27 @@ class AdminSettings: ObservableObject {
         saveTabSettings()
     }
     
-    /// Toggle individual tabs
-    func togglePatches() {
-        tabSettings.patchesEnabled.toggle()
-        saveTabSettings()
+    func setPatchesEnabled(_ enabled: Bool) {
+        commit { $0.patchesEnabled = enabled }
     }
-    
-    func toggleFiles() {
-        tabSettings.filesEnabled.toggle()
-        saveTabSettings()
+
+    func setFilesEnabled(_ enabled: Bool) {
+        commit { $0.filesEnabled = enabled }
     }
-    
-    func toggleFreeFire() {
-        tabSettings.freeFireEnabled.toggle()
-        saveTabSettings()
+
+    func setFreeFireEnabled(_ enabled: Bool) {
+        commit { $0.freeFireEnabled = enabled }
     }
-    
-    func toggleBundleExplorer() {
-        tabSettings.bundleExplorerEnabled.toggle()
+
+    func setBundleExplorerEnabled(_ enabled: Bool) {
+        commit { $0.bundleExplorerEnabled = enabled }
+    }
+
+    private func commit(_ change: (inout TabVisibilitySettings) -> Void) {
+        var next = tabSettings
+        change(&next)
+        tabSettings = next
+        objectWillChange.send()
         saveTabSettings()
     }
     

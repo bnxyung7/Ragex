@@ -28,7 +28,8 @@ struct ChangelogView: View {
                 "Activation and deactivation write the game file directly and confirm size on disk.",
                 "Original game files are cloned beside the target instead of copied into the app sandbox.",
                 "Removed Wallpaper Lab, Cleaner, and unused Combo/Otros packages so the IPA stays lighter.",
-                "Activated Files, Patches, and Bundle open from the bottom bar instead of Profile."
+                "Activated Files, Patches, and Bundle open from the bottom bar instead of Profile.",
+                "Admin eye and switches now add or remove that tab on the bottom bar immediately."
             ],
             fixed: [
                 "Leaving the app no longer restores originals before you can open Free Fire.",
