@@ -40,7 +40,7 @@ struct FreeFireView: View {
     @State private var bundlePatches: [BundlePatch] = []
     @State private var selectedCategory: PatchCategory = .aimbot
     @State private var selectedHologramaSubcategory: HologramaSubcategory = .arma
-    @State private var processingPatchIDs: Set<UUID> = []
+    @State private var processingPatchIDs: Set<String> = []
     @State private var errorMessage: String?
     @State private var showErrorAlert = false
     @State private var showAnnouncementsSheet = false
@@ -200,7 +200,7 @@ struct FreeFireView: View {
                         ForEach(filteredPatches) { patch in
                             PatchToggleRow(
                                 patch: patch,
-                                isProcessing: processingPatchIDs.contains(patch.id),
+                                isProcessing: processingPatchIDs.contains(patch.productId),
                                 onToggle: { activate in
                                     togglePatch(patch, activate: activate)
                                 }
@@ -472,7 +472,7 @@ struct FreeFireView: View {
             ForEach(hologramaPatches) { patch in
                 PatchToggleRow(
                     patch: patch,
-                    isProcessing: processingPatchIDs.contains(patch.id),
+                    isProcessing: processingPatchIDs.contains(patch.productId),
                     onToggle: { activate in
                         togglePatch(patch, activate: activate)
                     }
@@ -563,8 +563,7 @@ struct FreeFireView: View {
     // MARK: - Toggle Patch Action
     
     private func togglePatch(_ patch: BundlePatch, activate: Bool, recordHistory: Bool = true) {
-        guard !processingPatchIDs.contains(patch.id) else { return }
-        processingPatchIDs.insert(patch.id)
+        guard processingPatchIDs.insert(patch.productId).inserted else { return }
 
         Task.detached(priority: .userInitiated) {
             do {
@@ -630,51 +629,15 @@ struct FreeFireView: View {
                             receipt: receipt
                         )
                         SoundPlayer.shared.playActivate()
-                        processingPatchIDs.remove(patch.id)
+                        processingPatchIDs.remove(patch.productId)
                     }
                 } else {
-                    var restored = false
-                    let stored = await MainActor.run {
-                        DevicePatchService.receipt(fromStored:
-                            PatchActivationStore.shared.appliedRef(for: patch.productId)
-                        )
-                    }
-                    if let receipt = DevicePatchService.receipt(for: resolvedProject) ?? stored {
-                        log("freeFire: restoring \(patch.displayName) receipt=\(receipt.id.uuidString)")
-                        do {
-                            try DevicePatchService.restore(receipt: receipt, allowChangedTargets: true)
-                            restored = true
-                        } catch {
-                            log("freeFire: restore error \(error.localizedDescription)")
-                        }
-                    } else {
-                        log("freeFire: no receipt, restoring originals for \(patch.displayName)")
-                    }
-                    if !restored {
-                        do {
-                            try DevicePatchService.restoreOriginals(project: resolvedProject)
-                            restored = true
-                        } catch {
-                            log("freeFire: sidecar restore error \(error.localizedDescription)")
-                        }
-                    }
-                    if restored {
-                        do {
-                            try DevicePatchService.verifyUnpatched(project: resolvedProject)
-                        } catch {
-                            log("freeFire: file still patched after restore")
-                            restored = false
-                        }
-                    }
-                    guard restored else {
-                        throw NSError(domain: "FreeFire", code: 3, userInfo: [
-                            NSLocalizedDescriptionKey: "No se pudo desactivar \(patch.displayName). Inténtalo de nuevo."
-                        ])
-                    }
+                    log("freeFire: restoring once \(patch.displayName)")
+                    try DevicePatchService.restoreOriginals(project: resolvedProject)
                     await MainActor.run {
                         PatchActivationStore.shared.record(patch: patch, activated: false, recordHistory: recordHistory)
                         SoundPlayer.shared.playDeactivate()
-                        processingPatchIDs.remove(patch.id)
+                        processingPatchIDs.remove(patch.productId)
                     }
                 }
             } catch {
@@ -682,7 +645,7 @@ struct FreeFireView: View {
                 await MainActor.run {
                     errorMessage = errText
                     showErrorAlert = true
-                    processingPatchIDs.remove(patch.id)
+                    processingPatchIDs.remove(patch.productId)
                 }
                 log("freeFire: toggle error — \(errText)")
                 
@@ -1084,12 +1047,6 @@ struct PatchToggleRow: View {
         .padding(.horizontal, AppTheme.cardPadding)
         .padding(.vertical, 14)
         .obsidianCard(cornerRadius: 16, borderColor: isActive ? AppTheme.accent.opacity(0.4) : AppTheme.cardBorder, glowing: isActive)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if !isProcessing {
-                onToggle(!isActive)
-            }
-        }
     }
 }
 

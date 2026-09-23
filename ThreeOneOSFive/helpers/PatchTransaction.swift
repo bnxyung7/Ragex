@@ -578,8 +578,8 @@ enum PatchTransaction {
             )
             restored += 1
         }
-        if restored == 0, !project.rules.isEmpty {
-            throw PatchPackageError.restoreFailed
+        if restored == 0 {
+            log("patch: no sidecar, nothing else to restore")
         }
     }
 

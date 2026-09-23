@@ -29,7 +29,8 @@ struct ChangelogView: View {
                 "Original game files are cloned beside the target instead of copied into the app sandbox.",
                 "Removed Wallpaper Lab, Cleaner, and unused Combo/Otros packages so the IPA stays lighter.",
                 "Activated Files, Patches, and Bundle open from the bottom bar instead of Profile.",
-                "Admin eye and switches now add or remove that tab on the bottom bar immediately."
+                "Admin eye and switches now add or remove that tab on the bottom bar immediately.",
+                "Removed every bundled product until activation writes the game file only once."
             ],
             fixed: [
                 "Leaving the app no longer restores originals before you can open Free Fire.",
