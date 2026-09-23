@@ -720,7 +720,7 @@ struct RepositoryPackageDetailView: View {
         .buttonStyle(.borderedProminent)
         .controlSize(.regular)
         .disabled(
-            compatibility != .compatible
+            compatibility == .incompatible
                 || repositoryStore.isDownloading(record)
                 || patchStore.isBusy
         )

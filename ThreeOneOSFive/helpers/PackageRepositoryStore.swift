@@ -236,7 +236,7 @@ final class PackageRepositoryStore: ObservableObject {
             patch: AppInfo.versionTuple.patch,
             build: AppInfo.osBuild
         )
-        guard compatibility == .compatible else {
+        guard compatibility != .incompatible else {
             present(.incompatiblePackage)
             return
         }

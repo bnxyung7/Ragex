@@ -133,10 +133,11 @@ struct OnboardingView: View {
             VStack(spacing: 10) {
                 ForEach(AppLanguage.allCases) { option in
                     let isSelected = languageCode == option.rawValue
-                    Button {
-                        languageCode = option.rawValue
-                        UserDefaults.standard.set(true, forKey: "x.language.userChosen")
-                    } label: {
+        Button {
+            languageCode = option.rawValue
+            UserDefaults.standard.set(true, forKey: "x.language.userChosen")
+            UserDefaults.standard.set(option.rawValue, forKey: AppLanguage.storageKey)
+        } label: {
                         HStack(spacing: 14) {
                             Text(option.flag)
                                 .font(.system(size: 28))
@@ -439,12 +440,14 @@ enum OnboardingStore {
         if ProcessInfo.processInfo.arguments.contains("--skip-onboarding") { return false }
         if ProcessInfo.processInfo.arguments.contains("--reset-onboarding") { return true }
 #endif
-        if UserDefaults.standard.bool(forKey: languageSetupKey) { return false }
-        if UserDefaults.standard.bool(forKey: "hasSeenWelcome") { return false }
-        return true
+        // Always present language setup until the user explicitly picks a language.
+        // Installing a new IPA over a previous one keeps UserDefaults, so we cannot
+        // skip just because hasSeenWelcome was set on an older build.
+        return !UserDefaults.standard.bool(forKey: "x.language.userChosen")
     }
 
     static func markCompleted() {
+        UserDefaults.standard.set(true, forKey: "x.language.userChosen")
         UserDefaults.standard.set(true, forKey: languageSetupKey)
         UserDefaults.standard.set(true, forKey: "hasSeenWelcome")
         UserDefaults.standard.set(currentVersion, forKey: completedVersionKey)

@@ -696,7 +696,8 @@ enum PackageCompatibilityEvaluator {
         patch: Int,
         build: String
     ) -> PackageCompatibility {
-        guard !ranges.isEmpty else { return .unknown }
+        // No OS list means the package is not restricted.
+        guard !ranges.isEmpty else { return .compatible }
         let current = PackageSystemVersion(major: major, minor: minor, patch: patch)
         for range in ranges {
             guard let minimum = PackageSystemVersion(range.minimum),
@@ -704,9 +705,8 @@ enum PackageCompatibilityEvaluator {
                   (minimum...maximum).contains(current) else {
                 continue
             }
-            if let builds = range.builds, !builds.isEmpty {
-                return builds.contains(build) ? .compatible : .incompatible
-            }
+            // Version range matched. Do not block solely because the exact
+            // Darwin build string is missing from an optional whitelist.
             return .compatible
         }
         return .incompatible
