@@ -12,15 +12,6 @@ enum AppSection: Int, CaseIterable, Identifiable {
     var id: Int { rawValue }
 }
 
-enum WallpaperFeatureSupportPolicy {
-    static func isSupported(major: Int) -> Bool {
-        switch major {
-        case 17, 18, 26, 27:
-            return true
-        default:
-            return false
-        }
-    }
 }
 
 struct OneShotPresentationGate: Equatable {

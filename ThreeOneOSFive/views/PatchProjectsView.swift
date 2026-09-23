@@ -8,27 +8,13 @@ private enum PatchPackagePickerPolicy {
     static let copiesSelectedDocument = true
 }
 
-private enum WallpaperPackagePickerPolicy {
-    static let packageType = UTType(filenameExtension: "tendies") ?? .data
-    static let allowedContentTypes: [UTType] = [packageType, .data]
-}
-
 struct PatchProjectsView: View {
     @Environment(\.appLanguage) private var language
     @EnvironmentObject private var draftCoordinator: PatchDraftCoordinator
     @EnvironmentObject private var store: PatchProjectStore
-    @AppStorage(FeatureVisibility.cleanerStorageKey) private var cleanerEnabled = true
     @State private var showCreate = false
     @State private var showImporter = false
-    @State private var showWallpaperImporter = false
-    @State private var showCleaner = false
     @State private var searchText = ""
-    @State private var wallpaperPackages: [WallpaperStagedPackage] = []
-    @State private var wallpaperImportFeedback: WallpaperImportFeedback?
-    @State private var wallpaperPendingDeletion: WallpaperStagedPackage?
-    @State private var isImportingWallpapers = false
-    @State private var showSimulatedWallpaperDetail = false
-    @State private var simulatedWallpaperDetailGate = OneShotPresentationGate()
     let onOpenSettings: () -> Void
     let onOpenLogs: () -> Void
 
@@ -58,20 +44,12 @@ struct PatchProjectsView: View {
         }
     }
 
-    private var filteredWallpaperPackages: [WallpaperStagedPackage] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return wallpaperPackages }
-        return wallpaperPackages.filter {
-            $0.displayName.localizedCaseInsensitiveContains(query)
-        }
-    }
-
     private var hasLocalContent: Bool {
-        !store.items.isEmpty || !wallpaperPackages.isEmpty
+        !store.items.isEmpty
     }
 
     private var hasSearchResults: Bool {
-        !filteredItems.isEmpty || !filteredWallpaperPackages.isEmpty
+        !filteredItems.isEmpty
     }
 
     init(
@@ -97,7 +75,7 @@ struct PatchProjectsView: View {
                 )
                 Divider()
                 List {
-                    if !hasLocalContent && (store.isBusy || isImportingWallpapers) {
+                    if !hasLocalContent && store.isBusy {
                         loadingState
                             .listRowSeparator(.hidden)
                     } else if !hasLocalContent {
@@ -116,38 +94,6 @@ struct PatchProjectsView: View {
                                     offsets.map { filteredItems[$0] }.forEach(store.delete)
                                 }
                             }
-                        }
-                        if !filteredWallpaperPackages.isEmpty {
-                            Section(language.text("tab.wallpapers")) {
-                                ForEach(filteredWallpaperPackages) { package in
-                                    NavigationLink {
-                                        InstalledWallpaperPackageDetailView(
-                                            package: package,
-                                            onApplied: reloadWallpaperPackages
-                                        )
-                                    } label: {
-                                        wallpaperRow(package)
-                                    }
-                                    .swipeActions(
-                                        edge: .trailing,
-                                        allowsFullSwipe: false
-                                    ) {
-                                        Button(role: .destructive) {
-                                            wallpaperPendingDeletion = package
-                                        } label: {
-                                            Label(
-                                                language.text("common.delete"),
-                                                systemImage: "trash"
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if cleanerEnabled {
-                        Section(language.text("repository.utilities")) {
-                            cleanerRow
                         }
                     }
                 }
@@ -170,22 +116,14 @@ struct PatchProjectsView: View {
                         } label: {
                             Label(language.text("patch.import"), systemImage: "square.and.arrow.down")
                         }
-                        Button {
-                            showWallpaperImporter = true
-                        } label: {
-                            Label(
-                                language.text("wallpaper.import"),
-                                systemImage: "photo.badge.plus"
-                            )
-                        }
                     } label: {
-                        if store.isBusy || isImportingWallpapers {
+                        if store.isBusy {
                             ProgressView()
                         } else {
                             Image(systemName: "plus")
                         }
                     }
-                    .disabled(store.isBusy || isImportingWallpapers)
+                    .disabled(store.isBusy)
                     .accessibilityLabel(language.text("patch.add"))
                 }
                 AppUtilityToolbar(
@@ -219,9 +157,6 @@ struct PatchProjectsView: View {
                     store.create(project: project, password: password)
                 }
             }
-            .sheet(isPresented: $showCleaner) {
-                CleanerView()
-            }
             .sheet(item: $draftCoordinator.request) { request in
                 PatchProjectEditorView(
                     existingProject: nil,
@@ -232,66 +167,8 @@ struct PatchProjectsView: View {
                     draftCoordinator.clear()
                 }
             }
-            .sheet(isPresented: $showWallpaperImporter) {
-                FileDocumentPicker(
-                    allowedContentTypes: WallpaperPackagePickerPolicy.allowedContentTypes,
-                    copiesSelectedDocument: true,
-                    allowsMultipleSelection: true,
-                    onSelection: { result in
-                        showWallpaperImporter = false
-                        if case .success(let urls) = result, !urls.isEmpty {
-                            importWallpaperPackages(urls)
-                        }
-                    },
-                    onCancel: {
-                        showWallpaperImporter = false
-                    }
-                )
-                .ignoresSafeArea()
-            }
-            .alert(item: $wallpaperImportFeedback) { feedback in
-                Alert(
-                    title: Text(language.text(feedback.titleKey)),
-                    message: Text(feedback.message),
-                    dismissButton: .default(Text(language.text("common.ok")))
-                )
-            }
-            .alert(item: $wallpaperPendingDeletion) { package in
-                Alert(
-                    title: Text(language.text("wallpaper.delete_title")),
-                    message: Text(language.text(
-                        "wallpaper.delete_message",
-                        package.displayName
-                    )),
-                    primaryButton: .destructive(
-                        Text(language.text("common.delete"))
-                    ) {
-                        deleteWallpaperPackage(package)
-                    },
-                    secondaryButton: .cancel(Text(language.text("common.cancel")))
-                )
-            }
             .onAppear {
-                reloadWallpaperPackages()
                 consumeExternalImport()
-#if targetEnvironment(simulator)
-                if ProcessInfo.processInfo.arguments.contains(
-                    "--simulate-wallpaper-detail"
-                ), !wallpaperPackages.isEmpty,
-                   simulatedWallpaperDetailGate.claim() {
-                    DispatchQueue.main.async {
-                        showSimulatedWallpaperDetail = true
-                    }
-                }
-#endif
-            }
-            .navigationDestination(isPresented: $showSimulatedWallpaperDetail) {
-                if let package = wallpaperPackages.first {
-                    InstalledWallpaperPackageDetailView(
-                        package: package,
-                        onApplied: reloadWallpaperPackages
-                    )
-                }
             }
             .onChange(of: draftCoordinator.importRequest?.id) { _ in
                 consumeExternalImport()
@@ -303,121 +180,6 @@ struct PatchProjectsView: View {
         guard let request = draftCoordinator.importRequest else { return }
         draftCoordinator.clearImport()
         store.importPackage(from: request.source)
-    }
-
-    private func wallpaperRow(_ package: WallpaperStagedPackage) -> some View {
-        HStack(spacing: 12) {
-            AppRowIcon(systemName: wallpaperSymbol)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(package.displayName)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                InstalledContentKindBadge(kind: .wallpaper, language: language)
-                Text(language.text(
-                    "wallpaper.package_summary",
-                    Int64(package.payload.descriptors.count),
-                    ByteCountFormatter.string(
-                        fromByteCount: package.payload.totalBytes,
-                        countStyle: .file
-                    )
-                ))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    private var cleanerRow: some View {
-        Button {
-            showCleaner = true
-        } label: {
-            HStack(spacing: 12) {
-                AppRowIcon(systemName: "sparkles")
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(language.text("tab.cleaner"))
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Text(language.text("repository.cleaner_subtitle"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var wallpaperSymbol: String {
-        if #available(iOS 18.0, *) {
-            return "photo.on.rectangle.angled.fill"
-        }
-        return "photo.fill.on.rectangle.fill"
-    }
-
-    private func reloadWallpaperPackages() {
-        wallpaperPackages = WallpaperPackageStore.packages()
-    }
-
-    private func deleteWallpaperPackage(_ package: WallpaperStagedPackage) {
-        do {
-            try WallpaperPackageStore.delete(package)
-            reloadWallpaperPackages()
-        } catch {
-            wallpaperImportFeedback = WallpaperImportFeedback(
-                titleKey: "wallpaper.operation_failed",
-                message: wallpaperErrorMessage(error)
-            )
-        }
-    }
-
-    private func importWallpaperPackages(_ urls: [URL]) {
-        guard !isImportingWallpapers else { return }
-        isImportingWallpapers = true
-        DispatchQueue.global(qos: .userInitiated).async {
-            var imported = 0
-            var failures: [String] = []
-            for url in urls {
-                do {
-                    _ = try WallpaperPackageStore.importPackage(from: url)
-                    imported += 1
-                    log("wallpaper: staged \(url.lastPathComponent)")
-                } catch {
-                    failures.append(
-                        "\(url.lastPathComponent): \(wallpaperErrorMessage(error))"
-                    )
-                    log("wallpaper: import rejected \(url.lastPathComponent)")
-                }
-            }
-            DispatchQueue.main.async {
-                isImportingWallpapers = false
-                reloadWallpaperPackages()
-                wallpaperImportFeedback = WallpaperImportFeedback(
-                    titleKey: failures.isEmpty
-                        ? "wallpaper.import_done_title"
-                        : "wallpaper.import_result_title",
-                    message: failures.isEmpty
-                        ? language.text(
-                            "wallpaper.import_done_message",
-                            Int64(imported)
-                        )
-                        : failures.joined(separator: "\n")
-                )
-            }
-        }
-    }
-
-    private func wallpaperErrorMessage(_ error: Error) -> String {
-        if let wallpaperError = error as? WallpaperLabError {
-            return language.text(wallpaperError.localizationKey)
-        }
-        return language.text("wallpaper.error.unknown")
     }
 
     @ViewBuilder
@@ -483,12 +245,6 @@ struct PatchProjectsView: View {
     }
 }
 
-private struct WallpaperImportFeedback: Identifiable {
-    let id = UUID()
-    let titleKey: String
-    let message: String
-}
-
 private struct PatchProjectRow: View {
     let item: PatchLibraryItem
     let language: AppLanguage
@@ -546,20 +302,13 @@ private struct PatchProjectRow: View {
 
 private enum InstalledContentKind {
     case patch
-    case wallpaper
 
     var localizationKey: String {
-        switch self {
-        case .patch: return "installed.kind.patch"
-        case .wallpaper: return "installed.kind.wallpaper"
-        }
+        "installed.kind.patch"
     }
 
     var systemImage: String {
-        switch self {
-        case .patch: return "shippingbox.fill"
-        case .wallpaper: return "photo.fill"
-        }
+        "shippingbox.fill"
     }
 }
 

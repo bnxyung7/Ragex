@@ -44,9 +44,7 @@ final class PackageRepositoryStore: ObservableObject {
             sourceStates[source.id] = .idle
         }
 #if targetEnvironment(simulator)
-        if ProcessInfo.processInfo.arguments.contains("--simulate-wallpaper-repository") {
-            installSimulatorWallpaperRepository()
-        } else if ProcessInfo.processInfo.arguments.contains("--simulate-repository") {
+        if ProcessInfo.processInfo.arguments.contains("--simulate-repository") {
             installSimulatorPreviewRepository()
         }
 #endif
@@ -281,31 +279,12 @@ final class PackageRepositoryStore: ObservableObject {
                             "to patch import"
                     )
                 case .wallpaper:
-                    let packageURL = try await PackageRepositoryNetworkClient
-                        .downloadWallpaper(record.package)
-                    defer { try? FileManager.default.removeItem(at: packageURL) }
-                    try await Task.detached(priority: .userInitiated) {
-                        _ = try WallpaperPackageStore.importPackage(
-                            from: packageURL,
-                            displayName: record.package.name,
-                            repositoryIdentity: record.repositoryIdentity
-                        )
-                    }.value
-                    alert = RepositoryStoreAlert(
-                        titleKey: "wallpaper.import_done_title",
-                        messageKey: "repository.wallpaper_imported"
-                    )
-                    log(
-                        "repository: imported wallpaper " +
-                            record.package.identifier
-                    )
+                    throw PackageRepositoryError.invalidPackage
                 }
             } catch let error as PackageRepositoryError {
                 present(error)
             } catch let error as PatchPackageError {
                 patchStore.presentImportError(error)
-            } catch let error as WallpaperLabError {
-                present(error)
             } catch {
                 present(.sourceUnavailable)
             }
@@ -325,9 +304,7 @@ final class PackageRepositoryStore: ObservableObject {
         case .patch:
             return false
         case .wallpaper:
-            return WallpaperPackageStore.contains(
-                repositoryIdentity: record.repositoryIdentity
-            )
+            return false
         }
     }
 
@@ -344,13 +321,6 @@ final class PackageRepositoryStore: ObservableObject {
     private func present(_ error: PackageRepositoryError) {
         alert = RepositoryStoreAlert(
             titleKey: "common.failed",
-            messageKey: error.localizationKey
-        )
-    }
-
-    private func present(_ error: WallpaperLabError) {
-        alert = RepositoryStoreAlert(
-            titleKey: "wallpaper.operation_failed",
             messageKey: error.localizationKey
         )
     }
@@ -431,61 +401,6 @@ final class PackageRepositoryStore: ObservableObject {
         sourceStates[source.id] = .loaded(Date())
         refreshedThisLaunch = true
     }
-
-    private func installSimulatorWallpaperRepository() {
-        let revision = "f04c0a8e81c328201ad7769fac16b907ce905035"
-        let sourceURL = URL(
-            string: "https://raw.githubusercontent.com/bnxyung7/Ragex-repo/main/" +
-                "repositories/demo/repo.json"
-        )!
-        let previewURL = URL(
-            string: "https://raw.githubusercontent.com/SerStars/" +
-                "Nugget-Wallpapers/\(revision)/previews/custom/gifs/Cipher.gif"
-        )!
-        let downloadURL = URL(
-            string: "https://raw.githubusercontent.com/SerStars/" +
-                "Nugget-Wallpapers/\(revision)/wallpapers/custom/Cipher.tendies"
-        )!
-        let source = RepositorySource(manifestURL: sourceURL)
-        let ranges = [
-            PackageOSRange(minimum: "17.0", maximum: "18.7.1", builds: nil),
-            PackageOSRange(minimum: "26.0", maximum: "26.6.2", builds: nil)
-        ]
-        let package = RepositoryPackage(
-            identifier: "nugget-custom-113",
-            kind: .wallpaper,
-            name: "Cipher",
-            author: "@mightycooldude12",
-            version: "1.0.0",
-            summary: "Decoding...",
-            details: "Decoding...\n\nNguồn: SerStars/Nugget-Wallpapers (GPL-3.0).",
-            category: "Wallpaper",
-            tags: ["Wallpaper", "Custom"],
-            publishedAt: nil,
-            iconURL: previewURL,
-            bannerURL: nil,
-            screenshotURLs: [previewURL],
-            downloadURL: downloadURL,
-            sha256: nil,
-            expectedSize: nil,
-            supportedOS: ranges,
-            changelog: nil,
-            isFeatured: false,
-            isPrivate: false,
-            sharedPassword: nil
-        )
-        sources = [source]
-        repositories[source.id] = PackageRepository(
-            identifier: "com.bnxyung7.x",
-            name: "X Repository",
-            summary: "Official X patch and tweak repository.",
-            iconURL: nil,
-            sourceURL: sourceURL,
-            packages: [package]
-        )
-        sourceStates[source.id] = .loaded(Date())
-        refreshedThisLaunch = true
-    }
 #endif
 }
 
@@ -542,16 +457,6 @@ enum PackageRepositoryNetworkClient {
         let fileURL = try await verifiedDownload(package, maximumBytes: nil)
         defer { try? FileManager.default.removeItem(at: fileURL) }
         return try Data(contentsOf: fileURL, options: .mappedIfSafe)
-    }
-
-    static func downloadWallpaper(_ package: RepositoryPackage) async throws -> URL {
-        guard package.kind == .wallpaper else {
-            throw PackageRepositoryError.invalidPackage
-        }
-        return try await verifiedDownload(
-            package,
-            maximumBytes: Int(WallpaperLabLimits.maximumArchiveBytes)
-        )
     }
 
     private static func verifiedDownload(

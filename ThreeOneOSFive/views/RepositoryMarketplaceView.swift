@@ -4,10 +4,7 @@ import UIKit
 struct LegacyRepositoryExploreView: View {
     @Environment(\.appLanguage) private var language
     @EnvironmentObject private var repositoryStore: PackageRepositoryStore
-    @AppStorage(FeatureVisibility.cleanerStorageKey) private var cleanerEnabled = true
-    @State private var activeTool: BuiltInTool?
 
-    let wallpapersSupported: Bool
     let onOpenSettings: () -> Void
     let onOpenLogs: () -> Void
 
@@ -23,8 +20,6 @@ struct LegacyRepositoryExploreView: View {
     var body: some View {
         NavigationStack {
             List {
-                builtInToolsSection
-
                 if repositoryStore.packages.isEmpty {
                     marketplaceEmptySection
                 } else {
@@ -58,78 +53,10 @@ struct LegacyRepositoryExploreView: View {
             .onAppear {
                 repositoryStore.refreshAllIfNeeded()
             }
-            .sheet(item: $activeTool) { tool in
-                switch tool {
-                case .cleaner:
-                    CleanerView()
-                case .wallpaper:
-                    WallpaperLabView()
-                }
-            }
             .navigationDestination(for: RepositoryPackageRecord.self) { record in
                 RepositoryPackageDetailView(record: record)
             }
         }
-    }
-
-    private var builtInToolsSection: some View {
-        Section {
-            if cleanerEnabled {
-                builtInToolButton(
-                    .cleaner,
-                    titleKey: "tab.cleaner",
-                    subtitleKey: "repository.cleaner_subtitle",
-                    systemImage: "sparkles"
-                )
-            }
-            if wallpapersSupported {
-                builtInToolButton(
-                    .wallpaper,
-                    titleKey: "tab.wallpapers",
-                    subtitleKey: "repository.wallpaper_subtitle",
-                    systemImage: wallpaperSymbol
-                )
-            }
-            if !cleanerEnabled && !wallpapersSupported {
-                Text(language.text("repository.tools_disabled"))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        } header: {
-            Text(language.text("repository.built_in_tools"))
-        } footer: {
-            Text(language.text("repository.tools_footer"))
-        }
-    }
-
-    private func builtInToolButton(
-        _ tool: BuiltInTool,
-        titleKey: String,
-        subtitleKey: String,
-        systemImage: String
-    ) -> some View {
-        Button {
-            activeTool = tool
-        } label: {
-            HStack(spacing: 12) {
-                AppRowIcon(systemName: systemImage)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(language.text(titleKey))
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Text(language.text(subtitleKey))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint(language.text("repository.open_tool_hint"))
     }
 
     private var marketplaceEmptySection: some View {
@@ -169,13 +96,6 @@ struct LegacyRepositoryExploreView: View {
                 }
             }
         }
-    }
-
-    private var wallpaperSymbol: String {
-        if #available(iOS 18.0, *) {
-            return "photo.on.rectangle.angled.fill"
-        }
-        return "photo.fill.on.rectangle.fill"
     }
 }
 
@@ -1042,11 +962,6 @@ struct AppUtilityToolbar: ToolbarContent {
     }
 }
 
-private enum BuiltInTool: String, Identifiable {
-    case cleaner
-    case wallpaper
-
-    var id: String { rawValue }
 }
 
 private enum StorePresentationAlert: Identifiable {
