@@ -3,7 +3,7 @@ import Foundation
 /// Loads preinstalled patches from the app bundle on first launch
 enum PreinstalledPatchLoader {
     private static let installedGenerationKey = "PreinstalledPatchLoader.generation"
-    private static let generation = "3.1.1-24"
+    private static let generation = "3.1.2-25"
 
     /// Copy bundled patches once per build. An empty bundle does not lock the flag,
     /// so a later IPA that adds products still installs them.

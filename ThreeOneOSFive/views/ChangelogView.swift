@@ -17,9 +17,27 @@ struct ChangelogView: View {
     
     private let versions: [ChangelogVersion] = [
         ChangelogVersion(
-            version: "3.1.1",
+            version: "3.1.2",
             date: "2026-09-23",
             isLatest: true,
+            added: [
+                "Older IPAs are turned off on the server until this version is installed."
+            ],
+            changed: [
+                "The public site and installer now serve 3.1.2.",
+                "Notifications refresh in the foreground and the device token registers with the panel."
+            ],
+            fixed: [
+                "A second tap cannot write the game file again while the first activation is still running."
+            ],
+            compatibility: [
+                "iOS 17.0–26.x kernel apply. iOS 27 is not compatible."
+            ]
+        ),
+        ChangelogVersion(
+            version: "3.1.1",
+            date: "2026-09-23",
+            isLatest: false,
             added: [
                 "Forced in-place game file apply so options take effect without extra hashing delay.",
                 "Settings control to disable and clear activation history."
