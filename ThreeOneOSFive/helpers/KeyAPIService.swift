@@ -29,6 +29,8 @@ class KeyAPIService {
         let message: String?
         let isBanned: Bool?
         let banReason: String?
+        let blockType: String?
+        let title: String?
         let minAppVersion: String?  // Minimum app version required for this key
         let updateRequired: Bool?    // If true, user must update to use this key
     }
@@ -191,7 +193,7 @@ class KeyAPIService {
         }
         let url = URL(string: "\(baseURL)/keys/\(encodedKey)/activate")!
         
-        var request = URLRequest(url: url)
+        let request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let appVersion = Bundle.main.object(forInfoDictionaryKey: "AppReleaseDisplayVersion") as? String 
@@ -216,9 +218,14 @@ class KeyAPIService {
         }
         
         guard httpResponse.statusCode == 200 else {
-            if let errorObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let msg = errorObj["error"] as? String ?? errorObj["message"] as? String {
-                throw KeyAPIError.serverMessage(msg)
+            if let errorObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                let msg = (errorObj["reason"] as? String)
+                    ?? (errorObj["banReason"] as? String)
+                    ?? (errorObj["error"] as? String)
+                    ?? (errorObj["message"] as? String)
+                if let msg, !msg.isEmpty {
+                    throw KeyAPIError.serverMessage(msg)
+                }
             }
             throw KeyAPIError.httpError(statusCode: httpResponse.statusCode)
         }

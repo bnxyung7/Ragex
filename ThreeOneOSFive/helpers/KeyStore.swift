@@ -213,10 +213,16 @@ class KeyStore: ObservableObject {
                     // Determine error type
                     let isBanned = validationResult.isBanned == true ||
                         (validationResult.reason?.lowercased().contains("bann") == true) ||
-                        (validationResult.reason?.lowercased().contains("banead") == true)
+                        (validationResult.reason?.lowercased().contains("banead") == true) ||
+                        (validationResult.reason?.lowercased().contains("bloquead") == true) ||
+                        (validationResult.blockType == "device") ||
+                        (validationResult.blockType == "ipa") ||
+                        (validationResult.blockType == "key")
                     
                     if isBanned {
-                        let reason = validationResult.banReason ?? validationResult.reason ?? "Violación de términos"
+                        let reason = validationResult.banReason
+                            ?? validationResult.reason
+                            ?? "Acceso denegado por administración."
                         completion(.failure(.banned(reason: reason)))
                     } else if let reason = validationResult.reason {
                         if reason.contains("expired") {
@@ -776,7 +782,7 @@ enum KeyActivationError: LocalizedError {
         case .alreadyActivated:
             return AppLanguage.current.text("key.error.other_device")
         case .banned(let reason):
-            return "Esta Key ha sido BANEADA: \(reason ?? "Uso indebido")"
+            return reason ?? "Acceso denegado por administración."
         case .updateRequired(let minVersion):
             return "⚠️ ACTUALIZACIÓN REQUERIDA\n\nEsta Key requiere la versión \(minVersion) o superior.\n\nDescarga la última versión de la app para usar esta Key."
         case .serverError(let message):

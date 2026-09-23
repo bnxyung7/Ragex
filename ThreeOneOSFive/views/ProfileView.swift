@@ -583,20 +583,21 @@ struct KeyActivationSheet: View {
                     }
                     
                     if let error = activationError {
-                        HStack(spacing: 8) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(Color(hex: "EF4444"))
-                                .font(.system(size: 14))
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("ACCESO DENEGADO")
+                                .font(.system(size: 11, weight: .bold))
+                                .tracking(0.8)
+                                .foregroundStyle(Color(hex: "FECACA"))
                             Text(error)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(Color(hex: "EF4444"))
-                                .lineLimit(3)
-                            Spacer()
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.white)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Color(hex: "EF4444").opacity(0.10), in: RoundedRectangle(cornerRadius: 10))
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EF4444").opacity(0.25), lineWidth: 1))
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(hex: "EF4444").opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Color(hex: "EF4444").opacity(0.35), lineWidth: 1))
                         .padding(.horizontal, 24)
                     }
                     

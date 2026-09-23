@@ -773,8 +773,9 @@ struct FreeFireView: View {
                             .foregroundStyle(Color(hex: "94A3B8"))
                         Text(keyStore.banReason ?? "Violación de términos del servicio o uso no autorizado.")
                             .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(Color(hex: "EF4444"))
+                            .fontWeight(.medium)
+                            .foregroundStyle(.white)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 .padding(AppTheme.cardPadding)
