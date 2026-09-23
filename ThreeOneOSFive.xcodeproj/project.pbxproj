@@ -12,6 +12,7 @@
 		NOTIF013 /* InAppToastOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTIF003; };
 		FORCE001 /* ForceUpdateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FORCE000; };
 		PRODS001 /* ProductTagService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRODS000; };
+		ACTST001 /* PatchActivationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACTST000; };
 		ENCRY001 /* FileEncryptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ENCRY000; };
 		PUSH011 /* PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PUSH001; };
 		CTAB011 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CTAB001; };
@@ -115,6 +116,7 @@
 		NOTIF003 /* InAppToastOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppToastOverlay.swift; sourceTree = "<group>"; };
 		FORCE000 /* ForceUpdateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForceUpdateView.swift; sourceTree = "<group>"; };
 		PRODS000 /* ProductTagService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductTagService.swift; sourceTree = "<group>"; };
+		ACTST000 /* PatchActivationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchActivationStore.swift; sourceTree = "<group>"; };
 		ENCRY000 /* FileEncryptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileEncryptionService.swift; sourceTree = "<group>"; };
 		PUSH001 /* PushNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationService.swift; sourceTree = "<group>"; };
 		CTAB001 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
@@ -378,6 +380,7 @@
 				90DFBCB7 /* AdminSettings.swift */,
 				NOTIF002 /* NotificationService.swift */,
 				PRODS000 /* ProductTagService.swift */,
+				ACTST000 /* PatchActivationStore.swift */,
 				ENCRY000 /* FileEncryptionService.swift */,
 				PUSH001 /* PushNotificationService.swift */,
 				ANN00002 /* AnnouncementService.swift */,
@@ -523,6 +526,7 @@
 				NOTIF013,
 				FORCE001,
 				PRODS001,
+				ACTST001,
 				ENCRY001,
 				PUSH011,
 				CTAB011,

@@ -34,6 +34,7 @@ struct FreeFireView: View {
     @StateObject private var keyStore = KeyStore.shared
     @StateObject private var announcementService = AnnouncementService.shared
     @StateObject private var productTagService = ProductTagService.shared
+    @ObservedObject private var activationStore = PatchActivationStore.shared
     
     @State private var bundlePatches: [BundlePatch] = []
     @State private var selectedCategory: PatchCategory = .aimbot
@@ -45,6 +46,7 @@ struct FreeFireView: View {
     // Auto-refresh state
     @State private var lastRefreshed: Date = Date()
     @State private var isRefreshing: Bool = false
+    @State private var didRestoreActivations = false
     private let refreshInterval: TimeInterval = 30
     
     enum PatchCategory: String, CaseIterable, Identifiable {
@@ -118,6 +120,7 @@ struct FreeFireView: View {
         }
         .onAppear {
             loadBundlePatches()
+            restoreSavedActivationsIfNeeded()
             // Refresh announcements immediately when tab opens
             Task { 
                 await announcementService.fetchAnnouncements()
@@ -198,6 +201,7 @@ struct FreeFireView: View {
                             .environmentObject(productTagService)
                         }
                     }
+                    activationHistorySection
                 }
                 .padding(.horizontal, AppTheme.pageInset)
                 .padding(.top, AppTheme.itemSpacing)
@@ -468,7 +472,53 @@ struct FreeFireView: View {
             }
         }
     }
-    
+
+    private var activationHistorySection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.spacing8) {
+            Text("Historial de activación")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Color(hex: "94A3B8"))
+                .textCase(.uppercase)
+                .tracking(0.6)
+
+            if activationStore.history.isEmpty {
+                Text("Todavía no hay cambios registrados.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color(hex: "64748B"))
+                    .padding(.vertical, 8)
+            } else {
+                ForEach(Array(activationStore.history.prefix(8))) { event in
+                    HStack(alignment: .center, spacing: 10) {
+                        Circle()
+                            .fill(event.activated ? Color(hex: "10B981") : Color(hex: "64748B"))
+                            .frame(width: 7, height: 7)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(event.displayName)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                            Text("\(event.activated ? "Activado" : "Desactivado")  ·  \(formattedHistoryDate(event.date))")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(Color(hex: "94A3B8"))
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+        }
+        .padding(AppTheme.cardPadding)
+        .obsidianCard(cornerRadius: 16, borderColor: Color.white.opacity(0.06))
+    }
+
+    private func formattedHistoryDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "es")
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
     private var filteredPatches: [BundlePatch] {
         bundlePatches.filter { $0.category == selectedCategory }
     }
@@ -502,7 +552,7 @@ struct FreeFireView: View {
     
     // MARK: - Toggle Patch Action
     
-    private func togglePatch(_ patch: BundlePatch, activate: Bool) {
+    private func togglePatch(_ patch: BundlePatch, activate: Bool, recordHistory: Bool = true) {
         guard !processingPatchIDs.contains(patch.id) else { return }
         processingPatchIDs.insert(patch.id)
 
@@ -600,6 +650,7 @@ struct FreeFireView: View {
                 if activate {
                     _ = try DevicePatchService.apply(project: resolvedProject)
                     await MainActor.run {
+                        PatchActivationStore.shared.record(patch: patch, activated: true, recordHistory: recordHistory)
                         patchStore.reload()
                         SoundPlayer.shared.playActivate()
                         processingPatchIDs.remove(patch.id)
@@ -609,6 +660,7 @@ struct FreeFireView: View {
                         try DevicePatchService.restore(receipt: receipt)
                     }
                     await MainActor.run {
+                        PatchActivationStore.shared.record(patch: patch, activated: false, recordHistory: recordHistory)
                         patchStore.reload()
                         SoundPlayer.shared.playDeactivate()
                         processingPatchIDs.remove(patch.id)
@@ -692,11 +744,52 @@ struct FreeFireView: View {
         }
         
         bundlePatches = patches
+        syncActivationStoreFromReceipts()
         print("[FreeFireView:\(mode.rawValue)] Loaded \(patches.count) patches from \(modeFolder)")
         
         // Debug: Print all product IDs for tag matching
         for patch in patches where patch.category == .aimbot {
             print("[ProductTag Debug] \(patch.displayName) → productId: \(patch.productId)")
+        }
+    }
+
+    private func destinationFilename(for patch: BundlePatch) -> String {
+        var destFilename = patch.url.lastPathComponent
+        if patch.isEncrypted {
+            destFilename = patch.url.deletingPathExtension().lastPathComponent
+            if !destFilename.hasSuffix(".3105") {
+                destFilename += ".3105"
+            }
+        }
+        return destFilename
+    }
+
+    private func project(for patch: BundlePatch) -> PatchProject? {
+        let destFilename = destinationFilename(for: patch)
+        return patchStore.items.first(where: {
+            $0.packageURL.lastPathComponent == destFilename
+        })?.project
+    }
+
+    private func syncActivationStoreFromReceipts() {
+        for patch in bundlePatches {
+            guard let project = project(for: patch),
+                  DevicePatchService.latestReceipt(projectID: project.id) != nil else { continue }
+            if !activationStore.isActive(patch) {
+                activationStore.record(patch: patch, activated: true, recordHistory: false)
+            }
+        }
+    }
+
+    private func restoreSavedActivationsIfNeeded() {
+        guard !didRestoreActivations else { return }
+        didRestoreActivations = true
+        for patch in bundlePatches where activationStore.isActive(patch) {
+            if let project = project(for: patch),
+               DevicePatchService.latestReceipt(projectID: project.id) != nil {
+                continue
+            }
+            togglePatch(patch, activate: true, recordHistory: false)
         }
     }
     
@@ -892,6 +985,7 @@ struct PatchToggleRow: View {
     let onToggle: (Bool) -> Void
     @EnvironmentObject private var patchStore: PatchProjectStore
     @EnvironmentObject private var productTagService: ProductTagService
+    @ObservedObject private var activationStore = PatchActivationStore.shared
     
     private var patchProject: PatchProject? {
         let items = patchStore.items
@@ -914,6 +1008,7 @@ struct PatchToggleRow: View {
     }
     
     private var isActive: Bool {
+        if activationStore.isActive(patch) { return true }
         guard let project = patchProject else { return false }
         return DevicePatchService.latestReceipt(projectID: project.id) != nil
     }
