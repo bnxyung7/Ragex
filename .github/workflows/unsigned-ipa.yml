@@ -71,14 +71,14 @@ jobs:
           file "$BINARY" | grep -i "arm64" || { echo "ERROR: not arm64"; exit 1; }
           mkdir -p ipa/Payload
           cp -R "$APP_PATH" ipa/Payload/X.app
-          (cd ipa && zip -qr "$GITHUB_WORKSPACE/X-v3.1.0.ipa" Payload/)
-          unzip -l "$GITHUB_WORKSPACE/X-v3.1.0.ipa" | head -40
-          unzip -l "$GITHUB_WORKSPACE/X-v3.1.0.ipa" | grep "Payload/X.app/" >/dev/null
-          ls -lh "$GITHUB_WORKSPACE/X-v3.1.0.ipa"
+          (cd ipa && zip -qr "$GITHUB_WORKSPACE/X-v3.1.1.ipa" Payload/)
+          unzip -l "$GITHUB_WORKSPACE/X-v3.1.1.ipa" | head -40
+          unzip -l "$GITHUB_WORKSPACE/X-v3.1.1.ipa" | grep "Payload/X.app/" >/dev/null
+          ls -lh "$GITHUB_WORKSPACE/X-v3.1.1.ipa"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: X-v3.1.0
-          path: X-v3.1.0.ipa
+          name: X-v3.1.1
+          path: X-v3.1.1.ipa
           if-no-files-found: error

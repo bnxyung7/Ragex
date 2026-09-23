@@ -239,7 +239,7 @@ struct SettingsView: View {
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "AppReleaseDisplayVersion") as? String
             ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-            ?? "3.1.0"
+            ?? "3.1.1"
     }
 }
 
