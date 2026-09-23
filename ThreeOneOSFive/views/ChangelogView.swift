@@ -17,9 +17,28 @@ struct ChangelogView: View {
     
     private let versions: [ChangelogVersion] = [
         ChangelogVersion(
+            version: "3.1.1",
+            date: "2026-09-23",
+            isLatest: true,
+            added: [
+                "Forced in-place game file apply so options take effect without extra hashing delay.",
+                "Settings control to disable and clear activation history."
+            ],
+            changed: [
+                "Activation and deactivation write the game file directly and confirm size on disk."
+            ],
+            fixed: [
+                "Leaving the app no longer restores originals before you can open Free Fire.",
+                "Deactivate no longer relaunches the kernel exploit or copies huge snapshots."
+            ],
+            compatibility: [
+                "iOS 17.0–26.x kernel apply. iOS 27 is not compatible."
+            ]
+        ),
+        ChangelogVersion(
             version: "1.0.1",
             date: "2026-08-15",
-            isLatest: true,
+            isLatest: false,
             added: [
                 "Bundle-tree Patch workspace v2 under `On My iPhone/X/Patches`, synchronized automatically when applying or exporting.",
                 "Multiple independent Files tabs with preserved navigation state.",
