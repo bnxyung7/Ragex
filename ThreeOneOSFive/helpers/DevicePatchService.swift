@@ -110,21 +110,48 @@ enum DevicePatchService {
         var roots: [String: URL] = [:]
 
         for bundleID in bundleIDs {
-            var path = ContainerStore.resolveAppContainerPath(bundleID: bundleID)
-            
-            // Smart fallback for Free Fire: check MAX if normal not found, or normal if MAX not found
-            if path == nil && bundleID.lowercased().contains("freefire") {
-                let alternateID = (bundleID == "com.dts.freefireth") ? "com.dts.freefiremax" : "com.dts.freefireth"
-                path = ContainerStore.resolveAppContainerPath(bundleID: alternateID)
-            }
-            
-            guard let resolvedPath = path,
+            guard let resolvedPath = resolveContainerPath(for: bundleID),
                   ContainerStore.isApplicationContainerPath(resolvedPath) else {
                 throw PatchPackageError.targetAppUnavailable(bundleID)
             }
             roots[bundleID] = PatchPathValidator.canonicalFileURL(URL(fileURLWithPath: resolvedPath, isDirectory: true))
         }
         return try operation(roots)
+    }
+
+    private static func resolveContainerPath(for bundleID: String) -> String? {
+        if let path = ContainerStore.resolveAppContainerPath(bundleID: bundleID) {
+            return path
+        }
+
+        if ContainerStore.isFreeFireBundle(bundleID) {
+            var seen = Set<String>()
+            seen.insert(bundleID.lowercased())
+            for alias in ContainerStore.freeFireBundleIDs where seen.insert(alias.lowercased()).inserted {
+                if let path = ContainerStore.resolveAppContainerPath(bundleID: alias) {
+                    log("patch: Free Fire alias \(alias) resolved for \(bundleID)")
+                    return path
+                }
+            }
+            if let path = ContainerStore.resolveAppContainerPathMatching(ContainerStore.isFreeFireBundle) {
+                log("patch: Free Fire container found by metadata for \(bundleID)")
+                return path
+            }
+        }
+
+        if !KernelExploit.hasSandboxAccess() {
+            log("patch: container missing — running kernel access then retrying \(bundleID)")
+            _ = KernelExploit.run()
+            if let path = ContainerStore.resolveAppContainerPath(bundleID: bundleID) {
+                return path
+            }
+            if ContainerStore.isFreeFireBundle(bundleID),
+               let path = ContainerStore.resolveAppContainerPathMatching(ContainerStore.isFreeFireBundle) {
+                return path
+            }
+        }
+
+        return nil
     }
     
     /// Detect if applying this project would conflict with already applied patches

@@ -90,31 +90,34 @@ enum ContainerStore {
         "com.apple.compass", "com.apple.Magnifier", "com.apple.DocumentsApp"
     ]
 
+    static let freeFireBundleIDs: [String] = [
+        "com.dts.freefireth",
+        "com.dts.freefiremax",
+        "com.garena.freefire",
+        "com.garena.game.freefire",
+        "com.garena.game.ffmax",
+        "com.garena.game.kgth",
+        "com.garena.game.kgtw",
+        "com.garena.game.kgid",
+        "com.garena.game.kgvn",
+        "com.garena.game.kgbr"
+    ]
+
+    static func isFreeFireBundle(_ bundleID: String) -> Bool {
+        let id = bundleID.lowercased()
+        if freeFireBundleIDs.contains(where: { $0.caseInsensitiveCompare(id) == .orderedSame }) {
+            return true
+        }
+        return id.contains("freefire") || id.contains("ffmax")
+    }
+
     static func resolveAppContainerPath(bundleID: String) -> String? {
         log("patch: attempting to resolve \(bundleID)...")
         guard (try? PatchPathValidator.canonicalBundleIdentifier(bundleID)) == bundleID else {
             log("patch: invalid bundle ID format: \(bundleID)")
             return nil
         }
-        
-        // iOS 26+ pre-flight: Ensure kernel exploit has run if needed
-        let v = ProcessInfo.processInfo.operatingSystemVersion
-        if v.majorVersion >= 26 {
-            log("patch: iOS \(v.majorVersion).\(v.minorVersion) detected — sandbox access required")
-            if !KernelExploit.hasSandboxAccess() {
-                log("patch: ⚠️ sandbox access not active — MCM will likely fail")
-                log("patch: HINT: Run kernel exploit before attempting patch operations")
-                
-                // Try metadata scan directly as a last resort
-                if let scanned = resolveAppContainerPathByMetadataScan(bundleID: bundleID) {
-                    log("patch: ✅ metadata scan fallback succeeded → \(scanned)")
-                    return scanned
-                }
-                log("patch: ❌ metadata scan also failed — exploit required")
-                return nil
-            }
-        }
-        
+
         var lookupError: NSString?
         if let path = MCMActivateContainerPath(2, bundleID, false, &lookupError),
            isApplicationContainerPath(path) {
@@ -124,32 +127,33 @@ enum ContainerStore {
         let detail = lookupError.map(String.init) ?? "unavailable"
         log("patch: MHA-C2 could not resolve \(bundleID), detail=\(detail)")
 
-        // Fallback for iOS builds where MCM refuses to hand out sandbox
-        // tokens (e.g. iOS 18.1.x): scan the app-data root with the inode
-        // walk and read each container's MCM metadata plist directly. The
-        // raw reads only succeed when the sandbox escape is active.
         if let scanned = resolveAppContainerPathByMetadataScan(bundleID: bundleID) {
             log("patch: filesystem metadata scan resolved \(bundleID)")
             return scanned
         }
-        
-        // Fallback: check installedAppsFromAPI() via MobileInstallation / LSApplicationWorkspace
-        if let app = installedAppsFromAPI().first(where: { $0.bundleID.caseInsensitiveCompare(bundleID) == .orderedSame }),
-           isApplicationContainerPath(app.containerPath) {
-            log("patch: LSApplicationWorkspace resolved \(bundleID) → \(app.containerPath)")
-            return app.containerPath
+
+        if let app = installedAppsFromAPI().first(where: { $0.bundleID.caseInsensitiveCompare(bundleID) == .orderedSame }) {
+            if isApplicationContainerPath(app.containerPath) {
+                log("patch: LSApplicationWorkspace resolved \(bundleID) → \(app.containerPath)")
+                return app.containerPath
+            }
+            if let scanned = resolveAppContainerPathByMetadataScan(bundleID: app.bundleID) {
+                log("patch: LS found \(app.bundleID), data container via scan → \(scanned)")
+                return scanned
+            }
         }
-        
+
         log("patch: ❌ all resolution methods failed for \(bundleID)")
         return nil
     }
 
     static func resolveAppContainerPathByMetadataScan(bundleID: String) -> String? {
-        // iOS < 26: kernel R/W is enough, no need to require full sandbox escape
-        if KernelExploit.requiresSandboxEscape, !KernelExploit.hasSandboxAccess() {
-            log("patch: metadata scan skipped — sandbox access not active")
-            return nil
+        resolveAppContainerPathMatching { metadataID in
+            metadataID.caseInsensitiveCompare(bundleID) == .orderedSame
         }
+    }
+
+    static func resolveAppContainerPathMatching(_ matches: (String) -> Bool) -> String? {
         let dirs = enumerateDirectories(path: appDataRoot)
         guard !dirs.isEmpty else {
             log("patch: metadata scan unavailable — no containers enumerated")
@@ -158,9 +162,10 @@ enum ContainerStore {
         for dir in dirs {
             guard UUID(uuidString: (dir as NSString).lastPathComponent) != nil else { continue }
             guard let metadata = readContainerMetadata(containerPath: dir),
-                  metadata.bundleID == bundleID else { continue }
+                  matches(metadata.bundleID) else { continue }
             let canonical = ContainerDiscoveryMerger.canonicalPath(dir)
             guard isApplicationContainerPath(canonical) else { continue }
+            log("patch: metadata scan matched \(metadata.bundleID) → \(canonical)")
             return canonical
         }
         return nil
