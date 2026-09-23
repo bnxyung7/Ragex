@@ -179,12 +179,11 @@ enum DevicePatchService {
             return
         }
         guard KernelExploit.isExploitSupported else {
-            log("patch: skipping kernel on unsupported iOS — activate/deactivate will use direct container writes")
+            log("patch: skipping kernel on unsupported iOS")
             return
         }
         log("patch: requesting kernel write access")
-        let ok = KernelExploit.run()
-        log("patch: kernel access \(ok ? "ready" : "unavailable")")
+        _ = KernelExploit.run()
     }
 
     private static func orderedBundleIdentifiers(in project: PatchProject) -> [String] {

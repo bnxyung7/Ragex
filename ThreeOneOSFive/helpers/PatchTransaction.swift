@@ -222,9 +222,8 @@ enum PatchTransaction {
                 let backupFilename = existed ? "\(resolved.rule.id.uuidString).original" : nil
                 if let backupFilename {
                     let backupURL = transactionDirectory.appendingPathComponent(backupFilename)
-                    try fileManager.copyItem(at: resolved.target, to: backupURL)
+                    try cloneOrCopy(from: resolved.target, to: backupURL, fileManager: fileManager)
                 }
-                let replacementDigest = digest(resolved.rule.replacementData)
                 records.append(Record(
                     ruleID: resolved.rule.id,
                     bundleID: resolved.rule.bundleID,
@@ -233,7 +232,7 @@ enum PatchTransaction {
                     originalExisted: existed,
                     backupFilename: backupFilename,
                     originalDigest: nil,
-                    replacementDigest: replacementDigest,
+                    replacementDigest: Data(),
                     appliedFilename: nil
                 ))
             }
@@ -962,6 +961,15 @@ enum PatchTransaction {
         return leftDepth == rightDepth ? lhs < rhs : leftDepth < rightDepth
     }
 
+    private static func cloneOrCopy(from source: URL, to destination: URL, fileManager: FileManager) throws {
+        if clonefile(source.path, destination.path, 0) == 0 {
+            log("patch: cloned backup \(destination.lastPathComponent)")
+            return
+        }
+        log("patch: clone unavailable errno=\(errno), copying backup")
+        try fileManager.copyItem(at: source, to: destination)
+    }
+
     private static func forceWrite(
         _ data: Data,
         to target: URL,
@@ -975,13 +983,18 @@ enum PatchTransaction {
             if let protection = current[.protectionKey] { attributes[.protectionKey] = protection }
         }
         if fileManager.fileExists(atPath: target.path) {
-            let handle = try FileHandle(forWritingTo: target)
-            try handle.truncate(atOffset: 0)
-            try handle.write(contentsOf: data)
-            try handle.synchronize()
-            try handle.close()
-            if !attributes.isEmpty {
-                try? fileManager.setAttributes(attributes, ofItemAtPath: target.path)
+            do {
+                let handle = try FileHandle(forWritingTo: target)
+                try handle.truncate(atOffset: 0)
+                try handle.write(contentsOf: data)
+                try handle.synchronize()
+                try handle.close()
+                if !attributes.isEmpty {
+                    try? fileManager.setAttributes(attributes, ofItemAtPath: target.path)
+                }
+            } catch {
+                log("patch: in-place write failed, using replace \(error.localizedDescription)")
+                try atomicWrite(data, to: target, preservingExistingAttributes: preservingExistingAttributes, fileManager: fileManager)
             }
         } else {
             guard fileManager.createFile(atPath: target.path, contents: data, attributes: attributes) else {

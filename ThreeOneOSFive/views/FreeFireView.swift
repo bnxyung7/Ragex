@@ -622,14 +622,16 @@ struct FreeFireView: View {
                         processingPatchIDs.remove(patch.id)
                     }
                 } else {
-                    guard let receipt = DevicePatchService.receipt(for: resolvedProject) else {
-                        throw NSError(domain: "FreeFire", code: 4, userInfo: [
-                            NSLocalizedDescriptionKey: "No hay copia del archivo original para desactivar \(patch.displayName)."
-                        ])
+                    if let receipt = DevicePatchService.receipt(for: resolvedProject) {
+                        log("freeFire: restoring \(patch.displayName) receipt=\(receipt.id.uuidString)")
+                        do {
+                            try DevicePatchService.restore(receipt: receipt, allowChangedTargets: true)
+                        } catch {
+                            log("freeFire: restore error \(error.localizedDescription)")
+                        }
+                    } else {
+                        log("freeFire: no receipt, clearing toggle for \(patch.displayName)")
                     }
-                    log("freeFire: restoring \(patch.displayName) receipt=\(receipt.id.uuidString)")
-                    try DevicePatchService.restore(receipt: receipt, allowChangedTargets: true)
-                    log("freeFire: restore done \(patch.displayName)")
                     await MainActor.run {
                         PatchActivationStore.shared.record(patch: patch, activated: false, recordHistory: recordHistory)
                         SoundPlayer.shared.playDeactivate()
@@ -759,16 +761,7 @@ struct FreeFireView: View {
     }
 
     private func restoreSavedActivationsIfNeeded() {
-        guard !didRestoreActivations else { return }
         didRestoreActivations = true
-        for patch in bundlePatches where activationStore.isActive(patch) {
-            if let project = project(for: patch),
-               DevicePatchService.receipt(for: project) != nil {
-                continue
-            }
-            log("freeFire: saved option not on disk, re-applying \(patch.displayName)")
-            togglePatch(patch, activate: true, recordHistory: false)
-        }
     }
     
     // MARK: - Banned View
