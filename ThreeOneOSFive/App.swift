@@ -197,6 +197,7 @@ struct ThreeOneOSFiveApp: App {
             }
             .onChange(of: scenePhase) { phase in
                 guard phase == .active, !showOnboarding else { return }
+                checkVersionStatus()
                 appState.detectSupport()
             }
             .onOpenURL { url in

@@ -519,7 +519,9 @@ class KeyAPIService {
     /// Check if current app version is allowed to run
     /// Returns: (isAllowed, minimumVersion, forceUpdateMessage)
     func checkVersionStatus() async throws -> VersionStatusResponse {
-        let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let currentVersion = Bundle.main.object(forInfoDictionaryKey: "AppReleaseDisplayVersion") as? String
+            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+            ?? "1.0"
         let appName = "X" // Bundle name
         
         let url = URL(string: "\(self.adminPanelURL)/version/check")!
