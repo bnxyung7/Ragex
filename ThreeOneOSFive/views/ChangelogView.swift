@@ -17,9 +17,22 @@ struct ChangelogView: View {
     
     private let versions: [ChangelogVersion] = [
         ChangelogVersion(
-            version: "3.1.4",
+            version: "3.1.5",
             date: "2026-09-23",
             isLatest: true,
+            added: [
+                "Free Fire now includes Holograma Arma Turquesa and Holograma Arma Verde Negro."
+            ],
+            changed: [],
+            fixed: [],
+            compatibility: [
+                "iOS 17.0–26.x kernel apply. iOS 27 is not compatible."
+            ]
+        ),
+        ChangelogVersion(
+            version: "3.1.4",
+            date: "2026-09-23",
+            isLatest: false,
             added: [
                 "Free Fire hologram weapon green-black is available under Holograma Arma."
             ],

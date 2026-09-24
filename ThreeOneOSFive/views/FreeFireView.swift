@@ -720,7 +720,8 @@ struct FreeFireView: View {
                 }
             }
         }
-        
+
+        patches.sort { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
         bundlePatches = patches
         if !didChooseInitialCategory, let first = patches.first {
             didChooseInitialCategory = true
@@ -1083,6 +1084,9 @@ struct BundlePatch: Identifiable {
         }
         
         var name = filename.replacingOccurrences(of: "_", with: " ")
+        while name.contains("  ") {
+            name = name.replacingOccurrences(of: "  ", with: " ")
+        }
         name = name.replacingOccurrences(of: " PERCENT", with: "%")
         
         // Convert everything to uppercase for better visibility
