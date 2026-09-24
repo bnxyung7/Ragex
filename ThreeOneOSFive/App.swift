@@ -250,7 +250,9 @@ class AppState: ObservableObject {
             log("app: skipping auto-run — guard condition failed")
             return
         }
-        log("app: kernel stays idle until a product is activated")
+        autoRunAttempted = true
+        log("app: starting kernel exploit automatically")
+        runKernelExploitIfNeeded()
     }
 
     private func refreshKernelExploitStatus() {
