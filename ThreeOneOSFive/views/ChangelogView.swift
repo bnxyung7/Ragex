@@ -17,9 +17,22 @@ struct ChangelogView: View {
     
     private let versions: [ChangelogVersion] = [
         ChangelogVersion(
+            version: "3.1.6",
+            date: "2026-09-24",
+            isLatest: true,
+            added: [
+                "Free Fire Holograma Personaje now includes Rayo Personaje Lima Violeta."
+            ],
+            changed: [],
+            fixed: [],
+            compatibility: [
+                "iOS 17.0–26.x kernel apply. iOS 27 is not compatible."
+            ]
+        ),
+        ChangelogVersion(
             version: "3.1.5",
             date: "2026-09-23",
-            isLatest: true,
+            isLatest: false,
             added: [
                 "Free Fire now includes Holograma Arma Turquesa and Holograma Arma Verde Negro."
             ],
