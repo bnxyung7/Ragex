@@ -619,6 +619,12 @@ struct FreeFireView: View {
                 }
 
                 if activate {
+                    log("freeFire: preparing device before \(patch.displayName)")
+                    guard KernelExploit.run() else {
+                        throw NSError(domain: "FreeFire", code: 3, userInfo: [
+                            NSLocalizedDescriptionKey: "No se activó. Se canceló para que el teléfono no se apague."
+                        ])
+                    }
                     log("freeFire: applying \(patch.displayName) project=\(resolvedProject.id.uuidString)")
                     let receipt = try DevicePatchService.apply(project: resolvedProject)
                     log("freeFire: apply done \(patch.displayName)")
@@ -1065,6 +1071,26 @@ struct PatchToggleRow: View {
 
 // MARK: - Bundle Patch Model
 
+private enum NumberedPatchCatalog {
+    struct Entry {
+        let title: String
+        let category: FreeFireView.PatchCategory
+        let subcategory: String?
+        let productId: String
+    }
+
+    private static let entries: [String: Entry] = [
+        "7418": Entry(title: "AIM NECK", category: .aimbot, subcategory: nil, productId: "FREE_FIRE_AIMBOT_AIM_NECK"),
+        "211": Entry(title: "HOLOGRAMA ARMA TURQUESA", category: .holograma, subcategory: "Arma", productId: "FREE_FIRE_HOLOGRAMA_HOLOGRAMA_ARMA_TURQUESA"),
+        "218": Entry(title: "HOLOGRAMA ARMA VERDE NEGRO", category: .holograma, subcategory: "Arma", productId: "FREE_FIRE_HOLOGRAMA_HOLOGRAMA_ARMA_VERDE__NEGRO"),
+        "306": Entry(title: "RAYO PERSONAJE LIMA VIOLETA", category: .holograma, subcategory: "Personaje", productId: "FREE_FIRE_HOLOGRAMA_RAYO_PERSONAJE_LIMA_VIOLETA")
+    ]
+
+    static func match(_ url: URL) -> Entry? {
+        entries[url.deletingPathExtension().lastPathComponent]
+    }
+}
+
 struct BundlePatch: Identifiable {
     let id = UUID()
     let url: URL
@@ -1075,6 +1101,9 @@ struct BundlePatch: Identifiable {
     }
     
     var displayName: String {
+        if let known = NumberedPatchCatalog.match(url) {
+            return known.title
+        }
         // Remove .3105e extension if encrypted, show clean name
         var filename = url.deletingPathExtension().lastPathComponent
         
@@ -1094,6 +1123,14 @@ struct BundlePatch: Identifiable {
     }
     
     var icon: String {
+        if let known = NumberedPatchCatalog.match(url) {
+            switch known.category {
+            case .aimbot: return "scope"
+            case .holograma: return known.subcategory == "Personaje" ? "person.fill" : "cube.transparent"
+            case .modSkin: return "tshirt.fill"
+            case .combo, .others: return "scope"
+            }
+        }
         let name = url.lastPathComponent.uppercased()
         if name.contains("AIM") || name.contains("PECHO") || name.contains("CABEZA") || name.contains("CUELLO") || name.contains("NECK") {
             return "scope"
@@ -1116,6 +1153,9 @@ struct BundlePatch: Identifiable {
     }
     
     var category: FreeFireView.PatchCategory {
+        if let known = NumberedPatchCatalog.match(url) {
+            return known.category
+        }
         let filename = url.lastPathComponent.uppercased()
         let folderName = url.deletingLastPathComponent().lastPathComponent.uppercased()
         
@@ -1145,6 +1185,9 @@ struct BundlePatch: Identifiable {
     }
     
     var subcategory: String? {
+        if let known = NumberedPatchCatalog.match(url) {
+            return known.subcategory
+        }
         if category == .holograma {
             let folderName = url.deletingLastPathComponent().lastPathComponent
             if folderName.lowercased() == "arma" {
@@ -1165,6 +1208,9 @@ struct BundlePatch: Identifiable {
     
     /// Generate product ID for tag lookup (format: GAME_CATEGORY_NAME)
     var productId: String {
+        if let known = NumberedPatchCatalog.match(url) {
+            return known.productId
+        }
         let game = "FREE_FIRE"
         let cat = category.rawValue
         
