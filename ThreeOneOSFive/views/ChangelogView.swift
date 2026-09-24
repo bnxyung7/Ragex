@@ -24,7 +24,10 @@ struct ChangelogView: View {
                 "Free Fire Holograma Personaje now includes Rayo Personaje Lima Violeta."
             ],
             changed: [],
-            fixed: [],
+            fixed: [
+                "Opening the app no longer turns the phone off by itself.",
+                "If a product cannot activate, it stops and the phone stays on."
+            ],
             compatibility: [
                 "Aimbot and holograms activate on iOS 17.0–17.7.2, 18.0–18.7.10 and 26.0–26.7, including 26.6.2. iOS 27 does not."
             ]
@@ -307,7 +310,7 @@ struct ChangeSection: View {
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                     HStack(alignment: .top, spacing: 8) {
-                        Text("•")
+                        Text("[+]")
                             .foregroundStyle(.secondary)
                             .font(.body)
                         
