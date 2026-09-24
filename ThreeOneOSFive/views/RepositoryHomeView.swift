@@ -145,15 +145,12 @@ private struct SupportedVersionsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private var rows: [SupportedPlatformRow] {
-        let parts = AppInfo.osVersion.split(separator: ".").map { Int($0) ?? 0 }
-        let major = parts.first ?? 0
-        let minor = parts.count > 1 ? parts[1] : 0
+        let major = Int(AppInfo.osVersion.split(separator: ".").first.map(String.init) ?? "") ?? 0
         return [
             SupportedPlatformRow(id: "15", family: "IOS 15 – 16", coverage: "15.0 – 16.7.12", status: "NO COMPATIBLE", isCurrent: major == 15 || major == 16, compatible: false),
             SupportedPlatformRow(id: "17", family: "IOS 17", coverage: ExploitSupportPolicy.verifiedIOS17Range.uppercased(), status: "VERIFICADO", isCurrent: major == 17),
             SupportedPlatformRow(id: "18", family: "IOS 18", coverage: ExploitSupportPolicy.verifiedIOS18Range.uppercased(), status: "VERIFICADO", isCurrent: major == 18),
-            SupportedPlatformRow(id: "26", family: "IOS 26.0", coverage: ExploitSupportPolicy.verifiedIOS26Range.uppercased(), status: "VERIFICADO", isCurrent: major == 26 && minor == 0, compatible: true),
-            SupportedPlatformRow(id: "26later", family: "IOS 26.1+", coverage: "26.1 – 26.6.2", status: "NO COMPATIBLE", isCurrent: major == 26 && minor >= 1, compatible: false),
+            SupportedPlatformRow(id: "26", family: "IOS 26", coverage: ExploitSupportPolicy.verifiedIOS26Range.uppercased(), status: "VERIFICADO", isCurrent: major == 26, compatible: true),
             SupportedPlatformRow(id: "27", family: "IOS 27+", coverage: "27.0+", status: "NO COMPATIBLE", isCurrent: major >= 27, compatible: false)
         ]
     }

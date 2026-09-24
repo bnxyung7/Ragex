@@ -26,7 +26,7 @@ struct ChangelogView: View {
             changed: [],
             fixed: [],
             compatibility: [
-                "Aimbot activates on iOS 17.0–17.7.2, 18.0–18.7.1 and 26.0–26.0.1 only."
+                "Aimbot and holograms activate on iOS 17.0–17.7.2, 18.0–18.7.10 and 26.0–26.7, including 26.6.2. iOS 27 does not."
             ]
         ),
         ChangelogVersion(
@@ -39,7 +39,7 @@ struct ChangelogView: View {
             changed: [],
             fixed: [],
             compatibility: [
-                "Aimbot activates on iOS 17.0–17.7.2, 18.0–18.7.1 and 26.0–26.0.1 only."
+                "Aimbot and holograms activate on iOS 17.0–17.7.2, 18.0–18.7.10 and 26.0–26.7, including 26.6.2. iOS 27 does not."
             ]
         ),
         ChangelogVersion(
@@ -52,7 +52,7 @@ struct ChangelogView: View {
             changed: [],
             fixed: [],
             compatibility: [
-                "Aimbot activates on iOS 17.0–17.7.2, 18.0–18.7.1 and 26.0–26.0.1 only."
+                "Aimbot and holograms activate on iOS 17.0–17.7.2, 18.0–18.7.10 and 26.0–26.7, including 26.6.2. iOS 27 does not."
             ]
         ),
         ChangelogVersion(
@@ -67,7 +67,7 @@ struct ChangelogView: View {
                 "Switching tabs no longer rebuilds the screen, which was making movement heavy and unstable."
             ],
             compatibility: [
-                "Aimbot activates on iOS 17.0–17.7.2, 18.0–18.7.1 and 26.0–26.0.1 only."
+                "Aimbot and holograms activate on iOS 17.0–17.7.2, 18.0–18.7.10 and 26.0–26.7, including 26.6.2. iOS 27 does not."
             ]
         ),
         ChangelogVersion(
@@ -85,7 +85,7 @@ struct ChangelogView: View {
                 "A second tap cannot write the game file again while the first activation is still running."
             ],
             compatibility: [
-                "Aimbot activates on iOS 17.0–17.7.2, 18.0–18.7.1 and 26.0–26.0.1 only."
+                "Aimbot and holograms activate on iOS 17.0–17.7.2, 18.0–18.7.10 and 26.0–26.7, including 26.6.2. iOS 27 does not."
             ]
         ),
         ChangelogVersion(
@@ -115,7 +115,7 @@ struct ChangelogView: View {
                 "Deactivate puts the real original file back instead of a cloned copy of the patch."
             ],
             compatibility: [
-                "Aimbot activates on iOS 17.0–17.7.2, 18.0–18.7.1 and 26.0–26.0.1 only."
+                "Aimbot and holograms activate on iOS 17.0–17.7.2, 18.0–18.7.10 and 26.0–26.7, including 26.6.2. iOS 27 does not."
             ]
         ),
         ChangelogVersion(
@@ -143,7 +143,7 @@ struct ChangelogView: View {
                 "Refined navigation icon rendering and nested file-row spacing."
             ],
             compatibility: [
-                "Verified iOS 26.0–26.0.1. 26.1 and later are not compatible.",
+                "iOS 26.0 through 26.7 works, including 26.6.2. iOS 27 does not.",
                 "Verified iOS 27 Developer Beta 1–4, including Public Beta 1–2 mappings listed in the app.",
                 "Added iPhone and iPad interface support; device-level features still require enterprise signing."
             ]
@@ -173,7 +173,7 @@ struct ChangelogView: View {
                 "Corrected Cleaner layout when no removable app data is found."
             ],
             compatibility: [
-                "Verified iOS 26.0–26.0.1. 26.1 and later are not compatible.",
+                "iOS 26.0 through 26.7 works, including 26.6.2. iOS 27 does not.",
                 "Verified iOS 27 beta 1–4 builds listed in the app.",
                 "Unlisted iOS 27 builds remain disabled until explicitly verified."
             ]
