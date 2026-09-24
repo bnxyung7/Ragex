@@ -30,6 +30,7 @@ class KeyAPIService {
         let isBanned: Bool?
         let banReason: String?
         let blockType: String?
+        let paused: Bool?
         let title: String?
         let minAppVersion: String?  // Minimum app version required for this key
         let updateRequired: Bool?    // If true, user must update to use this key

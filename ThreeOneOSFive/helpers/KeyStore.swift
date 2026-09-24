@@ -171,6 +171,12 @@ class KeyStore: ObservableObject {
                     return
                 }
                 
+                if validationResult.paused == true || validationResult.blockType == "pause" {
+                    let message = validationResult.reason ?? "Mantenimiento de productos. Tu clave está en pausa y el tiempo no corre mientras esperas."
+                    completion(.failure(.serverError(message: message)))
+                    return
+                }
+
                 if validationResult.valid {
                     if validationResult.needsActivation == true {
                         // Key needs activation - activate it now
@@ -609,6 +615,13 @@ class KeyStore: ObservableObject {
                 let result = try await KeyAPIService.shared.validateKeyWithDevice(keyString, deviceId: deviceId)
                 
                 await MainActor.run {
+                    if result.paused == true || result.blockType == "pause" {
+                        let message = result.reason ?? "Mantenimiento de productos. Tu clave está en pausa y el tiempo no corre mientras esperas."
+                        self.showPauseAlert(message: message)
+                        self.deactivateSession()
+                        return
+                    }
+
                     // ⚠️ VERIFICAR VERSIÓN PRIMERO
                     if let updateRequired = result.updateRequired, updateRequired == true,
                        let minVersion = result.minAppVersion {
@@ -703,6 +716,22 @@ class KeyStore: ObservableObject {
         }
     }
     
+    private func showPauseAlert(message: String) {
+        DispatchQueue.main.async {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootViewController = windowScene.windows.first?.rootViewController else {
+                return
+            }
+            let alert = UIAlertController(
+                title: "Clave en pausa",
+                message: message,
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "Entendido", style: .default))
+            rootViewController.present(alert, animated: true)
+        }
+    }
+
     /// Show alert when app update is required
     private func showUpdateRequiredAlert(minVersion: String) {
         DispatchQueue.main.async {
