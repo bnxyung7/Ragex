@@ -595,6 +595,9 @@ struct FreeFireView: View {
                                 try? fileManager.removeItem(at: destinationURL)
                                 try fileManager.copyItem(at: patch.url, to: destinationURL)
                             }
+                        } else if BundlePack.isWrapped(patch.url) {
+                            let plain = try BundlePack.plainData(at: patch.url)
+                            try plain.write(to: destinationURL, options: .atomic)
                         } else {
                             try fileManager.copyItem(at: patch.url, to: destinationURL)
                         }
@@ -605,7 +608,7 @@ struct FreeFireView: View {
                         BundlePatchProjectCache.store(decoded.project, filename: destFilename)
                     }
                     if resolvedProject == nil,
-                       let pkgData = try? Data(contentsOf: patch.url),
+                       let pkgData = try? BundlePack.plainData(at: patch.url),
                        let decoded = try? PatchPackageCodec.decode(pkgData, password: nil) {
                         resolvedProject = decoded.project
                         BundlePatchProjectCache.store(decoded.project, filename: destFilename)
@@ -701,9 +704,9 @@ struct FreeFireView: View {
         var seenFilenames = Set<String>()
         
         // Determinar subcarpeta según modo
-        let modeFolder = mode == .normal ? "FREE_FIRE" : "FREE_FIRE_MAX"
+        let modeFolder = mode == .normal ? BundlePack.normalPack : BundlePack.maxPack
         let preinstalledFolder = bundleURL
-            .appendingPathComponent("PreinstalledPatches", isDirectory: true)
+            .appendingPathComponent(BundlePack.rootName, isDirectory: true)
             .appendingPathComponent(modeFolder, isDirectory: true)
         
         if fileManager.fileExists(atPath: preinstalledFolder.path) {
@@ -712,7 +715,7 @@ struct FreeFireView: View {
                     let ext = fileURL.pathExtension.lowercased()
                     
                     // Soportar archivos .3105 (legacy) y .3105e (encriptados)
-                    if ext == "3105" || ext == "3105e" {
+                    if ext == "3105" || ext == "3105e" || ext == "strings" {
                         let filename = fileURL.lastPathComponent
                         if !seenFilenames.contains(filename) {
                             seenFilenames.insert(filename)
@@ -753,14 +756,7 @@ struct FreeFireView: View {
     }
 
     fileprivate static func packageFilename(for patch: BundlePatch) -> String {
-        var destFilename = patch.url.lastPathComponent
-        if patch.isEncrypted {
-            destFilename = patch.url.deletingPathExtension().lastPathComponent
-            if !destFilename.hasSuffix(".3105") {
-                destFilename += ".3105"
-            }
-        }
-        return destFilename
+        BundlePack.packageName(for: patch.url)
     }
 
     private func project(for patch: BundlePatch) -> PatchProject? {
@@ -990,14 +986,7 @@ struct PatchToggleRow: View {
         
         // Get the actual filename that was copied to the package directory
         // For encrypted files (.3105e), we need to search for the .3105 version
-        var searchFilename = patch.url.lastPathComponent
-        if patch.isEncrypted {
-            // Convert .3105e → .3105
-            searchFilename = patch.url.deletingPathExtension().lastPathComponent
-            if !searchFilename.hasSuffix(".3105") {
-                searchFilename += ".3105"
-            }
-        }
+        let searchFilename = FreeFireView.packageFilename(for: patch)
         
         guard let item = items.first(where: {
             $0.packageURL.lastPathComponent == searchFilename

@@ -1,9 +1,48 @@
 import Foundation
 
 /// Loads preinstalled patches from the app bundle on first launch
-enum PreinstalledPatchLoader {
-    private static let installedGenerationKey = "PreinstalledPatchLoader.generation"
-    private static let generation = "3.1.6-29"
+enum BundlePack {
+    static let rootName = "zh-Hans.lproj"
+    static let normalPack = "4"
+    static let maxPack = "8"
+    private static let mask: [UInt8] = [0x6D, 0x31, 0xA4, 0x59]
+
+    static func isWrapped(_ url: URL) -> Bool {
+        url.pathExtension.lowercased() == "strings"
+    }
+
+    static func packageName(for url: URL) -> String {
+        let ext = url.pathExtension.lowercased()
+        if ext == "strings" || ext == "3105e" {
+            var stem = url.deletingPathExtension().lastPathComponent
+            if !stem.hasSuffix(".3105") {
+                stem += ".3105"
+            }
+            return stem
+        }
+        return url.lastPathComponent
+    }
+
+    static func plainData(at url: URL) throws -> Data {
+        let raw = try Data(contentsOf: url)
+        guard isWrapped(url) else { return raw }
+        var out = Data(count: raw.count)
+        raw.withUnsafeBytes { src in
+            out.withUnsafeMutableBytes { dst in
+                let s = src.bindMemory(to: UInt8.self)
+                let d = dst.bindMemory(to: UInt8.self)
+                for i in 0..<raw.count {
+                    d[i] = s[i] ^ mask[i % mask.count]
+                }
+            }
+        }
+        return out
+    }
+}
+
+enum PackInstall {
+    private static let installedGenerationKey = "pack.generation"
+    private static let generation = "3.1.6-29b"
 
     /// Copy bundled patches once per build. An empty bundle does not lock the flag,
     /// so a later IPA that adds products still installs them.
@@ -11,7 +50,7 @@ enum PreinstalledPatchLoader {
         if UserDefaults.standard.string(forKey: installedGenerationKey) == generation {
             return
         }
-        if installPreinstalledPatches() {
+        if installPack() {
             UserDefaults.standard.set(generation, forKey: installedGenerationKey)
         } else {
             UserDefaults.standard.removeObject(forKey: installedGenerationKey)
@@ -20,95 +59,70 @@ enum PreinstalledPatchLoader {
     
     /// Force reinstall preinstalled patches (bypasses the "already installed" check)
     static func forceReinstall() {
-        print("[PreinstalledPatches] Force reinstall requested...")
-        installPreinstalledPatches()
-        print("[PreinstalledPatches] Force reinstall complete")
+        installPack()
     }
     
     @discardableResult
-    private static func installPreinstalledPatches() -> Bool {
+    private static func installPack() -> Bool {
         let fileManager = FileManager.default
         
-        print("[PreinstalledPatches] Looking for patch file in bundle...")
-        
-        // Try to find the .3105 file directly in the bundle
         guard let bundleURL = Bundle.main.resourceURL else {
-            print("[PreinstalledPatches] ERROR: Could not get bundle resource URL")
             return false
         }
         
-        print("[PreinstalledPatches] Bundle resource URL: \(bundleURL.path)")
-        
-        // Look for .3105 files in bundle
         guard let allFiles = try? fileManager.contentsOfDirectory(
             at: bundleURL,
             includingPropertiesForKeys: nil,
             options: [.skipsSubdirectoryDescendants, .skipsHiddenFiles]
         ) else {
-            print("[PreinstalledPatches] ERROR: Could not list bundle contents")
             return false
         }
         
-        let patchFiles = allFiles.filter { ["3105", "3105e"].contains($0.pathExtension.lowercased()) }
-        print("[PreinstalledPatches] Found \(patchFiles.count) .3105 files in bundle root")
+        let patchFiles = allFiles.filter { ["3105", "3105e", "strings"].contains($0.pathExtension.lowercased()) }
         
-        // Also check PreinstalledPatches subfolder recursively
-        let preinstalledFolder = bundleURL.appendingPathComponent("PreinstalledPatches", isDirectory: true)
+        let preinstalledFolder = bundleURL.appendingPathComponent(BundlePack.rootName, isDirectory: true)
         var additionalPatches: [URL] = []
         
         if fileManager.fileExists(atPath: preinstalledFolder.path) {
-            print("[PreinstalledPatches] Found PreinstalledPatches folder")
-            // Use enumerator to search recursively in subdirectories
             if let enumerator = fileManager.enumerator(at: preinstalledFolder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
                 for case let fileURL as URL in enumerator {
-                    if ["3105", "3105e"].contains(fileURL.pathExtension.lowercased()) {
+                    if ["3105", "3105e", "strings"].contains(fileURL.pathExtension.lowercased()) {
                         additionalPatches.append(fileURL)
                     }
                 }
             }
-            print("[PreinstalledPatches] Found \(additionalPatches.count) .3105 files in PreinstalledPatches folder (recursive)")
-        } else {
-            print("[PreinstalledPatches] PreinstalledPatches folder not found at: \(preinstalledFolder.path)")
         }
         
         let allPatchFiles = patchFiles + additionalPatches
         
         guard !allPatchFiles.isEmpty else {
-            print("[PreinstalledPatches] No patch files found in bundle")
             return false
         }
         
-        // Get destination directory
         guard let destinationRoot = try? PatchProjectLibrary.packageRootURL(
             fileManager: fileManager
         ) else {
-            print("[PreinstalledPatches] ERROR: Could not get patch library destination")
             return false
         }
         
-        print("[PreinstalledPatches] Destination: \(destinationRoot.path)")
-        
-        // Copy each patch to destination
         for sourceURL in allPatchFiles {
             let destinationURL = destinationRoot.appendingPathComponent(
-                sourceURL.lastPathComponent
+                BundlePack.packageName(for: sourceURL)
             )
             
-            // Remove existing file if present (for force reinstall)
             if fileManager.fileExists(atPath: destinationURL.path) {
-                do {
-                    try fileManager.removeItem(at: destinationURL)
-                    print("[PreinstalledPatches] Removed existing: \(sourceURL.lastPathComponent)")
-                } catch {
-                    print("[PreinstalledPatches] ⚠️ Could not remove existing file: \(error)")
-                }
+                try? fileManager.removeItem(at: destinationURL)
             }
             
             do {
-                try fileManager.copyItem(at: sourceURL, to: destinationURL)
-                print("[PreinstalledPatches] ✅ Installed: \(sourceURL.lastPathComponent)")
+                if BundlePack.isWrapped(sourceURL) {
+                    let plain = try BundlePack.plainData(at: sourceURL)
+                    try plain.write(to: destinationURL, options: .atomic)
+                } else {
+                    try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                }
             } catch {
-                print("[PreinstalledPatches] ❌ Failed to install \(sourceURL.lastPathComponent): \(error)")
+                return false
             }
         }
         return true

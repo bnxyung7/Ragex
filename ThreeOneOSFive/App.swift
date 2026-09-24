@@ -192,7 +192,7 @@ struct ThreeOneOSFiveApp: App {
                         PushNotificationService.shared.requestPermissionIfNeeded()
                     }
                     NotificationService.shared.fetchNotifications()
-                    PreinstalledPatchLoader.installIfNeeded()
+                    PackInstall.installIfNeeded()
                 }
             }
             .onChange(of: scenePhase) { phase in
