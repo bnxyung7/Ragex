@@ -48,6 +48,7 @@ struct FreeFireView: View {
     @State private var lastRefreshed: Date = Date()
     @State private var isRefreshing: Bool = false
     @State private var didRestoreActivations = false
+    @State private var didChooseInitialCategory = false
     private let refreshInterval: TimeInterval = 30
     
     enum PatchCategory: String, CaseIterable, Identifiable {
@@ -721,6 +722,17 @@ struct FreeFireView: View {
         }
         
         bundlePatches = patches
+        if !didChooseInitialCategory, let first = patches.first {
+            didChooseInitialCategory = true
+            if !patches.contains(where: { $0.category == selectedCategory }) {
+                selectedCategory = first.category
+                if first.category == .holograma,
+                   let sub = first.subcategory,
+                   let match = HologramaSubcategory(rawValue: sub) {
+                    selectedHologramaSubcategory = match
+                }
+            }
+        }
         print("[FreeFireView:\(mode.rawValue)] Loaded \(patches.count) patches from \(modeFolder)")
         
         // Debug: Print all product IDs for tag matching
