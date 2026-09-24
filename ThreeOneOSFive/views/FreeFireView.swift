@@ -42,7 +42,6 @@ struct FreeFireView: View {
     @State private var selectedHologramaSubcategory: HologramaSubcategory = .arma
     @State private var processingPatchIDs: Set<String> = []
     @State private var errorMessage: String?
-    @State private var errorAlertTitle = ""
     @State private var showErrorAlert = false
     @State private var showAnnouncementsSheet = false
     // Auto-refresh state
@@ -148,7 +147,7 @@ struct FreeFireView: View {
                 await performRefresh()
             }
         }
-        .alert(errorAlertTitle.isEmpty ? language.text("ff.error") : errorAlertTitle, isPresented: $showErrorAlert) {
+        .alert(language.text("ff.error"), isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage ?? language.text("ff.unexpected"))
@@ -623,24 +622,6 @@ struct FreeFireView: View {
                 }
 
                 if activate {
-                    log("freeFire: preparing device before \(patch.displayName)")
-                    var deviceReady = KernelExploit.hasReadySession
-                    if !deviceReady {
-                        for attempt in 1...2 {
-                            if KernelExploit.run() {
-                                deviceReady = true
-                                break
-                            }
-                            if attempt == 1 {
-                                Thread.sleep(forTimeInterval: 1.5)
-                            }
-                        }
-                    }
-                    guard deviceReady else {
-                        throw NSError(domain: "FreeFire", code: 3, userInfo: [
-                            NSLocalizedDescriptionKey: "Inténtalo de nuevo."
-                        ])
-                    }
                     log("freeFire: applying \(patch.displayName) project=\(resolvedProject.id.uuidString)")
                     let receipt = try DevicePatchService.apply(project: resolvedProject)
                     log("freeFire: apply done \(patch.displayName)")
@@ -665,10 +646,8 @@ struct FreeFireView: View {
                 }
             } catch {
                 let errText = error.localizedDescription
-                let calmFailure = (error as NSError).domain == "FreeFire" && (error as NSError).code == 3
                 await MainActor.run {
-                    errorAlertTitle = calmFailure ? "No se pudo activar" : ""
-                    errorMessage = calmFailure ? "Inténtalo de nuevo." : errText
+                    errorMessage = errText
                     showErrorAlert = true
                     processingPatchIDs.remove(patch.productId)
                 }
