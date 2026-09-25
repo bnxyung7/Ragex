@@ -69,13 +69,6 @@ enum PatchTransaction {
         let target: URL
     }
 
-    private struct ResolvedDirectory {
-        let bundleID: String
-        let relativePath: String
-        let containerRoot: URL
-        let target: URL
-    }
-
     private struct ResolvedRecord {
         let record: Record
         let target: URL
@@ -110,7 +103,6 @@ enum PatchTransaction {
 
         var roots: [String: URL] = [:]
         var resolvedRules: [ResolvedRule] = []
-        var resolvedDirectories: [ResolvedDirectory] = []
         var targetKeys = Set<String>()
 
         func resolvedRoot(for bundleID: String) throws -> URL {
@@ -153,12 +145,6 @@ enum PatchTransaction {
                 containerRoot: root,
                 fileManager: fileManager
             )
-            resolvedDirectories.append(ResolvedDirectory(
-                bundleID: bundleID,
-                relativePath: relativePath,
-                containerRoot: root,
-                target: target
-            ))
         }
 
         for rule in project.rules {
@@ -208,49 +194,35 @@ enum PatchTransaction {
         }
 
         var records: [Record] = []
-        let createdDirectories = resolvedDirectories.compactMap { resolved -> DirectoryRecord? in
-            guard !fileManager.fileExists(atPath: resolved.target.path) else { return nil }
-            return DirectoryRecord(
-                bundleID: resolved.bundleID,
-                relativePath: resolved.relativePath,
-                containerFingerprint: containerFingerprint(resolved.containerRoot)
-            )
-        }
+        let createdDirectories: [DirectoryRecord] = []
         do {
             for resolved in resolvedRules {
-                let existed = fileManager.fileExists(atPath: resolved.target.path)
-                var backupFilename: String?
-                if existed {
-                    let legacyURL = resolved.target.deletingLastPathComponent()
-                        .appendingPathComponent(resolved.target.lastPathComponent + ".xorig")
-                    let backupName = resolved.rule.id.uuidString + ".orig"
-                    let backupURL = transactionDirectory.appendingPathComponent(backupName)
-                    if fileManager.fileExists(atPath: legacyURL.path) {
-                        if fileManager.fileExists(atPath: backupURL.path) {
-                            try? fileManager.removeItem(at: backupURL)
-                        }
-                        do {
-                            try fileManager.moveItem(at: legacyURL, to: backupURL)
-                        } catch {
-                            let original = try Data(contentsOf: legacyURL, options: [.mappedIfSafe])
-                            try original.write(to: backupURL, options: .atomic)
-                            try? fileManager.removeItem(at: legacyURL)
-                        }
-                    } else {
-                        try preserveOriginal(
-                            at: resolved.target,
-                            sidecar: backupURL,
-                            fileManager: fileManager
-                        )
-                    }
-                    backupFilename = backupName
+                guard fileManager.fileExists(atPath: resolved.target.path) else {
+                    log("patch: target missing, refusing to add a file \(resolved.rule.relativePath)")
+                    throw PatchPackageError.applyFailed
                 }
+                let legacyURL = resolved.target.deletingLastPathComponent()
+                    .appendingPathComponent(resolved.target.lastPathComponent + ".xorig")
+                let backupName = resolved.rule.id.uuidString + ".orig"
+                let backupURL = transactionDirectory.appendingPathComponent(backupName)
+                if fileManager.fileExists(atPath: legacyURL.path) {
+                    let original = try Data(contentsOf: legacyURL, options: [.mappedIfSafe])
+                    try original.write(to: backupURL, options: .atomic)
+                    try? fileManager.removeItem(at: legacyURL)
+                } else {
+                    try preserveOriginal(
+                        at: resolved.target,
+                        sidecar: backupURL,
+                        fileManager: fileManager
+                    )
+                }
+                let backupFilename: String? = backupName
                 records.append(Record(
                     ruleID: resolved.rule.id,
                     bundleID: resolved.rule.bundleID,
                     relativePath: resolved.rule.relativePath,
                     containerFingerprint: containerFingerprint(resolved.containerRoot),
-                    originalExisted: existed,
+                    originalExisted: true,
                     backupFilename: backupFilename,
                     originalDigest: nil,
                     replacementDigest: Data(),
@@ -280,12 +252,6 @@ enum PatchTransaction {
         }
 
         do {
-            for resolved in resolvedDirectories where !fileManager.fileExists(atPath: resolved.target.path) {
-                try fileManager.createDirectory(
-                    at: resolved.target,
-                    withIntermediateDirectories: false
-                )
-            }
             for (index, resolved) in resolvedRules.enumerated() {
                 try beforeWrite?(index)
                 try forceWrite(
@@ -1063,26 +1029,9 @@ enum PatchTransaction {
         sidecar: URL,
         fileManager: FileManager
     ) throws {
-        if fileManager.fileExists(atPath: sidecar.path) {
-            if filesAreByteIdentical(target, sidecar, fileManager: fileManager) {
-                log("patch: discarding sidecar that matches the patched file \(sidecar.lastPathComponent)")
-                try? fileManager.removeItem(at: sidecar)
-                return
-            }
-            log("patch: keeping existing original sidecar \(sidecar.lastPathComponent)")
-            try? fileManager.removeItem(at: target)
-            return
-        }
-        do {
-            try fileManager.moveItem(at: target, to: sidecar)
-            log("patch: renamed original to \(sidecar.lastPathComponent)")
-            return
-        } catch {
-            log("patch: rename original failed \(error.localizedDescription)")
-        }
         let original = try Data(contentsOf: target, options: [.mappedIfSafe])
         try original.write(to: sidecar, options: .atomic)
-        log("patch: wrote independent original backup \(sidecar.lastPathComponent) bytes=\(original.count)")
+        log("patch: copied original outside the game folder \(sidecar.lastPathComponent) bytes=\(original.count)")
     }
 
     private static func restorePreservedOriginal(
@@ -1093,31 +1042,16 @@ enum PatchTransaction {
         guard fileManager.fileExists(atPath: sidecar.path) else {
             throw PatchPackageError.restoreFailed
         }
-        if fileManager.fileExists(atPath: target.path) {
-            try fileManager.removeItem(at: target)
-        }
-        do {
-            try fileManager.moveItem(at: sidecar, to: target)
-            log("patch: renamed original back \(target.lastPathComponent)")
-            return
-        } catch {
-            log("patch: rename-back failed \(error.localizedDescription)")
-        }
         let original = try Data(contentsOf: sidecar, options: [.mappedIfSafe])
-        try forceWrite(original, to: target, preservingExistingAttributes: true, fileManager: fileManager)
+        if fileManager.fileExists(atPath: target.path) {
+            try forceWrite(original, to: target, preservingExistingAttributes: true, fileManager: fileManager)
+        } else {
+            guard fileManager.createFile(atPath: target.path, contents: original, attributes: nil) else {
+                throw PatchPackageError.restoreFailed
+            }
+        }
         try? fileManager.removeItem(at: sidecar)
         log("patch: copied original back \(target.lastPathComponent) bytes=\(original.count)")
-    }
-
-    private static func filesAreByteIdentical(_ a: URL, _ b: URL, fileManager: FileManager) -> Bool {
-        let sa = (try? fileManager.attributesOfItem(atPath: a.path)[.size] as? NSNumber)?.int64Value
-        let sb = (try? fileManager.attributesOfItem(atPath: b.path)[.size] as? NSNumber)?.int64Value
-        guard let sa, let sb, sa == sb else { return false }
-        guard let da = try? Data(contentsOf: a, options: [.mappedIfSafe]),
-              let db = try? Data(contentsOf: b, options: [.mappedIfSafe]) else {
-            return false
-        }
-        return da == db
     }
 
     private static func forceWrite(
@@ -1132,25 +1066,17 @@ enum PatchTransaction {
             if let permissions = current[.posixPermissions] { attributes[.posixPermissions] = permissions }
             if let protection = current[.protectionKey] { attributes[.protectionKey] = protection }
         }
-        if fileManager.fileExists(atPath: target.path) {
-            do {
-                let handle = try FileHandle(forWritingTo: target)
-                try handle.truncate(atOffset: 0)
-                try handle.write(contentsOf: data)
-                try handle.synchronize()
-                try handle.close()
-                if !attributes.isEmpty {
-                    try? fileManager.setAttributes(attributes, ofItemAtPath: target.path)
-                }
-            } catch {
-                log("patch: in-place write failed, using replace \(error.localizedDescription)")
-                try atomicWrite(data, to: target, preservingExistingAttributes: preservingExistingAttributes, fileManager: fileManager)
-            }
-        } else {
-            guard fileManager.createFile(atPath: target.path, contents: data, attributes: attributes) else {
-                log("patch: force write failed path=\(target.path) errno=\(errno)")
-                throw PatchPackageError.applyFailed
-            }
+        guard fileManager.fileExists(atPath: target.path) else {
+            log("patch: refuse to add a file \(target.path)")
+            throw PatchPackageError.applyFailed
+        }
+        let handle = try FileHandle(forWritingTo: target)
+        try handle.truncate(atOffset: 0)
+        try handle.write(contentsOf: data)
+        try handle.synchronize()
+        try handle.close()
+        if !attributes.isEmpty {
+            try? fileManager.setAttributes(attributes, ofItemAtPath: target.path)
         }
         let size = (try fileManager.attributesOfItem(atPath: target.path)[.size] as? NSNumber)?.int64Value ?? -1
         guard size == Int64(data.count) else {
@@ -1175,27 +1101,12 @@ enum PatchTransaction {
         preservingExistingAttributes: Bool,
         fileManager: FileManager
     ) throws {
-        let staging = target.deletingLastPathComponent()
-            .appendingPathComponent(".3105-patch-\(UUID().uuidString)")
-        var attributes: [FileAttributeKey: Any] = [:]
-        if preservingExistingAttributes,
-           let current = try? fileManager.attributesOfItem(atPath: target.path) {
-            if let permissions = current[.posixPermissions] { attributes[.posixPermissions] = permissions }
-            if let protection = current[.protectionKey] { attributes[.protectionKey] = protection }
-        }
-        guard fileManager.createFile(atPath: staging.path, contents: data, attributes: attributes) else {
-            log("patch: staging write failed path=\(staging.path) errno=\(errno)")
-            throw PatchPackageError.applyFailed
-        }
-        defer { try? fileManager.removeItem(at: staging) }
-        let handle = try FileHandle(forWritingTo: staging)
-        try handle.synchronize()
-        try handle.close()
-        guard rename(staging.path, target.path) == 0 else {
-            log("patch: rename failed from=\(staging.path) to=\(target.path) errno=\(errno)")
-            throw PatchPackageError.applyFailed
-        }
-        log("patch: wrote \(data.count) bytes to \(target.path)")
+        try forceWrite(
+            data,
+            to: target,
+            preservingExistingAttributes: preservingExistingAttributes,
+            fileManager: fileManager
+        )
     }
 
     private static func atomicCopy(
@@ -1204,29 +1115,13 @@ enum PatchTransaction {
         preservingExistingAttributes: Bool = false,
         fileManager: FileManager
     ) throws {
-        let staging = target.deletingLastPathComponent()
-            .appendingPathComponent(".3105-restore-\(UUID().uuidString)")
-        defer { try? fileManager.removeItem(at: staging) }
-        try fileManager.copyItem(at: source, to: staging)
-        if preservingExistingAttributes,
-           let current = try? fileManager.attributesOfItem(atPath: target.path) {
-            var attributes: [FileAttributeKey: Any] = [:]
-            if let permissions = current[.posixPermissions] {
-                attributes[.posixPermissions] = permissions
-            }
-            if let protection = current[.protectionKey] {
-                attributes[.protectionKey] = protection
-            }
-            if !attributes.isEmpty {
-                try fileManager.setAttributes(attributes, ofItemAtPath: staging.path)
-            }
-        }
-        let handle = try FileHandle(forWritingTo: staging)
-        try handle.synchronize()
-        try handle.close()
-        guard rename(staging.path, target.path) == 0 else {
-            throw PatchPackageError.restoreFailed
-        }
+        let data = try Data(contentsOf: source, options: [.mappedIfSafe])
+        try forceWrite(
+            data,
+            to: target,
+            preservingExistingAttributes: preservingExistingAttributes,
+            fileManager: fileManager
+        )
     }
 
     private static func writeJournal(_ journal: Journal, to url: URL) throws {
