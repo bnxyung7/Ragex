@@ -21,7 +21,7 @@ struct ChangelogView: View {
             date: "2026-09-24",
             isLatest: true,
             added: [
-                "Free Fire Holograma Personaje now includes Rayo Personaje Lima Violeta."
+                "Free Fire Holograma Arma includes Turquesa."
             ],
             changed: [],
             fixed: [

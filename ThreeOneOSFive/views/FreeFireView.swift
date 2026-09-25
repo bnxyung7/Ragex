@@ -1064,9 +1064,7 @@ private enum NumberedPatchCatalog {
 
     private static let entries: [String: Entry] = [
         "7418": Entry(title: "AIM NECK", category: .aimbot, subcategory: nil, productId: "FREE_FIRE_AIMBOT_AIM_NECK"),
-        "211": Entry(title: "HOLOGRAMA ARMA TURQUESA", category: .holograma, subcategory: "Arma", productId: "FREE_FIRE_HOLOGRAMA_HOLOGRAMA_ARMA_TURQUESA"),
-        "218": Entry(title: "HOLOGRAMA ARMA VERDE NEGRO", category: .holograma, subcategory: "Arma", productId: "FREE_FIRE_HOLOGRAMA_HOLOGRAMA_ARMA_VERDE__NEGRO"),
-        "306": Entry(title: "RAYO PERSONAJE LIMA VIOLETA", category: .holograma, subcategory: "Personaje", productId: "FREE_FIRE_HOLOGRAMA_RAYO_PERSONAJE_LIMA_VIOLETA")
+        "211": Entry(title: "HOLOGRAMA ARMA TURQUESA", category: .holograma, subcategory: "Arma", productId: "FREE_FIRE_HOLOGRAMA_HOLOGRAMA_ARMA_TURQUESA")
     ]
 
     static func match(_ url: URL) -> Entry? {
