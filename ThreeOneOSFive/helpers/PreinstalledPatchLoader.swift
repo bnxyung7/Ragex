@@ -125,6 +125,13 @@ enum PackInstall {
                 return false
             }
         }
+        let removedNames = ["218.3105", "306.3105"]
+        for name in removedNames {
+            let leftover = destinationRoot.appendingPathComponent(name)
+            if fileManager.fileExists(atPath: leftover.path) {
+                try? fileManager.removeItem(at: leftover)
+            }
+        }
         return true
     }
     

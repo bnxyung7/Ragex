@@ -76,6 +76,8 @@ public class AnnouncementService: ObservableObject {
     
     @MainActor
     public func fetchAnnouncements() async {
+        if isFetching { return }
+        if let lastRefreshed, Date().timeIntervalSince(lastRefreshed) < 45 { return }
         isFetching = true
         defer { isFetching = false }
         

@@ -298,8 +298,10 @@ struct SettingsView: View {
                 }
             }
         }
-        PatchActivationStore.shared.resetAllActivations()
         URLCache.shared.removeAllCachedResponses()
+        if DevicePatchService.appliedReceipts().isEmpty {
+            PatchActivationStore.shared.resetAllActivations()
+        }
     }
 
     private var appVersion: String {

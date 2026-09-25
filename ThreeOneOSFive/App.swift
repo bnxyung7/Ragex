@@ -326,14 +326,19 @@ class AppState: ObservableObject {
                 }
             }
             
+            DevicePatchService.recoverIncompleteJournals()
+
             DispatchQueue.main.async {
                 self.kernelExploitRunning = false
                 if success {
                     self.exploitStatus = .success(method: "kexploit")
                     log("app: ✅ kernel exploit success on attempt \(currentAttempt)/\(maxAttempts)")
                 } else {
-                    self.exploitStatus = .success(method: "direct")
-                    log("app: ✅ device connected directly (fallback mode active)")
+                    self.exploitStatus = .failed(method: "kexploit", code: 1)
+                    log("app: kernel exploit failed")
+                }
+                Task { @MainActor in
+                    PatchActivationStore.shared.dropClosedActivations()
                 }
             }
         }

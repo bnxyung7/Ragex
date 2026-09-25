@@ -566,6 +566,7 @@ class KeyStore: ObservableObject {
     // MARK: - Expiration Timer
     
     private var expirationTimer: Timer?
+    private var syncInFlight = false
     
     private func startExpirationTimer() {
         // Check every 30 seconds for expired sessions and sync with server
@@ -607,10 +608,13 @@ class KeyStore: ObservableObject {
     /// Synchronize the active session with the remote server
     func syncWithServer() {
         guard let session = activeSession else { return }
+        guard !syncInFlight else { return }
+        syncInFlight = true
         let keyString = session.key.keyString
         let deviceId = getDeviceId()
         
         Task {
+            defer { self.syncInFlight = false }
             do {
                 let result = try await KeyAPIService.shared.validateKeyWithDevice(keyString, deviceId: deviceId)
                 

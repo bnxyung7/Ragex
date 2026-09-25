@@ -123,9 +123,7 @@ struct FreeFireView: View {
         .onAppear {
             loadBundlePatches()
             restoreSavedActivationsIfNeeded()
-            // Refresh announcements immediately when tab opens
-            Task { 
-                await announcementService.fetchAnnouncements()
+            Task {
                 await productTagService.fetchTags()
             }
         }
@@ -680,9 +678,6 @@ struct FreeFireView: View {
 
         // 2. Refresh patch store so toggle states are current
         patchStore.reload()
-
-        // 3. Pull latest announcements from server
-        await announcementService.fetchAnnouncements()
 
         lastRefreshed = Date()
         print("[FreeFireView:\(mode.rawValue)] 🔄 Auto-refreshed at \(lastRefreshed)")

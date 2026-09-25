@@ -120,9 +120,23 @@ final class PatchActivationStore: ObservableObject {
     private func resetIfNewInstall() {
         let stored = UserDefaults.standard.string(forKey: generationKey)
         if stored != currentGeneration {
-            resetAllActivations()
+            if DevicePatchService.appliedReceipts().isEmpty {
+                resetAllActivations()
+            }
             UserDefaults.standard.set(currentGeneration, forKey: generationKey)
         }
+    }
+
+    func dropClosedActivations() {
+        let closing = applied.filter { _, ref in
+            !PatchTransaction.journalIsApplied(at: URL(fileURLWithPath: ref.journalPath))
+        }.map(\.key)
+        guard !closing.isEmpty else { return }
+        for productId in closing {
+            applied.removeValue(forKey: productId)
+            activeIDs.remove(productId)
+        }
+        persist()
     }
 
     private func persist() {

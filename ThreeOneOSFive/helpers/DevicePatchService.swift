@@ -161,6 +161,34 @@ enum DevicePatchService {
         log("patch: sidecar restore done name=\(project.name)")
     }
 
+    static func recoverIncompleteJournals() {
+        guard let backupRoot = try? PatchProjectLibrary.backupRootURL(),
+              let directories = try? FileManager.default.contentsOfDirectory(
+                at: backupRoot,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+              ) else { return }
+        for directory in directories {
+            guard let projectID = UUID(uuidString: directory.lastPathComponent) else { continue }
+            do {
+                try beginExclusive(projectID)
+            } catch {
+                continue
+            }
+            defer { endExclusive(projectID) }
+            PatchTransaction.recoverIncomplete(
+                projectDirectory: directory,
+                containerResolver: { bundleID in
+                    guard let resolvedPath = resolveContainerPath(for: bundleID),
+                          ContainerStore.isApplicationContainerPath(resolvedPath) else {
+                        throw PatchPackageError.targetAppUnavailable(bundleID)
+                    }
+                    return URL(fileURLWithPath: resolvedPath, isDirectory: true)
+                }
+            )
+        }
+    }
+
     static func verifyUnpatched(project: PatchProject) throws {
         let bundleIDs = orderedBundleIdentifiers(in: project)
         try withResolvedContainers(bundleIDs: bundleIDs) { roots in

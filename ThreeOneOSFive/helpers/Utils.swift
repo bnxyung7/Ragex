@@ -150,7 +150,17 @@ enum AppUpdateChecker {
         UserDefaults.standard.set(version, forKey: dismissedVersionKey)
     }
 
+    private static let checkLock = NSLock()
+    private static var didStartCheck = false
+
     static func check() async -> Offer? {
+        checkLock.lock()
+        if didStartCheck {
+            checkLock.unlock()
+            return nil
+        }
+        didStartCheck = true
+        checkLock.unlock()
         var request = URLRequest(url: apiURL)
         request.timeoutInterval = 15
         request.setValue("X", forHTTPHeaderField: "User-Agent")

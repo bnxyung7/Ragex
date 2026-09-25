@@ -201,31 +201,51 @@ enum PatchTransaction {
                     log("patch: target missing, refusing to add a file \(resolved.rule.relativePath)")
                     throw PatchPackageError.applyFailed
                 }
+                let replacementDigest = digest(resolved.rule.replacementData)
                 let legacyURL = resolved.target.deletingLastPathComponent()
                     .appendingPathComponent(resolved.target.lastPathComponent + ".xorig")
                 let backupName = resolved.rule.id.uuidString + ".orig"
                 let backupURL = transactionDirectory.appendingPathComponent(backupName)
-                if fileManager.fileExists(atPath: legacyURL.path) {
-                    let original = try Data(contentsOf: legacyURL, options: [.mappedIfSafe])
-                    try original.write(to: backupURL, options: .atomic)
-                    try? fileManager.removeItem(at: legacyURL)
+                let source: Data
+                if let prior = earliestOriginalBytes(
+                    backupRoot: backupRoot,
+                    projectID: project.id,
+                    bundleID: resolved.rule.bundleID,
+                    relativePath: resolved.rule.relativePath,
+                    target: resolved.target,
+                    replacementDigest: replacementDigest,
+                    fileManager: fileManager
+                ) {
+                    source = prior
+                } else if fileManager.fileExists(atPath: legacyURL.path) {
+                    let legacy = try Data(contentsOf: legacyURL, options: [.mappedIfSafe])
+                    guard digest(legacy) != replacementDigest else {
+                        log("patch: leftover xorig matches the patch, refusing it as original")
+                        throw PatchPackageError.applyFailed
+                    }
+                    source = legacy
                 } else {
-                    try preserveOriginal(
-                        at: resolved.target,
-                        sidecar: backupURL,
-                        fileManager: fileManager
-                    )
+                    let current = try Data(contentsOf: resolved.target, options: [.mappedIfSafe])
+                    guard digest(current) != replacementDigest else {
+                        log("patch: target already patched and no original backup exists \(resolved.rule.relativePath)")
+                        throw PatchPackageError.applyFailed
+                    }
+                    source = current
                 }
-                let backupFilename: String? = backupName
+                try source.write(to: backupURL, options: .atomic)
+                let originalDigest = try digestFile(backupURL)
+                guard originalDigest == digest(source), originalDigest != replacementDigest else {
+                    throw PatchPackageError.applyFailed
+                }
                 records.append(Record(
                     ruleID: resolved.rule.id,
                     bundleID: resolved.rule.bundleID,
                     relativePath: resolved.rule.relativePath,
                     containerFingerprint: containerFingerprint(resolved.containerRoot),
                     originalExisted: true,
-                    backupFilename: backupFilename,
-                    originalDigest: nil,
-                    replacementDigest: Data(),
+                    backupFilename: backupName,
+                    originalDigest: originalDigest,
+                    replacementDigest: replacementDigest,
                     appliedFilename: nil
                 ))
             }
@@ -252,6 +272,13 @@ enum PatchTransaction {
         }
 
         do {
+            for resolved in resolvedRules {
+                let legacyURL = resolved.target.deletingLastPathComponent()
+                    .appendingPathComponent(resolved.target.lastPathComponent + ".xorig")
+                if fileManager.fileExists(atPath: legacyURL.path) {
+                    try? fileManager.removeItem(at: legacyURL)
+                }
+            }
             for (index, resolved) in resolvedRules.enumerated() {
                 try beforeWrite?(index)
                 try forceWrite(
@@ -260,6 +287,11 @@ enum PatchTransaction {
                     preservingExistingAttributes: true,
                     fileManager: fileManager
                 )
+                let written = try digestFile(resolved.target)
+                guard written == digest(resolved.rule.replacementData) else {
+                    log("patch: hash mismatch after write \(resolved.rule.relativePath)")
+                    throw PatchPackageError.applyFailed
+                }
             }
             journal.status = .applied
             try writeJournal(journal, to: journalURL)
@@ -366,12 +398,31 @@ enum PatchTransaction {
                         ) else {
                             throw PatchPackageError.restoreFailed
                         }
+                        let backupBytes = try Data(contentsOf: backup, options: [.mappedIfSafe])
+                        let backupDigest = digest(backupBytes)
+                        if let expected = item.record.originalDigest, backupDigest != expected {
+                            log("patch: backup does not match stored original digest")
+                            throw PatchPackageError.restoreFailed
+                        }
+                        if !item.record.replacementDigest.isEmpty, backupDigest == item.record.replacementDigest {
+                            log("patch: backup matches the patch, refusing to restore it as original")
+                            throw PatchPackageError.restoreFailed
+                        }
                         log("patch: restoring original \(item.record.bundleID)/\(item.record.relativePath)")
                         try restorePreservedOriginal(
                             sidecar: backup,
                             to: item.target,
                             fileManager: fileManager
                         )
+                        guard try digestFile(item.target) == backupDigest else {
+                            log("patch: restored file hash does not match the backup")
+                            throw PatchPackageError.restoreFailed
+                        }
+                        let legacyURL = item.target.deletingLastPathComponent()
+                            .appendingPathComponent(item.target.lastPathComponent + ".xorig")
+                        if fileManager.fileExists(atPath: legacyURL.path) {
+                            try? fileManager.removeItem(at: legacyURL)
+                        }
                     } else if fileManager.fileExists(atPath: item.target.path) {
                         log("patch: removing patched file that had no original \(item.record.relativePath)")
                         try fileManager.removeItem(at: item.target)
@@ -561,6 +612,128 @@ enum PatchTransaction {
         if restored == 0 {
             log("patch: no sidecar, nothing else to restore")
         }
+    }
+
+    static func journalIsApplied(at url: URL) -> Bool {
+        guard let journal = try? readJournal(url) else { return true }
+        return journal.status == .applied || journal.status == .prepared
+    }
+
+    static func recoverIncomplete(
+        projectDirectory: URL,
+        containerResolver: (String) throws -> URL,
+        fileManager: FileManager = .default
+    ) {
+        guard let transactions = try? fileManager.contentsOfDirectory(
+            at: projectDirectory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else { return }
+
+        let journals: [(Journal, URL)] = transactions.compactMap { directory in
+            let url = directory.appendingPathComponent(journalFilename)
+            guard let journal = try? readJournal(url),
+                  journal.status == .prepared || journal.status == .applied else { return nil }
+            return (journal, url)
+        }.sorted { $0.0.createdAt < $1.0.createdAt }
+
+        for (journal, url) in journals {
+            let receipt = PatchTransactionReceipt(
+                id: journal.transactionID,
+                projectID: journal.projectID,
+                journalURL: url
+            )
+            do {
+                if journal.status == .prepared {
+                    try restore(
+                        receipt: receipt,
+                        allowChangedTargets: true,
+                        containerResolver: containerResolver,
+                        strictContainerIdentity: false,
+                        snapshotCurrentFiles: false
+                    )
+                    continue
+                }
+                if try appliedJournalIsInconsistent(
+                    journal: journal,
+                    containerResolver: containerResolver,
+                    fileManager: fileManager
+                ) {
+                    try restore(
+                        receipt: receipt,
+                        allowChangedTargets: true,
+                        containerResolver: containerResolver,
+                        strictContainerIdentity: false,
+                        snapshotCurrentFiles: false
+                    )
+                }
+            } catch {
+                log("patch: incomplete journal left in place \(url.lastPathComponent) \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private static func appliedJournalIsInconsistent(
+        journal: Journal,
+        containerResolver: (String) throws -> URL,
+        fileManager: FileManager
+    ) throws -> Bool {
+        for record in journal.records {
+            guard !record.replacementDigest.isEmpty else { continue }
+            let root = PatchPathValidator.canonicalFileURL(try containerResolver(record.bundleID))
+            let target = try PatchPathValidator.resolveContainedTargetURL(
+                relativePath: record.relativePath,
+                containerRoot: root
+            )
+            guard fileManager.fileExists(atPath: target.path) else { return true }
+            if try digestFile(target) != record.replacementDigest {
+                return true
+            }
+        }
+        return false
+    }
+
+    private static func earliestOriginalBytes(
+        backupRoot: URL,
+        projectID: UUID,
+        bundleID: String,
+        relativePath: String,
+        target: URL,
+        replacementDigest: Data,
+        fileManager: FileManager
+    ) -> Data? {
+        let projectDirectory = backupRoot.appendingPathComponent(projectID.uuidString, isDirectory: true)
+        guard let directories = try? fileManager.contentsOfDirectory(
+            at: projectDirectory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else { return nil }
+
+        let journals: [(Journal, URL)] = directories.compactMap { directory in
+            let url = directory.appendingPathComponent(journalFilename)
+            guard let journal = try? readJournal(url),
+                  journal.projectID == projectID,
+                  journal.status == .applied || journal.status == .prepared else { return nil }
+            return (journal, url)
+        }.sorted { $0.0.createdAt < $1.0.createdAt }
+
+        for (journal, url) in journals {
+            let transactionDirectory = url.deletingLastPathComponent()
+            for record in journal.records where record.bundleID == bundleID && record.relativePath == relativePath {
+                guard let backup = originalBackupURL(
+                    record: record,
+                    target: target,
+                    transactionDirectory: transactionDirectory
+                ), fileManager.fileExists(atPath: backup.path),
+                      let bytes = try? Data(contentsOf: backup, options: [.mappedIfSafe]),
+                      !bytes.isEmpty else { continue }
+                let backupDigest = digest(bytes)
+                if let stored = record.originalDigest, stored != backupDigest { continue }
+                if backupDigest == replacementDigest { continue }
+                return bytes
+            }
+        }
+        return nil
     }
 
     static func latestReceipt(
@@ -1022,18 +1195,6 @@ enum PatchTransaction {
         return transactionDirectory.appendingPathComponent(name)
     }
 
-    /// Keep the real original as its own inode. clonefile + in-place write shares extents
-    /// and leaves deactivate restoring the patched bytes.
-    private static func preserveOriginal(
-        at target: URL,
-        sidecar: URL,
-        fileManager: FileManager
-    ) throws {
-        let original = try Data(contentsOf: target, options: [.mappedIfSafe])
-        try original.write(to: sidecar, options: .atomic)
-        log("patch: copied original outside the game folder \(sidecar.lastPathComponent) bytes=\(original.count)")
-    }
-
     private static func restorePreservedOriginal(
         sidecar: URL,
         to target: URL,
@@ -1043,12 +1204,17 @@ enum PatchTransaction {
             throw PatchPackageError.restoreFailed
         }
         let original = try Data(contentsOf: sidecar, options: [.mappedIfSafe])
+        let expected = digest(original)
         if fileManager.fileExists(atPath: target.path) {
             try forceWrite(original, to: target, preservingExistingAttributes: true, fileManager: fileManager)
         } else {
             guard fileManager.createFile(atPath: target.path, contents: original, attributes: nil) else {
                 throw PatchPackageError.restoreFailed
             }
+        }
+        guard try digestFile(target) == expected else {
+            log("patch: restored bytes do not match backup \(target.lastPathComponent)")
+            throw PatchPackageError.restoreFailed
         }
         try? fileManager.removeItem(at: sidecar)
         log("patch: copied original back \(target.lastPathComponent) bytes=\(original.count)")
