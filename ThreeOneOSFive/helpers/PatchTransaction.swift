@@ -645,6 +645,19 @@ enum PatchTransaction {
             )
             do {
                 if journal.status == .prepared {
+                    let hasDigests = journal.records.allSatisfy { !$0.replacementDigest.isEmpty }
+                    let alreadyWritten = hasDigests
+                        && (try? appliedJournalIsInconsistent(
+                            journal: journal,
+                            containerResolver: containerResolver,
+                            fileManager: fileManager
+                        )) == false
+                    if alreadyWritten {
+                        var updated = journal
+                        updated.status = .applied
+                        try writeJournal(updated, to: url)
+                        continue
+                    }
                     try restore(
                         receipt: receipt,
                         allowChangedTargets: true,
