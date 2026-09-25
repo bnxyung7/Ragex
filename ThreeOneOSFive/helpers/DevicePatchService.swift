@@ -131,6 +131,22 @@ enum DevicePatchService {
         ensureContainerWriteAccess(forRestore: true)
         let bundleIDs = orderedBundleIdentifiers(in: project)
         log("patch: sidecar restore begin name=\(project.name)")
+        if let receipt = receipt(for: project) {
+            try withResolvedContainers(bundleIDs: bundleIDs) { roots in
+                try PatchTransaction.restore(
+                    receipt: receipt,
+                    allowChangedTargets: true,
+                    containerResolver: { bundleID in
+                        guard let root = roots[bundleID] else {
+                            throw PatchPackageError.targetAppUnavailable(bundleID)
+                        }
+                        return root
+                    },
+                    strictContainerIdentity: false,
+                    snapshotCurrentFiles: false
+                )
+            }
+        }
         try withResolvedContainers(bundleIDs: bundleIDs) { roots in
             try PatchTransaction.restoreSidecars(
                 project: project,

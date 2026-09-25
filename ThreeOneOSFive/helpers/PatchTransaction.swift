@@ -221,15 +221,29 @@ enum PatchTransaction {
                 let existed = fileManager.fileExists(atPath: resolved.target.path)
                 var backupFilename: String?
                 if existed {
-                    let sidecarName = resolved.target.lastPathComponent + ".xorig"
-                    let sidecarURL = resolved.target.deletingLastPathComponent()
-                        .appendingPathComponent(sidecarName)
-                    try preserveOriginal(
-                        at: resolved.target,
-                        sidecar: sidecarURL,
-                        fileManager: fileManager
-                    )
-                    backupFilename = "sidecar:" + sidecarName
+                    let legacyURL = resolved.target.deletingLastPathComponent()
+                        .appendingPathComponent(resolved.target.lastPathComponent + ".xorig")
+                    let backupName = resolved.rule.id.uuidString + ".orig"
+                    let backupURL = transactionDirectory.appendingPathComponent(backupName)
+                    if fileManager.fileExists(atPath: legacyURL.path) {
+                        if fileManager.fileExists(atPath: backupURL.path) {
+                            try? fileManager.removeItem(at: backupURL)
+                        }
+                        do {
+                            try fileManager.moveItem(at: legacyURL, to: backupURL)
+                        } catch {
+                            let original = try Data(contentsOf: legacyURL, options: [.mappedIfSafe])
+                            try original.write(to: backupURL, options: .atomic)
+                            try? fileManager.removeItem(at: legacyURL)
+                        }
+                    } else {
+                        try preserveOriginal(
+                            at: resolved.target,
+                            sidecar: backupURL,
+                            fileManager: fileManager
+                        )
+                    }
+                    backupFilename = backupName
                 }
                 records.append(Record(
                     ruleID: resolved.rule.id,
