@@ -38,19 +38,17 @@ struct SupportView: View {
                             }
                         }
                         
-                        // WhatsApp Official Card
                         SupportCard(
                             icon: "bubble.left.and.bubble.right.fill",
                             badge: language.text("support.badge_official"),
                             title: language.text("support.whatsapp_official"),
                             subtitle: language.text("support.whatsapp_fast"),
-                            color: Color(hex: "10B981"),
-                            detail: SupportContact.whatsappNumber
+                            color: Color(hex: "5865F2"),
+                            detail: "Discord"
                         ) {
-                            openWhatsApp()
+                            openDiscord(SupportContact.discordSupportURL)
                         }
                         
-                        // WhatsApp Channel Card
                         SupportCard(
                             icon: "megaphone.fill",
                             badge: language.text("support.badge_channel"),
@@ -59,7 +57,7 @@ struct SupportView: View {
                             color: AppTheme.accent,
                             detail: language.text("support.follow_whatsapp")
                         ) {
-                            openChannel()
+                            openDiscord(SupportContact.discordAnnounceURL)
                         }
                         
                         // Developer Verification Card
@@ -101,12 +99,12 @@ struct SupportView: View {
                                 Spacer()
                                 
                                 Button {
-                                    copyToClipboard(SupportContact.whatsappNumber)
+                                    copyToClipboard(SupportContact.discordSupportURL)
                                 } label: {
                                     HStack(spacing: 6) {
                                         Image(systemName: "doc.on.doc")
                                             .font(.caption2)
-                                        Text(SupportContact.whatsappNumber)
+                                        Text("Discord")
                                             .font(.system(size: 13, weight: .semibold, design: .monospaced))
                                     }
                                     .foregroundStyle(.white)
@@ -172,18 +170,8 @@ struct SupportView: View {
     }
     
     // MARK: - Actions
-    private func openWhatsApp() {
-        let number = SupportContact.whatsappNumber.replacingOccurrences(of: "+", with: "")
-        let message = language.text("support.whatsapp_prefill")
-        let urlString = "https://wa.me/\(number)?text=\(message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-        
+    private func openDiscord(_ urlString: String) {
         if let url = URL(string: urlString) {
-            UIApplication.shared.open(url)
-        }
-    }
-    
-    private func openChannel() {
-        if let url = URL(string: "https://whatsapp.com/channel/0029Vb7NRaRAojYuOAfX5S0S") {
             UIApplication.shared.open(url)
         }
     }

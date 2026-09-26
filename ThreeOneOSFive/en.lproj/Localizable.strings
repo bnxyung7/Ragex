@@ -697,8 +697,8 @@
 
 "support.title" = "Support";
 "support.subtitle" = "We are here to help you";
-"support.whatsapp_title" = "WhatsApp Support";
-"support.whatsapp_desc" = "Chat with us directly";
+"support.whatsapp_title" = "Discord Support";
+"support.whatsapp_desc" = "Chat with us on Discord";
 "support.telegram_title" = "Telegram Support";
 "support.telegram_desc" = "Fast responses on Telegram";
 "support.email_title" = "Email Support";
@@ -710,12 +710,12 @@
 "support.center_title" = "Support Center";
 "support.center_subtitle" = "Direct help and support for X iOS";
 "support.badge_official" = "OFFICIAL";
-"support.whatsapp_official" = "Official WhatsApp";
+"support.whatsapp_official" = "Discord Support";
 "support.whatsapp_fast" = "Fast personal assistance";
 "support.badge_channel" = "CHANNEL";
-"support.news_channel" = "News Channel";
+"support.news_channel" = "Discord Announcements";
 "support.news_channel_desc" = "Updates, notices and new versions";
-"support.follow_whatsapp" = "Follow on WhatsApp";
+"support.follow_whatsapp" = "Open Discord";
 "support.official_developer" = "Official X developer";
 "support.contact_label" = "Contact:";
 "support.whatsapp_prefill" = "Hello, I need support with X iOS";
@@ -738,7 +738,7 @@
 "ff.ban_reason" = "Block reason:";
 "ff.ban_reason_default" = "Terms of service violation or unauthorized use.";
 "ff.appeal" = "Contact support to appeal your key:";
-"ff.whatsapp" = "Official WhatsApp Support";
+"ff.whatsapp" = "Official Discord Support";
 "ff.logout" = "Sign Out";
 "ff.locked_title" = "%@ Locked";
 "ff.locked_body" = "Activate your access key from the Profile tab to unlock every feature.";

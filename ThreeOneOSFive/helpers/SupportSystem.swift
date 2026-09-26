@@ -17,7 +17,8 @@ enum SupportAction {
 }
 
 struct SupportContact {
-    static let whatsappNumber = "+18099289722"
+    static let discordAnnounceURL = "https://discord.gg/wAAbwX8Dmc"
+    static let discordSupportURL = "https://discord.gg/wpqqTnfXfc"
     static let telegramUsername = "Bnxyung7"
     static let email = "support@xapp.com"
     static let developerName = "Bnxyung7"

@@ -177,10 +177,10 @@ struct ProfileView: View {
                             .foregroundStyle(Color(hex: "CBD5E1"))
                             .lineSpacing(2)
                         
-                        Link(destination: URL(string: "https://wa.me/18099289722?text=Hola,%20mi%20clave%20de%20Project%20X%20expiró%20y%20deseo%20renovarla:\(session.key.keyString)")!) {
+                        Link(destination: URL(string: SupportContact.discordSupportURL)!) {
                             HStack {
                                 Image(systemName: "arrow.clockwise.circle.fill")
-                                Text("Renovar Clave por WhatsApp")
+                                Text("Renovar clave en Discord")
                                     .fontWeight(.bold)
                                 Spacer()
                                 Image(systemName: "arrow.up.right")

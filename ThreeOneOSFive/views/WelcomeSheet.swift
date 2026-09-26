@@ -157,18 +157,18 @@ struct Page3View: View {
             VStack(spacing: 12) {
                 CommunityButton(
                     icon: "bubble.left.and.bubble.right.fill",
-                    title: "WhatsApp Soporte",
+                    title: "Discord Soporte",
                     subtitle: "Atención personalizada",
-                    color: Color(hex: "10B981"),
-                    url: "https://wa.me/18099289722"
+                    color: Color(hex: "5865F2"),
+                    url: SupportContact.discordSupportURL
                 )
                 
                 CommunityButton(
                     icon: "megaphone.fill",
-                    title: "Canal Oficial WhatsApp",
+                    title: "Discord Anuncio",
                     subtitle: "Actualizaciones y descargas",
                     color: AppTheme.accent,
-                    url: "https://whatsapp.com/channel/0029Vb7NRaRAojYuOAfX5S0S"
+                    url: SupportContact.discordAnnounceURL
                 )
             }
             .padding(.horizontal, 24)

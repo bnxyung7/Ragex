@@ -697,8 +697,8 @@
 
 "support.title" = "Soporte";
 "support.subtitle" = "Estamos aqui para ayudarte";
-"support.whatsapp_title" = "Soporte WhatsApp";
-"support.whatsapp_desc" = "Habla con nosotros directamente";
+"support.whatsapp_title" = "Soporte Discord";
+"support.whatsapp_desc" = "Habla con nosotros en Discord";
 "support.telegram_title" = "Soporte Telegram";
 "support.telegram_desc" = "Respuestas rapidas en Telegram";
 "support.email_title" = "Soporte por correo";
@@ -710,12 +710,12 @@
 "support.center_title" = "Centro de Soporte";
 "support.center_subtitle" = "Atencion directa y soporte para X iOS";
 "support.badge_official" = "OFICIAL";
-"support.whatsapp_official" = "WhatsApp Oficial";
+"support.whatsapp_official" = "Discord Soporte";
 "support.whatsapp_fast" = "Atencion rapida personalizada";
 "support.badge_channel" = "CANAL";
-"support.news_channel" = "Canal de Novedades";
+"support.news_channel" = "Discord Anuncio";
 "support.news_channel_desc" = "Actualizaciones, avisos y nuevas versiones";
-"support.follow_whatsapp" = "Seguir en WhatsApp";
+"support.follow_whatsapp" = "Entrar a Discord";
 "support.official_developer" = "Desarrollador Oficial de X";
 "support.contact_label" = "Contacto:";
 "support.whatsapp_prefill" = "Hola, necesito soporte con X iOS";
@@ -738,7 +738,7 @@
 "ff.ban_reason" = "Motivo del bloqueo:";
 "ff.ban_reason_default" = "Violacion de terminos del servicio o uso no autorizado.";
 "ff.appeal" = "Comunicate con soporte para apelar tu clave:";
-"ff.whatsapp" = "Soporte Oficial WhatsApp";
+"ff.whatsapp" = "Soporte Oficial Discord";
 "ff.logout" = "Cerrar Sesion";
 "ff.locked_title" = "%@ Bloqueado";
 "ff.locked_body" = "Activa tu clave de acceso desde la pestana Perfil para desbloquear todas las funciones.";

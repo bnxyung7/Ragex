@@ -204,7 +204,7 @@ struct SettingsView: View {
                                 .foregroundStyle(Color(hex: "475569"))
                                 .padding(.horizontal, 4)
 
-                            Link(destination: URL(string: "https://whatsapp.com/channel/0029Vb7NRaRAojYuOAfX5S0S")!) {
+                            Link(destination: URL(string: SupportContact.discordAnnounceURL)!) {
                                 HStack(spacing: 12) {
                                     ZStack {
                                         RoundedRectangle(cornerRadius: 8)
@@ -215,7 +215,7 @@ struct SettingsView: View {
                                             .foregroundStyle(Color(hex: "10B981"))
                                     }
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text("Canal Oficial de WhatsApp")
+                                        Text("Discord Anuncio")
                                             .font(.system(size: 14, weight: .semibold))
                                             .foregroundStyle(.white)
                                         Text("Anuncios y descargas")

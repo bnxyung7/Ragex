@@ -133,8 +133,8 @@ public class AnnouncementService: ObservableObject {
                 tag: "NUEVO",
                 tagColor: "purple",
                 timestamp: "En Tiempo Real",
-                linkURL: "https://wa.me/18099289722",
-                linkTitle: "Canal Oficial",
+                linkURL: SupportContact.discordAnnounceURL,
+                linkTitle: "Discord Anuncio",
                 isImportant: true
             ),
             LiveAnnouncement(
@@ -149,14 +149,14 @@ public class AnnouncementService: ObservableObject {
                 isImportant: true
             ),
             LiveAnnouncement(
-                id: "ann-whatsapp-support",
+                id: "ann-discord-support",
                 title: "Renovaciones y soporte directo 24/7",
-                message: "¿Necesitas soporte técnico, nuevas keys o renovaciones de tu membresía? Nuestro equipo oficial está disponible a través de WhatsApp.",
+                message: "¿Necesitas soporte técnico, nuevas keys o renovaciones de tu membresía? El equipo oficial está en Discord.",
                 tag: "OFICIAL",
                 tagColor: "amber",
                 timestamp: "24/7 Activo",
-                linkURL: "https://wa.me/18099289722?text=Hola,%20deseo%20información%20sobre%20X%20iOS",
-                linkTitle: "Contactar por WhatsApp",
+                linkURL: SupportContact.discordSupportURL,
+                linkTitle: "Abrir Discord Soporte",
                 isImportant: false
             ),
             LiveAnnouncement(

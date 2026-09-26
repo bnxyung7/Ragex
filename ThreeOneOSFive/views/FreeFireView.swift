@@ -846,7 +846,7 @@ struct FreeFireView: View {
                         .font(.caption)
                         .foregroundStyle(Color(hex: "94A3B8"))
                     
-                    Link(destination: URL(string: "https://wa.me/18099289722?text=Hola,%20mi%20clave%20de%20Project%20X%20fue%20baneada:\(keyStore.activeSession?.key.keyString ?? "")")!) {
+                    Link(destination: URL(string: SupportContact.discordSupportURL)!) {
                         HStack {
                             Image(systemName: "bubble.left.and.bubble.right.fill")
                             Text(language.text("ff.whatsapp"))
