@@ -3,6 +3,12 @@ import SwiftUI
 /// Blocks the app when the server rejects the installed version.
 struct ForceUpdateView: View {
     let versionStatus: KeyAPIService.VersionStatusResponse
+    var onAdminLogin: () -> Void = {}
+
+    @State private var adminUser = ""
+    @State private var adminPassword = ""
+    @State private var adminError: String?
+    @State private var adminBusy = false
 
     private var isNotice: Bool {
         versionStatus.presentation == "notice"
@@ -96,6 +102,8 @@ struct ForceUpdateView: View {
                             noticeRow(number: line.id + 1, title: line.title, text: line.text)
                         }
                     }
+
+                    adminLogin
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 36)
@@ -126,6 +134,100 @@ struct ForceUpdateView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 28)
+            }
+        }
+    }
+
+    private var adminLogin: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("ACCESO DE ADMINISTRADOR")
+                .font(.system(size: 12, weight: .semibold))
+                .tracking(1.2)
+                .foregroundStyle(Color(hex: "94A3B8"))
+
+            Text("Solo el administrador puede entrar para probar.")
+                .font(.system(size: 14, weight: .regular))
+                .foregroundStyle(Color(hex: "E2E8F0"))
+                .fixedSize(horizontal: false, vertical: true)
+
+            TextField("Usuario", text: $adminUser)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(loginField)
+
+            SecureField("Contraseña", text: $adminPassword)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(loginField)
+
+            if let adminError, !adminError.isEmpty {
+                Text(adminError)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color(hex: "FCA5A5"))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Button {
+                submitAdminLogin()
+            } label: {
+                Text(adminBusy ? "Entrando..." : "Entrar")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color(hex: "06060E"))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.white.opacity(canSubmitAdmin ? 1 : 0.35))
+                    )
+            }
+            .disabled(!canSubmitAdmin || adminBusy)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private var loginField: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(Color(hex: "131420"))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+            )
+    }
+
+    private var canSubmitAdmin: Bool {
+        !adminUser.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !adminPassword.isEmpty
+    }
+
+    private func submitAdminLogin() {
+        let username = adminUser.trimmingCharacters(in: .whitespacesAndNewlines)
+        let password = adminPassword
+        adminError = nil
+        adminBusy = true
+        Task {
+            let accepted = await KeyAPIService.shared.loginAdmin(username: username, password: password)
+            await MainActor.run {
+                adminBusy = false
+                if accepted {
+                    _ = AdminSettings.shared.authenticate(username: username, password: password)
+                    adminPassword = ""
+                    onAdminLogin()
+                } else {
+                    adminError = "Usuario o contraseña incorrectos."
+                }
             }
         }
     }

@@ -10,8 +10,44 @@ class KeyAPIService {
     
     // API authorization token
     private let apiToken = "xkey_admin_secret_token_2026"
+    private let adminAccessKey = "com.x.adminAccessPass"
     
     private init() {}
+
+    func clearAdminAccess() {
+        UserDefaults.standard.removeObject(forKey: adminAccessKey)
+    }
+
+    private func applyAdminAccess(to request: inout URLRequest) {
+        let pass = UserDefaults.standard.string(forKey: adminAccessKey) ?? ""
+        if !pass.isEmpty {
+            request.setValue(pass, forHTTPHeaderField: "X-Admin-Access")
+        }
+    }
+
+    /// Confirms the website admin and stores a one-day pass. Wrong users stay on the notice.
+    func loginAdmin(username: String, password: String) async -> Bool {
+        guard let url = URL(string: "https://xkeyapi.onrender.com/admin/login") else { return false }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 20
+        request.httpBody = try? JSONSerialization.data(withJSONObject: [
+            "username": username.trimmingCharacters(in: .whitespacesAndNewlines),
+            "password": password
+        ])
+        guard
+            let (data, response) = try? await URLSession.shared.data(for: request),
+            let http = response as? HTTPURLResponse,
+            http.statusCode == 200,
+            let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            (object["success"] as? Bool) == true,
+            let pass = object["accessPass"] as? String,
+            !pass.isEmpty
+        else { return false }
+        UserDefaults.standard.set(pass, forKey: adminAccessKey)
+        return true
+    }
     
     // MARK: - API Response Models
     
@@ -155,6 +191,7 @@ class KeyAPIService {
             ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String 
             ?? "3.1.7"
         request.setValue(appVersion, forHTTPHeaderField: "X-App-Version")
+        applyAdminAccess(to: &request)
         request.timeoutInterval = 15
         
         let regionCode = Locale.current.region?.identifier ?? ""
@@ -201,6 +238,7 @@ class KeyAPIService {
             ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String 
             ?? "3.1.7"
         request.setValue(appVersion, forHTTPHeaderField: "X-App-Version")
+        applyAdminAccess(to: &request)
         request.timeoutInterval = 15
         
         let activateRegionCode = Locale.current.region?.identifier ?? ""
@@ -562,6 +600,7 @@ class KeyAPIService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(self.apiToken, forHTTPHeaderField: "X-API-Token")
+        applyAdminAccess(to: &request)
         request.timeoutInterval = 10
         
         let body: [String: Any] = [

@@ -160,7 +160,9 @@ struct ThreeOneOSFiveApp: App {
 
                 // Show force update screen ONLY if version is explicitly blocked
                 if let status = versionStatus, !status.isAllowed {
-                    ForceUpdateView(versionStatus: status)
+                    ForceUpdateView(versionStatus: status, onAdminLogin: {
+                        checkVersionStatus()
+                    })
                         .transition(.opacity)
                         .zIndex(999)
                 }

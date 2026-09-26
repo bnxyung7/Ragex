@@ -104,6 +104,7 @@ class AdminSettings: ObservableObject {
     func logout() {
         UserDefaults.standard.removeObject(forKey: sessionKey)
         isAdminAuthenticated = false
+        KeyAPIService.shared.clearAdminAccess()
     }
     
     /// Update tab visibility
