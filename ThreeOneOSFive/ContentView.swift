@@ -50,6 +50,8 @@ struct ContentView: View {
         .onChange(of: developerModeEnabled) { _ in reconcile() }
         .onChange(of: adminSettings.tabSettings) { _ in reconcile() }
         .onChange(of: keyStore.activeSession?.key.status) { _ in reconcile() }
+        .onChange(of: keyStore.allowFiles) { _ in reconcile() }
+        .onChange(of: keyStore.allowPatches) { _ in reconcile() }
         .onAppear {
             reconcile()
             if !Self.didPlayWelcome {

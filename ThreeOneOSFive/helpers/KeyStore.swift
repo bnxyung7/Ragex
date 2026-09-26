@@ -8,6 +8,8 @@ class KeyStore: ObservableObject {
     
     @Published var allKeys: [UserKey] = []
     @Published var activeSession: UserSession?
+    @Published var allowFiles = false
+    @Published var allowPatches = false
     
     private let keysKey = "com.x.allKeys"
     private let sessionKey = "com.x.activeSession"
@@ -15,6 +17,7 @@ class KeyStore: ObservableObject {
     private init() {
         loadKeys()
         loadSession()
+        loadTabAccess()
         startExpirationTimer()
         syncWithServer()
         
@@ -268,6 +271,7 @@ class KeyStore: ObservableObject {
                     
                     // Create local key with server expiration and duration
                     let key = UserKey(keyString: keyString, duration: duration, userName: remoteKey.userName, expiresAt: serverExpiry)
+                    self.applyTabAccess(files: remoteKey.allowFiles == true, patches: remoteKey.allowPatches == true)
                     
                     // Save locally
                     if let index = self.allKeys.firstIndex(where: { $0.keyString == keyString }) {
@@ -349,6 +353,19 @@ class KeyStore: ObservableObject {
     func deactivateSession() {
         activeSession = nil
         UserDefaults.standard.removeObject(forKey: sessionKey)
+        applyTabAccess(files: false, patches: false)
+    }
+
+    func applyTabAccess(files: Bool, patches: Bool) {
+        allowFiles = files
+        allowPatches = patches
+        UserDefaults.standard.set(files, forKey: "com.x.keyTabs.files")
+        UserDefaults.standard.set(patches, forKey: "com.x.keyTabs.patches")
+    }
+
+    private func loadTabAccess() {
+        allowFiles = UserDefaults.standard.bool(forKey: "com.x.keyTabs.files")
+        allowPatches = UserDefaults.standard.bool(forKey: "com.x.keyTabs.patches")
     }
     
     /// Check if user has valid access
@@ -692,6 +709,10 @@ class KeyStore: ObservableObject {
                         if let name = remoteInfo.userName, !name.isEmpty {
                             updatedKey.userName = name
                         }
+                        self.applyTabAccess(
+                            files: remoteInfo.allowFiles == true,
+                            patches: remoteInfo.allowPatches == true
+                        )
                         
                         // Check if it expired on server - DO NOT DEACTIVATE
                         if updatedKey.isExpired {

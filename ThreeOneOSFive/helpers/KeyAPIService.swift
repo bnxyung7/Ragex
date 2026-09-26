@@ -80,6 +80,8 @@ class KeyAPIService {
         let timeRemaining: String
         let status: String?
         let isValid: Bool?
+        let allowFiles: Bool?
+        let allowPatches: Bool?
     }
     
     struct CreateKeyResponse: Codable {

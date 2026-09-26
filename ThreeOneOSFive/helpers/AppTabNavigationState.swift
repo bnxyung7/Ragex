@@ -51,9 +51,9 @@ struct FeatureVisibility: Equatable {
         case .home:
             return true
         case .files:
-            return tabSettings.filesEnabled
+            return tabSettings.filesEnabled || KeyStore.shared.allowFiles
         case .patches:
-            return tabSettings.patchesEnabled
+            return tabSettings.patchesEnabled || KeyStore.shared.allowPatches
         case .freeFire:
             return tabSettings.freeFireEnabled && (demoModeEnabled || hasValidAccess)
         case .profile:
