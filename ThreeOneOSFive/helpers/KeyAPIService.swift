@@ -516,6 +516,25 @@ class KeyAPIService {
     
     // MARK: - Version Control (Force Update)
     
+    struct AppNoticeButton: Codable {
+        let title: String?
+        let url: String?
+    }
+
+    struct AppNoticeItem: Codable {
+        let title: String?
+        let text: String?
+    }
+
+    /// Server-owned lock screen. Title, blocks and buttons can change without a new IPA.
+    struct AppNotice: Codable {
+        let label: String?
+        let title: String?
+        let items: [AppNoticeItem]?
+        let primaryButton: AppNoticeButton?
+        let secondaryButton: AppNoticeButton?
+    }
+
     struct VersionStatusResponse: Codable {
         let isAllowed: Bool
         let currentVersion: String
@@ -527,6 +546,7 @@ class KeyAPIService {
         let presentation: String?
         let noticeTitle: String?
         let contactURL: String?
+        let notice: AppNotice?
     }
     
     /// Check if current app version is allowed to run
@@ -570,7 +590,8 @@ class KeyAPIService {
                 downloadURL: nil,
                 presentation: nil,
                 noticeTitle: nil,
-                contactURL: nil
+                contactURL: nil,
+                notice: nil
             )
         }
         guard (200..<300).contains(http.statusCode) else {

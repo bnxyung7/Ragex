@@ -8,11 +8,58 @@ struct ForceUpdateView: View {
         versionStatus.presentation == "notice"
     }
 
-    private var noticeParagraphs: [String] {
-        (versionStatus.message ?? "")
+    private struct NoticeLine: Identifiable {
+        let id: Int
+        let title: String
+        let text: String
+    }
+
+    private struct NoticeAction: Identifiable {
+        let id: Int
+        let title: String
+        let url: URL
+    }
+
+    private var noticeLines: [NoticeLine] {
+        if let items = versionStatus.notice?.items, !items.isEmpty {
+            return items.enumerated().compactMap { index, item in
+                let title = item.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                let text = item.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                guard !title.isEmpty || !text.isEmpty else { return nil }
+                return NoticeLine(id: index, title: title, text: text)
+            }
+        }
+        return (versionStatus.message ?? "")
             .components(separatedBy: "\n\n")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
+            .enumerated()
+            .map { NoticeLine(id: $0.offset, title: "", text: $0.element) }
+    }
+
+    private var noticeActions: [NoticeAction] {
+        let buttons = [
+            versionStatus.notice?.primaryButton,
+            versionStatus.notice?.secondaryButton
+        ]
+        var actions: [NoticeAction] = []
+        for button in buttons {
+            guard
+                let title = button?.title?.trimmingCharacters(in: .whitespacesAndNewlines),
+                !title.isEmpty,
+                let rawURL = button?.url?.trimmingCharacters(in: .whitespacesAndNewlines),
+                let url = URL(string: rawURL),
+                !rawURL.isEmpty
+            else { continue }
+            actions.append(NoticeAction(id: actions.count, title: title, url: url))
+        }
+        if actions.isEmpty,
+           let rawURL = versionStatus.contactURL?.trimmingCharacters(in: .whitespacesAndNewlines),
+           let url = URL(string: rawURL),
+           !rawURL.isEmpty {
+            actions.append(NoticeAction(id: 0, title: "Abrir enlace", url: url))
+        }
+        return actions
     }
 
     var body: some View {
@@ -33,20 +80,20 @@ struct ForceUpdateView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("AVISO")
+                        Text(noticeLabel)
                             .font(.system(size: 12, weight: .semibold))
                             .tracking(1.4)
                             .foregroundStyle(Color(hex: "94A3B8"))
 
-                        Text(versionStatus.noticeTitle ?? "Servicio en pausa")
+                        Text(noticeHeading)
                             .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
                     VStack(spacing: 12) {
-                        ForEach(Array(noticeParagraphs.enumerated()), id: \.offset) { index, paragraph in
-                            noticeRow(number: index + 1, text: paragraph)
+                        ForEach(noticeLines) { line in
+                            noticeRow(number: line.id + 1, title: line.title, text: line.text)
                         }
                     }
                 }
@@ -55,23 +102,27 @@ struct ForceUpdateView: View {
                 .padding(.bottom, 24)
             }
 
-            if let contactURL = versionStatus.contactURL, let url = URL(string: contactURL), !contactURL.isEmpty {
-                Button {
-                    UIApplication.shared.open(url)
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "bubble.left.and.bubble.right.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text("Escribir por WhatsApp")
-                            .font(.system(size: 16, weight: .semibold))
+            if !noticeActions.isEmpty {
+                VStack(spacing: 10) {
+                    ForEach(noticeActions) { action in
+                        Button {
+                            UIApplication.shared.open(action.url)
+                        } label: {
+                            Text(action.title)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(action.id == 0 ? Color(hex: "06060E") : .white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(action.id == 0 ? Color.white : Color.clear)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .stroke(Color.white.opacity(action.id == 0 ? 0 : 0.35), lineWidth: 1)
+                                )
+                        }
                     }
-                    .foregroundStyle(Color(hex: "06060E"))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color.white)
-                    )
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 28)
@@ -79,7 +130,19 @@ struct ForceUpdateView: View {
         }
     }
 
-    private func noticeRow(number: Int, text: String) -> some View {
+    private var noticeLabel: String {
+        let label = versionStatus.notice?.label?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return label.isEmpty ? "AVISO" : label
+    }
+
+    private var noticeHeading: String {
+        let title = versionStatus.notice?.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !title.isEmpty { return title }
+        let fallback = versionStatus.noticeTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return fallback.isEmpty ? "Aviso" : fallback
+    }
+
+    private func noticeRow(number: Int, title: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Text(String(format: "%02d", number))
                 .font(.system(size: 13, weight: .bold, design: .monospaced))
@@ -87,12 +150,22 @@ struct ForceUpdateView: View {
                 .frame(width: 36, height: 36)
                 .background(Circle().fill(Color.white))
 
-            Text(text)
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(Color(hex: "E2E8F0"))
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 6)
+            VStack(alignment: .leading, spacing: 4) {
+                if !title.isEmpty {
+                    Text(title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if !text.isEmpty {
+                    Text(text)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundStyle(Color(hex: "E2E8F0"))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, title.isEmpty ? 6 : 2)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
