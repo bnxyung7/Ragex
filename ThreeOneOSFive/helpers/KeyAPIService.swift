@@ -25,9 +25,9 @@ class KeyAPIService {
         }
     }
 
-    /// Confirms the website admin and stores a one-day pass. Wrong users stay on the notice.
+    /// Confirms a tester account and stores a one-day pass. Other users stay on the notice.
     func loginAdmin(username: String, password: String) async -> Bool {
-        guard let url = URL(string: "https://xkeyapi.onrender.com/admin/login") else { return false }
+        guard let url = URL(string: "https://xkeyapi.onrender.com/api/testers/login") else { return false }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

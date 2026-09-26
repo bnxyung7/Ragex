@@ -140,12 +140,12 @@ struct ForceUpdateView: View {
 
     private var adminLogin: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("ACCESO DE ADMINISTRADOR")
+            Text("ACCESO TESTES")
                 .font(.system(size: 12, weight: .semibold))
                 .tracking(1.2)
                 .foregroundStyle(Color(hex: "94A3B8"))
 
-            Text("Solo el administrador puede entrar para probar.")
+            Text("Solo un usuario de prueba puede entrar. Después la app abre y puedes jugar.")
                 .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(Color(hex: "E2E8F0"))
                 .fixedSize(horizontal: false, vertical: true)
@@ -222,7 +222,6 @@ struct ForceUpdateView: View {
             await MainActor.run {
                 adminBusy = false
                 if accepted {
-                    _ = AdminSettings.shared.authenticate(username: username, password: password)
                     adminPassword = ""
                     onAdminLogin()
                 } else {
