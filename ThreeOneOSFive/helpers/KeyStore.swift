@@ -107,25 +107,6 @@ class KeyStore: ObservableObject {
             return
         }
         
-        if cleanKey == "ADMIN" {
-            var key = allKeys.first(where: { $0.keyString == "ADMIN" })
-                ?? UserKey(keyString: "ADMIN", duration: .permanent, userName: "ADMIN")
-            key.isBanned = false
-            key.banReason = nil
-            key.expiresAt = nil
-            if let index = allKeys.firstIndex(where: { $0.keyString == "ADMIN" }) {
-                allKeys[index] = key
-            } else {
-                allKeys.append(key)
-            }
-            saveKeys()
-            let session = UserSession(key: key, activatedAt: Date())
-            activeSession = session
-            saveSession()
-            completion(.success(session))
-            return
-        }
-
         let deviceId = getDeviceId()
         
         // Check if key exists locally first
@@ -627,7 +608,6 @@ class KeyStore: ObservableObject {
     /// Synchronize the active session with the remote server
     func syncWithServer() {
         guard let session = activeSession else { return }
-        guard session.key.keyString != "ADMIN" else { return }
         guard !syncInFlight else { return }
         syncInFlight = true
         let keyString = session.key.keyString

@@ -17,9 +17,22 @@ struct ChangelogView: View {
     
     private let versions: [ChangelogVersion] = [
         ChangelogVersion(
+            version: "3.1.7",
+            date: "2026-09-25",
+            isLatest: true,
+            added: [],
+            changed: [
+                "Only this version stays active. Older IPAs stop working."
+            ],
+            fixed: [],
+            compatibility: [
+                "Aimbot and holograms activate on iOS 17.0–17.7.2, 18.0–18.7.10 and 26.0–26.7, including 26.6.2. iOS 27 does not."
+            ]
+        ),
+        ChangelogVersion(
             version: "3.1.6",
             date: "2026-09-24",
-            isLatest: true,
+            isLatest: false,
             added: [
                 "Free Fire Holograma Arma includes Turquesa."
             ],
