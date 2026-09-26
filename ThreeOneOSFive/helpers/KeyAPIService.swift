@@ -524,6 +524,9 @@ class KeyAPIService {
         let forceUpdate: Bool
         let message: String?
         let downloadURL: String?
+        let presentation: String?
+        let noticeTitle: String?
+        let contactURL: String?
     }
     
     /// Check if current app version is allowed to run
@@ -564,7 +567,10 @@ class KeyAPIService {
                 latestVersion: nil,
                 forceUpdate: false,
                 message: nil,
-                downloadURL: nil
+                downloadURL: nil,
+                presentation: nil,
+                noticeTitle: nil,
+                contactURL: nil
             )
         }
         guard (200..<300).contains(http.statusCode) else {
